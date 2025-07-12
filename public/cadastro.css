@@ -1,0 +1,283 @@
+/* Seu CSS existente para o formulário aqui */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f2f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.container {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 800px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+h1 {
+    color: #333333;
+    margin-bottom: 25px;
+    font-size: 28px;
+}
+/* Novo estilo para o cabeçalho com a imagem e o título */
+.header-content {
+    display: flex; /* Permite que os itens fiquem lado a lado */
+    align-items: center; /* Alinha os itens verticalmente ao centro */
+    justify-content: left; /* Centraliza os itens horizontalmente */
+    margin-bottom: 20px; /* Adiciona um espaço abaixo do cabeçalho */
+    gap: 75px; /* Espaçamento entre a imagem e o título */
+    
+}
+
+.header-content .header-logo {
+    max-width: 100px; /* Ajuste o tamanho da logo conforme necessário */
+    height: auto;
+    /* Remover ou comentar o margin-bottom do h1 se ele já estiver dentro de header-content */
+}
+
+h1 {
+    color: #333333;
+    margin-bottom: 0; /* Remove a margem inferior do h1, já que o pai (header-content) terá gap/margin-bottom */
+    font-size: 28px;
+}
+
+form label {
+    display: block;
+    text-align: left;
+    margin-bottom: 8px;
+    color: #555555;
+    font-weight: bold;
+}
+
+form input,
+form select,
+form textarea {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 0;
+    border: 1px solid #dddddd;
+    border-radius: 5px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+form textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+form button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 5px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin-top: 20px;
+    width: 100%;
+}
+
+form button:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+}
+
+/* --- ESTILOS PARA LAYOUT LADO A LADO --- */
+.form-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-bottom: 15px;
+    align-items: flex-start;
+}
+
+.form-group {
+    flex: 1 1 calc(50% - 10px);
+    min-width: 250px;
+    margin-top: 0;
+}
+
+.form-group.full-width {
+    flex: 1 1 100%;
+}
+
+/* --- ESTILOS PARA CENTRALIZAR A PARTE DA FOTO --- */
+.photo-upload-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centraliza os itens horizontalmente dentro deste grupo */
+}
+
+.photo-upload-group label {
+    text-align: center;
+    width: 100%;
+}
+
+.photo-upload-group input[type="file"] {
+    width: auto;
+    margin: 0 auto 10px auto;
+    display: block;
+}
+
+/* --- ESTILOS PARA PRÉ-VISUALIZAÇÃO DA FOTO (com ícone de câmera) --- */
+.foto-preview-container {
+    width: 120px;
+    height: 120px;
+    margin: 10px auto 0 auto;
+    position: relative;
+    border: 1px solid #e0e0e0;
+    background-color: #f9f9f9;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    /* Adicionado para o ícone da câmera */
+    color: #cccccc; /* Cor do ícone da câmera */
+    font-size: 2em; /* Tamanho base para o ícone */
+}
+
+/* Ícone de câmera básico usando caracteres (requer Font Awesome ou fonte similar) */
+.foto-preview-container::before {
+    content: "\f030"; /* Código Unicode para um ícone de câmera (Font Awesome 5 Free) */
+    font-family: "Font Awesome 5 Free"; /* Certifique-se de ter Font Awesome linkado no seu HTML! */
+    font-weight: 400; /* Estilo regular do Font Awesome */
+    color: #d3d3d3; /* Cinza claro */
+    font-size: 2.5em; /* Tamanho do ícone */
+    position: absolute; /* Para centralizar o ícone se a imagem preencher */
+    z-index: 1; /* Garante que o ícone esteja acima da imagem vazia */
+}
+
+/* Esconde o pseudo-elemento quando uma imagem é carregada */
+.foto-preview-container.has-image::before {
+    content: ""; /* Remove o ícone */
+    display: none; /* Garante que não ocupe espaço */
+}
+
+#foto-preview {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center center;
+    display: block;
+}
+
+.foto-mask {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, transparent 60px, rgba(0, 0, 0, 0.5) 60px);
+    pointer-events: none;
+    box-sizing: border-box;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.foto-preview-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 2px solid rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    box-sizing: border-box;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.foto-preview-container.has-image .foto-mask,
+.foto-preview-container.has-image::after {
+    opacity: 1;
+}
+
+/* Mensagens do formulário */
+#form-message {
+    padding: 10px 15px;
+    margin-bottom: 20px;
+    border-radius: 5px;
+    text-align: center;
+    font-weight: bold;
+    opacity: 1;
+    transition: opacity 0.5s ease;
+}
+
+#form-message.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+#form-message.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+#form-message.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* Adicionado para a mensagem de "info" (ex: enviando dados...) */
+#form-message.info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+/* Esconder grupo de atuação (já tratado pelo JS) */
+#atuacao-group {
+    transition: all 0.3s ease;
+}
+
+/* Responsividade: Volta para coluna única em telas menores */
+@media (max-width: 650px) {
+    .form-row {
+        flex-direction: column;
+        gap: 0;
+    }
+    .form-group {
+        flex: 1 1 100%;
+        margin-bottom: 15px;
+    }
+    /* Ajustes específicos para a foto preview em telas pequenas */
+    .foto-preview-container {
+        width: 100px; /* Reduz o tamanho da foto em mobile */
+        height: 100px; /* Reduz o tamanho da foto em mobile */
+        margin: 10px auto 15px auto; /* Mantém centralizada e com espaçamento */
+    }
+    .foto-mask {
+        /* Ajusta o gradiente da máscara para o novo tamanho de 100px */
+        background: radial-gradient(circle at center, transparent 50px, rgba(0, 0, 0, 0.5) 50px);
+    }
+
+    /* Ajuste para o grupo da foto em telas menores para garantir centralização */
+    .photo-upload-group {
+        align-items: center;
+    }
+    .photo-upload-group input[type="file"] {
+        margin: 0 auto 10px auto;
+    }
+}
+
+@media (max-width: 650px) {
+    form input,
+    form select,
+    form textarea {
+        margin-bottom: 0;
+    }
+}

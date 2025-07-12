@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Helpy</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+    <link rel="stylesheet" href="cadastro.css"> <!-- Reutilizando o CSS do cadastro para manter a consistência -->
+    <style>
+        /* Ajustes específicos para a página de login */
+        .header-content {
+            justify-content: center; /* Centraliza a logo e o título no login */
+            gap: 20px; /* Reduz o espaçamento para o login */
+        }
+        .container {
+            max-width: 500px; /* Torna o formulário de login um pouco menor */
+        }
+        .form-row {
+            display: block; /* Garante que os campos fiquem um abaixo do outro */
+            margin-bottom: 15px;
+        }
+        .form-group {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        form button {
+            margin-top: 20px;
+        }
+        .link-cadastro {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        .link-cadastro a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .link-cadastro a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-content">
+            <img src="imagens/helpy-login.png" alt="Logo Helpy" class="header-logo">
+            <h1>Acesse sua conta Helpy</h1>
+        </div>
+        <div id="form-message" class="hidden"></div>
+
+        <form id="form-login">
+            <div class="form-row">
+                <div class="form-group full-width">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group full-width">
+                    <label for="senha">Senha</label>
+                    <input type="password" id="senha" name="senha" required>
+                </div>
+            </div>
+
+            <button type="submit">Entrar</button>
+        </form>
+
+        <div class="link-cadastro">
+            Não tem uma conta? <a href="cadastro.html">Cadastre-se aqui</a>
+        </div>
+    </div>
+    <script src="login.js"></script>
+</body>
+</html>

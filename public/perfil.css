@@ -1,0 +1,516 @@
+/* Estilos gerais */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f2f5;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.container {
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 850px;
+    box-sizing: border-box;
+    margin: 20px auto;
+    text-align: center;
+}
+
+.perfil-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.foto-perfil {
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: none; /* SEM BORDA */
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+h2#nomePerfil {
+    color: #333333;
+    margin-bottom: 10px;
+    font-size: 30px;
+}
+
+p {
+    color: #666666;
+    margin-bottom: 8px;
+    line-height: 1.6;
+    font-size: 16px;
+}
+
+/* Estilos para os botões de ação do perfil (Editar, Salvar, Cancelar) */
+.botoes-acao {
+    margin-top: 25px; /* Espaçamento acima do grupo de botões */
+    display: flex; /* Para alinhar os botões lado a lado */
+    gap: 15px; /* Espaçamento entre os botões */
+    justify-content: center; /* Centraliza os botões */
+    flex-wrap: wrap; /* Permite que os botões quebrem a linha em telas menores */
+}
+
+.btn-perfil {
+    padding: 12px 25px;
+    font-size: 16px;
+    font-weight: bold;
+    border: none;
+    border-radius: 8px; /* Bordas mais arredondadas */
+    cursor: pointer;
+    transition: all 0.3s ease; /* Transição para todas as propriedades no hover */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15); /* Sombra para profundidade */
+}
+
+/* Estilo específico para o botão "Editar Perfil" */
+#btnEditarPerfil {
+    background-color: #007bff; /* Azul primário */
+    color: white;
+}
+
+#btnEditarPerfil:hover {
+    background-color: #0056b3; /* Azul mais escuro no hover */
+    transform: translateY(-2px); /* Leve efeito de levantamento */
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25); /* Sombra mais pronunciada no hover */
+}
+
+/* Estilo específico para o botão "Salvar Alterações" */
+#btnSalvarPerfil {
+    background-color: #28a745; /* Verde para sucesso/salvar */
+    color: white;
+}
+
+#btnSalvarPerfil:hover {
+    background-color: #218838; /* Verde mais escuro no hover */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+}
+
+/* Estilo específico para o botão "Cancelar" */
+#btnCancelarEdicao {
+    background-color: #dc3545; /* Vermelho para cancelar/erro */
+    color: white;
+}
+
+#btnCancelarEdicao:hover {
+    background-color: #c82333; /* Vermelho mais escuro no hover */
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
+}
+
+/* Classe para esconder elementos (já deve existir no seu CSS, mas garantindo) */
+.oculto {
+    display: none !important; /* !important garante que sobrescreva outras regras de display */
+}
+
+p#descricaoPerfil {
+    font-style: italic;
+    color: #444444;
+    margin-top: 20px;
+    margin-bottom: 25px;
+    padding: 15px;
+    background-color: #f9f9f9;
+    border-left: 4px solid #007bff;
+    border-radius: 5px;
+    text-align: left;
+    font-size: 15px;
+}
+
+/* Ajuste na descrição para quando não estiver editando (NOVO) */
+p.descricao-perfil {
+    text-align: left; /* Alinha o texto da descrição à esquerda */
+    width: 100%;
+    max-width: 600px; /* Limita a largura para melhor leitura */
+    margin: 15px auto;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    border: 1px solid #eee;
+}
+
+.contato {
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #eeeeee;
+    width: 100%;
+}
+
+.contato p {
+    font-size: 16px;
+    color: #333333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+/* Estilos de avaliação */
+.avaliacao {
+    margin-top: 30px;
+    padding-top: 25px;
+    border-top: 1px solid #eeeeee;
+    width: 100%;
+}
+
+.avaliacao h3 {
+    color: #333333;
+    margin-bottom: 15px;
+    font-size: 22px;
+}
+
+.estrelas {
+    cursor: pointer;
+    margin-bottom: 15px;
+    display: flex;
+    justify-content: center;
+}
+
+/* Estilo padrão para o ícone de estrela */
+.estrelas span i {
+    color: #cccccc;
+    font-size: 36px;
+    transition: color 0.2s ease, transform 0.2s ease;
+    margin: 0 3px;
+}
+
+/* Efeito ao passar o mouse (hover) */
+.estrelas span i:hover {
+    color: #ffc107;
+    transform: scale(1.1);
+}
+
+/* Estilo para as estrelas preenchidas (selecionadas) */
+.estrelas span i.fas {
+    color: #ffc107;
+}
+
+p#notaSelecionada {
+    font-size: 18px;
+    font-weight: bold;
+    color: #007bff;
+    min-height: 20px;
+}
+
+/* Estilos para a área de média de avaliação */
+.media-avaliacao {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.estrelas-media {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 5px;
+}
+
+.estrelas-media i {
+    color: #ffc107;
+    font-size: 24px; /* Tamanho menor para as estrelas da média */
+    margin: 0 2px;
+}
+
+#totalAvaliacoes {
+    font-size: 14px;
+    color: #777;
+    font-style: italic;
+}
+
+
+/* ESTILOS DO PORTFÓLIO DE SERVIÇOS */
+.portfolio-servicos {
+    margin-top: 35px;
+    padding-top: 30px;
+    border-top: 1px solid #eeeeee;
+    width: 100%;
+    text-align: center;
+}
+
+.portfolio-servicos h3 {
+    color: #333333;
+    margin-bottom: 25px;
+    font-size: 24px;
+}
+
+/* Estilo do botão "Anexar Fotos" */
+.btn-anexar-foto {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    margin-bottom: 25px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-anexar-foto:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+}
+
+.btn-anexar-foto i {
+    font-size: 18px;
+}
+
+.galeria-servicos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    justify-content: center;
+    align-items: center;
+    padding: 0 15px;
+}
+
+.servico-imagem-wrapper {
+    position: relative;
+    width: 100%;
+    height: 160px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.servico-imagem {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+    transition: transform 0.2s ease;
+    cursor: pointer;
+}
+
+.servico-imagem:hover {
+    transform: scale(1.03);
+}
+
+.mensagem-vazia {
+    color: #999999;
+    font-style: italic;
+    margin-top: 20px;
+    grid-column: 1 / -1;
+}
+
+.btn-remover-foto {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: rgba(255, 0, 0, 0.7);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 25px;
+    height: 25px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 14px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.servico-imagem-wrapper:hover .btn-remover-foto {
+    opacity: 1;
+}
+
+
+/* Responsividade */
+@media (max-width: 880px) {
+    .container {
+        padding: 35px;
+    }
+    .galeria-servicos {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+    .servico-imagem-wrapper {
+        height: 140px;
+    }
+}
+
+@media (max-width: 650px) {
+    .container {
+        padding: 25px;
+        max-width: 90%;
+    }
+    .foto-perfil {
+        width: 100px;
+        height: 100px;
+        margin-bottom: 15px;
+    }
+    h2#nomePerfil {
+        font-size: 26px;
+    }
+    p {
+        font-size: 15px;
+    }
+    p#descricaoPerfil {
+        font-size: 14px;
+        padding: 10px;
+    }
+    .contato p {
+        font-size: 15px;
+    }
+    .avaliacao h3 {
+        font-size: 20px;
+    }
+    .estrelas span i {
+        font-size: 30px;
+        margin: 0 2px;
+    }
+    .portfolio-servicos h3 {
+        font-size: 20px;
+        margin-bottom: 15px;
+    }
+    .galeria-servicos {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+    }
+    .servico-imagem-wrapper {
+        height: 120px;
+    }
+    .btn-anexar-foto {
+        padding: 8px 15px;
+        font-size: 14px;
+    }
+    .btn-anexar-foto i {
+        font-size: 16px;
+    }
+    .estrelas-media i {
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 450px) {
+    .container {
+        padding: 15px;
+    }
+    .galeria-servicos {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    .servico-imagem-wrapper {
+        height: 180px;
+    }
+    .foto-perfil {
+        width: 80px;
+        height: 80px;
+    }
+    h2#nomePerfil {
+        font-size: 22px;
+    }
+    .estrelas span i {
+        font-size: 26px;
+    }
+    .estrelas-media i {
+        font-size: 18px;
+    }
+}
+
+/* Estilos para o bloco de contato para centralizar */
+.contato p {
+    font-size: 16px;
+    color: #333333;
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Garante que o conteúdo (incluindo o link) esteja centralizado */
+    gap: 8px; /* Espaçamento entre o ícone e o texto, se não estiverem no mesmo elemento */
+}
+
+
+/* Efeito de Hover para links de contato (WhatsApp e Email) */
+.contato p a {
+    color: #333333; /* Cor padrão do texto do link */
+    text-decoration: none; /* Remove sublinhado padrão */
+    transition: color 0.3s ease, text-decoration 0.3s ease, transform 0.2s ease; /* Transição suave para cor, sublinhado e escala */
+    display: flex; /* Para alinhar o ícone e o texto dentro do link */
+    align-items: center; /* Alinha verticalmente */
+    gap: 8px; /* Espaçamento entre ícone e texto dentro do link */
+}
+
+.contato p a:hover {
+    color: #007bff; /* Mude para uma cor que indique clicável, como azul */
+    text-decoration: underline; /* Adiciona sublinhado ao passar o mouse */
+    cursor: pointer; /* Muda o cursor para indicar que é clicável */
+    transform: translateY(-2px); /* Efeito de leve levantamento */
+}
+
+/* Estilos para os ícones dentro dos links de contato */
+.contato p a i {
+    font-size: 18px; /* Tamanho do ícone */
+    color: inherit; /* O ícone herda a cor do link pai */
+    transition: color 0.3s ease, transform 0.2s ease;
+}
+
+/* Cor específica para o ícone do WhatsApp quando não há hover */
+.contato p a[href*="wa.me"] i {
+    color: #25d366; /* Cor verde do WhatsApp */
+}
+
+/* Cor específica para o ícone do Email quando não há hover */
+.contato p a[href*="mailto"] i {
+    color: #007bff; /* Cor azul para e-mail */
+}
+
+
+/* Efeito de hover nos ícones dentro dos links */
+.contato p a:hover i {
+    color: #007bff; /* O ícone fica azul no hover, para ambos WhatsApp e Email */
+    transform: scale(1.1); /* Um leve aumento de tamanho no ícone ao passar o mouse sobre o link */
+}
+
+/* Estilos para os inputs de edição que aparecerão (ADICIONADOS) */
+.input-perfil {
+    width: calc(100% - 20px); /* Ajusta a largura, considerando o padding do container */
+    padding: 10px 15px;
+    margin-top: 5px; /* Espaçamento acima do input */
+    margin-bottom: 15px; /* Espaçamento abaixo do input */
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 1em;
+    color: #333;
+    box-sizing: border-box; /* Garante que padding e border sejam incluídos na largura */
+}
+
+.input-perfil:focus {
+    border-color: #007bff; /* Borda azul ao focar */
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    outline: none; /* Remove o outline padrão do navegador */
+}
+
+/* Estilo para o textarea de descrição (ADICIONADO) */
+textarea.input-perfil {
+    resize: vertical; /* Permite redimensionar verticalmente */
+    min-height: 80px; /* Altura mínima para o textarea */
+}
+
+/* Botão/Label para selecionar a foto de perfil (ADICIONADO) */
+.btn-selecionar-foto {
+    display: inline-block; /* Faz com que o label se comporte como um botão */
+    background-color: #6c757d; /* Cor cinza para o botão de alterar foto */
+    color: white;
+    padding: 8px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10px;
+    transition: background-color 0.3s ease;
+    font-size: 0.9em;
+}
+
+.btn-selecionar-foto:hover {
+    background-color: #5a6268;
+}

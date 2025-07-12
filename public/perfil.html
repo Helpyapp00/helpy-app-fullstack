@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Helpy - Meu Perfil</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="perfil.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+    <header>
+        <div class="logo-box">
+            <img src="imagens/helpy-perfil.png" alt="Logo Helpy">
+            <h1>Helpy</h1>
+        </div>
+        <input type="text" class="search" placeholder="Buscar serviços ou profissionais..." disabled>
+        <div class="user-info">
+            <img id="user-avatar-header" src="https://via.placeholder.com/50?text=User" alt="Avatar do Usuário" class="user-avatar-header">
+            <span id="user-name-header"></span>
+            <button id="back-to-feed-button">Voltar ao Feed</button>
+            <button id="logout-button">Sair</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="perfil-box">
+            <img id="fotoPerfil" class="foto-perfil" src="https://via.placeholder.com/130?text=Perfil" alt="Foto de Perfil">
+            <input type="file" id="inputFotoPerfil" accept="image/*" class="oculto">
+            <label for="inputFotoPerfil" id="labelInputFotoPerfil" class="btn-selecionar-foto oculto">
+                <i class="fas fa-camera"></i> Alterar Foto
+            </label>
+
+            <h2 id="nomePerfil">Nome do Usuário</h2>
+            <input type="text" id="inputNome" class="input-perfil oculto" placeholder="Seu nome completo">
+
+            <p><i class="fas fa-calendar-alt"></i> Idade: <span id="idadePerfil">25 anos</span></p>
+            <input type="number" id="inputIdade" class="input-perfil oculto" placeholder="Sua idade">
+
+            <p><i class="fas fa-map-marker-alt"></i> Cidade: <span id="cidadePerfil">São Paulo, SP</span></p>
+            <input type="text" id="inputCidade" class="input-perfil oculto" placeholder="Sua cidade">
+
+            <p><i class="fas fa-briefcase"></i> Área de Atuação: <span id="areaPerfil">Eletricista</span></p>
+            <input type="text" id="inputAtuacao" class="input-perfil oculto" placeholder="Sua área de atuação">
+
+            <p id="descricaoPerfil" class="descricao-perfil">
+                Esta é uma breve descrição sobre o profissional. Foco em oferecer serviços de qualidade, com pontualidade e bom atendimento.
+            </p>
+            <textarea id="inputDescricao" class="input-perfil oculto" placeholder="Descreva-se profissionalmente..."></textarea>
+
+
+            <div class="botoes-acao">
+                <button id="btnEditarPerfil" class="btn-perfil">
+                    <i class="fas fa-edit"></i> Editar Perfil
+                </button>
+                <button id="btnSalvarPerfil" class="btn-perfil oculto">
+                    <i class="fas fa-save"></i> Salvar Alterações
+                </button>
+                <button id="btnCancelarEdicao" class="btn-perfil oculto">
+                    <i class="fas fa-times-circle"></i> Cancelar
+                </button>
+            </div>
+
+            <div class="contato">
+                <h2>Contato</h2>
+                <p><a id="whatsappPerfil" href="#" target="_blank"><i class="fab fa-whatsapp"></i> (XX) XXXXX-XXXX</a></p>
+                <input type="tel" id="inputWhatsapp" class="input-perfil oculto" placeholder="(XX) XXXXX-XXXX">
+
+                <p><a id="emailPerfil" href="#"><i class="fas fa-envelope"></i> email@exemplo.com</a></p>
+                <input type="email" id="inputEmail" class="input-perfil oculto" placeholder="seu.email@exemplo.com">
+            </div>
+
+            <div class="avaliacao">
+                <h3>Avalie este profissional</h3>
+                <div class="estrelas">
+                    <span data-value="1"><i class="far fa-star"></i></span>
+                    <span data-value="2"><i class="far fa-star"></i></span>
+                    <span data-value="3"><i class="far fa-star"></i></span>
+                    <span data-value="4"><i class="far fa-star"></i></span>
+                    <span data-value="5"><i class="far fa-star"></i></span>
+                </div>
+                <p id="notaSelecionada"></p>
+                <form id="formAvaliacao" class="oculto"> <textarea id="comentarioAvaliacaoInput" class="input-perfil" placeholder="Deixe um comentário sobre o serviço..."></textarea>
+                    <button type="submit" class="btn-perfil" id="btnEnviarAvaliacao"><i class="fas fa-paper-plane"></i> Enviar Avaliação</button>
+                    <div id="form-avaliacao-message" class="form-message hidden"></div>
+                </form>
+                <div class="media-avaliacao">
+                    <div id="mediaEstrelas" class="estrelas-media">
+                        </div>
+                    <p id="totalAvaliacoes"></p>
+                </div>
+            </div>
+
+            <div class="portfolio-servicos">
+                <h3>Portfólio de Serviços</h3>
+                <button id="btnAnexarFoto" class="btn-anexar-foto">
+                    <i class="fas fa-plus-circle"></i> Fotos
+                </button>
+                <input type="file" id="inputFotoServico" accept="image/*" multiple style="display: none;">
+
+                <div class="galeria-servicos" id="galeriaServicos">
+                    <p id="mensagemGaleriaVazia" class="mensagem-vazia">Nenhuma foto de serviço ainda. Anexe a primeira!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="logout-confirm-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3>Tem certeza que deseja sair?</h3>
+            <div class="modal-buttons">
+                <button id="confirm-logout-yes" class="btn-confirm-yes">Sim</button>
+                <button id="confirm-logout-no" class="btn-confirm-no">Não</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="perfil.js"></script>
+    <script src="script.js"></script> </body>
+</html>
