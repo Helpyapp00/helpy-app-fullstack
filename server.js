@@ -139,20 +139,29 @@ const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey'; // Use uma var
 // --- Middleware de Autenticação JWT ---
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
+    console.log('Backend - Header de Autorização recebido:', authHeader); // ADICIONE ESTA LINHA
+
     const token = authHeader && authHeader.split(' ')[1];
+    console.log('Backend - Token extraído:', token); // ADICIONE ESTA LINHA
 
-    if (token == null) return res.sendStatus(401); // Se não houver token
+    if (token == null) {
+        console.log('Backend - Token é nulo, enviando 401.'); // ADICIONE ESTA LINHA
+        return res.sendStatus(401);
+    }
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
+    // Certifique-se de que JWT_SECRET está definido.
+    // Adicione esta linha temporariamente para depuração, mas não em produção real!
+    console.log('Backend - JWT_SECRET usado para verificação:', process.env.JWT_SECRET ? 'DEFINIDO' : 'NÃO DEFINIDO'); // ADICIONE ESTA LINHA
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
         if (err) {
-            console.error('Erro de verificação do token:', err);
-            return res.sendStatus(403); // Token inválido ou expirado
+            console.error('Backend - Erro de verificação do token:', err.message); // Modificado para logar a mensagem do erro
+            return res.sendStatus(403);
         }
         req.user = user;
         next();
     });
 };
-
 // --- Rotas de Autenticação e Usuário ---
 
 // Rota de Registro

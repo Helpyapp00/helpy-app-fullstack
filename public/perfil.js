@@ -1,33 +1,40 @@
 document.addEventListener('DOMContentLoaded', async function() {
-    // --- Elementos do DOM ---
+    // --- Configurações Iniciais ---
     const API_BASE_URL = 'http://localhost:3000/api';
 
+    // Variáveis de estado globais (obtidas do localStorage)
+    const userId = localStorage.getItem('userId');
+    const token = localStorage.getItem('jwtToken');
+    const userType = localStorage.getItem('userType'); // Pega o tipo de usuário logado
+
     console.log('perfil.js carregado.');
-    console.log('Token JWT no localStorage ao carregar perfil.js:', localStorage.getItem('jwtToken'));
-
-    console.log('perfil.js carregado. Tentando acessar localStorage...');
-    console.log('localStorage.length:', localStorage.length);
-    console.log('Token JWT no localStorage (antes de checkAuthAndRedirect):', localStorage.getItem('jwtToken'));
-    console.log('User ID no localStorage (antes de checkAuthAndRedirect):', localStorage.getItem('userId'));
-
+    console.log('Token JWT no localStorage ao carregar perfil.js:', token);
+    console.log('User ID no localStorage ao carregar perfil.js:', userId);
+    console.log('User Type no localStorage ao carregar perfil.js:', userType);
 
     // Elementos de exibição do perfil
     const fotoPerfil = document.getElementById('fotoPerfil');
     const nomePerfil = document.getElementById('nomePerfil');
     const idadePerfil = document.getElementById('idadePerfil');
     const cidadePerfil = document.getElementById('cidadePerfil');
-    const areaPerfil = document.getElementById('areaPerfil'); // 'atuacao' no backend
+    const areaPerfil = document.getElementById('areaPerfil'); // 
+    
+    // Elementos do cabeçalho
+    const userAvatarHeader = document.getElementById('user-avatar-header');
+    const userNameHeader = document.getElementById('userName-header');
+
+        const backToFeedButton = document.getElementById('back-to-feed-button');
+    const logoutButton = document.getElementById('logout-button');
+
+
+    //Corresponde a 'atuacao' no backend
     const descricaoPerfil = document.getElementById('descricaoPerfil');
-    const whatsappPerfil = document.getElementById('whatsappPerfil'); // 'telefone' no backend
+    const whatsappPerfil = document.getElementById('whatsappPerfil'); // Corresponde a 'telefone' no backend
     const emailPerfil = document.getElementById('emailPerfil');
-    const mediaEstrelas = document.getElementById('mediaEstrelas');
+    const mediaEstrelasDisplay = document.getElementById('mediaEstrelas'); // Display das estrelas da média de avaliação
     const totalAvaliacoes = document.getElementById('totalAvaliacoes');
     const galeriaServicos = document.getElementById('galeriaServicos');
     const mensagemGaleriaVazia = document.getElementById('mensagemGaleriaVazia');
-
-    // Elementos do cabeçalho (para consistência, já que perfil.html tem um header similar ao index.html)
-    const userAvatarHeader = document.getElementById('user-avatar-header');
-    const userNameHeader = document.getElementById('userName-header');
 
     // Elementos de input para edição
     const inputFotoPerfil = document.getElementById('inputFotoPerfil');
@@ -44,31 +51,41 @@ document.addEventListener('DOMContentLoaded', async function() {
     const btnEditarPerfil = document.getElementById('btnEditarPerfil');
     const btnSalvarPerfil = document.getElementById('btnSalvarPerfil');
     const btnCancelarEdicao = document.getElementById('btnCancelarEdicao');
-    
-    // Elementos de avaliação
-    const estrelasAvaliacao = document.querySelectorAll('.estrelas span');
+
+    // Elementos de avaliação (para avaliador)
+    const estrelasAvaliacaoClickable = document.querySelectorAll('.estrelas span'); // Estrelas clicáveis para dar nota
     const notaSelecionadaDisplay = document.getElementById('notaSelecionada');
     const formAvaliacao = document.getElementById('formAvaliacao');
     const comentarioAvaliacaoInput = document.getElementById('comentarioAvaliacaoInput');
-    const btnEnviarAvaliacao = document.getElementById('btnEnviarAvaliacao');
     const formAvaliacaoMessage = document.getElementById('form-avaliacao-message');
 
     // Portfólio de serviços
     const btnAnexarFoto = document.getElementById('btnAnexarFoto');
     const inputFotoServico = document.getElementById('inputFotoServico');
 
+    // Modal de Logout
+    const logoutConfirmModal = document.getElementById('logout-confirm-modal');
+    const confirmLogoutYesBtn = document.getElementById('confirm-logout-yes');
+    const confirmLogoutNoBtn = document.getElementById('confirm-logout-no');
 
-    let currentRating = 0; // Para a avaliação de estrelas
-    let userProfileData = null; // Para armazenar os dados do perfil carregados
-    const userId = localStorage.getItem('userId');
-    const token = localStorage.getItem('jwtToken');
-    const userType = localStorage.getItem('userType'); // Pega o tipo de usuário
+    // --- Variáveis de Estado Internas ---
+    let currentRating = 0; // Para a avaliação de estrelas (quando o usuário avalia)
+    let userProfileData = null; // Para armazenar os dados do perfil carregados do backend (importante para edição)
 
 
     // --- Funções Auxiliares ---
 
-    // Função para exibir mensagens
+    /**
+     * Exibe uma mensagem em um elemento HTML.
+     * @param {string} message - A mensagem a ser exibida.
+     * @param {'success'|'error'|'info'} type - O tipo da mensagem (para estilos CSS).
+     * @param {HTMLElement} element - O elemento HTML onde a mensagem será exibida.
+     */
     function showMessage(message, type, element) {
+        if (!element) {
+            console.warn('Elemento da mensagem não encontrado.');
+            return;
+        }
         element.textContent = message;
         element.className = `form-message ${type}`;
         element.classList.remove('hidden');
@@ -80,37 +97,79 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-function checkAuthAndRedirect() {
-        const token = localStorage.getItem('jwtToken');
-        const userId = localStorage.getItem('userId');
+    /**
+     * Decodifica um token JWT e extrai o payload.
+     * @param {string} token - O token JWT a ser decodificado.
+     * @returns {object|null} O payload decodificado ou null se houver erro.
+     */
+    function decodeJwtToken(token) {
+        if (!token) return null;
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            console.error('Erro ao decodificar token JWT:', e);
+            return null;
+        }
+    }
 
-        console.log('DEBUG: Dentro de checkAuthAndRedirect - Token:', token);
-        console.log('DEBUG: Dentro de checkAuthAndRedirect - UserId:', userId);
-
-        if (!token || !userId) {
-            console.error('Token JWT ou User ID não encontrado. Redirecionando para login.');
-            alert('Você precisa estar logado para acessar esta página.');
+    /**
+     * Verifica a autenticação e redireciona para a página de login se o token for inválido ou ausente.
+     * @returns {boolean} True se o token for válido e não expirado, false caso contrário.
+     */
+    function checkAuthAndRedirect() {
+        if (!token) { // Usando a variável global `token`
+            console.warn('Token JWT não encontrado. Redirecionando para login.');
             window.location.href = 'login.html';
             return false;
         }
-        return true;
+
+        const decodedToken = decodeJwtToken(token);
+        // Verifica se o token existe e não está expirado
+        if (!decodedToken || decodedToken.exp * 1000 < Date.now()) {
+            console.warn('Token JWT expirado ou inválido. Redirecionando para login.');
+            localStorage.clear(); // Limpa todo o localStorage para garantir
+            window.location.href = 'login.html';
+            return false;
+        }
+        // Garante que userId está no localStorage, se não, tenta pegar do token
+        if (!userId && decodedToken.userId) {
+            localStorage.setItem('userId', decodedToken.userId);
+        }
+        return true; // Token válido
     }
 
-    // Função para renderizar estrelas
-    function renderStars(container, rating) {
-        container.innerHTML = '';
+    /**
+     * Renderiza as estrelas de avaliação média de um perfil.
+     * @param {number} rating - A nota média (0-5).
+     * @param {HTMLElement} element - O elemento HTML onde as estrelas serão renderizadas.
+     */
+    function renderAverageStars(rating, element) {
+        if (!element) return;
+        element.innerHTML = ''; // Limpa estrelas existentes
         for (let i = 1; i <= 5; i++) {
-            const starClass = i <= rating ? 'fas' : 'far'; // fas para preenchida, far para vazia
-            const starElement = document.createElement('i');
-            starElement.className = `fa-star ${starClass}`;
-            container.appendChild(starElement);
+            const star = document.createElement('i');
+            star.classList.add('fas', 'fa-star'); // fas para preenchida, far para vazia (ajuste com seu CSS)
+            if (i <= rating) {
+                star.style.color = '#FFD700'; // Estrela preenchida (cor dourada)
+            } else {
+                star.style.color = '#d3d3d3'; // Estrela vazia (cinza claro)
+            }
+            element.appendChild(star);
         }
     }
 
-    // Função para atualizar as estrelas clicáveis
+    /**
+     * Atualiza o estado visual das estrelas clicáveis no formulário de avaliação.
+     * @param {number} rating - A nota selecionada.
+     */
     function updateStarRating(rating) {
         currentRating = rating;
-        estrelasAvaliacao.forEach(starSpan => {
+        estrelasAvaliacaoClickable.forEach(starSpan => {
             const starValue = parseInt(starSpan.dataset.value);
             const starIcon = starSpan.querySelector('i');
             if (starIcon) {
@@ -122,25 +181,74 @@ function checkAuthAndRedirect() {
         }
     }
 
-    // Função para carregar informações do usuário
-    async function loadUserInfo() {
+    /**
+     * Carrega e exibe as informações básicas do usuário no cabeçalho.
+     */
+    function loadUserInfo() {
         const userName = localStorage.getItem('userName');
         const userPhotoUrl = localStorage.getItem('userPhotoUrl');
-        const userType = localStorage.getItem('userType');
 
-        console.log('loadUserInfo - UserName:', userName); // Debug
-        console.log('loadUserInfo - UserPhotoUrl:', userPhotoUrl); // Debug
-
-        if (userName && userNameHeader) {
-            userNameHeader.textContent = userName;
+        if (userNameHeader) {
+            userNameHeader.textContent = userName || 'Usuário';
         }
-        if (userPhotoUrl && userAvatarHeader) {
-            userAvatarHeader.src = userPhotoUrl;
+        if (userAvatarHeader) {
+            userAvatarHeader.src = userPhotoUrl || 'https://via.placeholder.com/50?text=User';
         }
     }
 
-    // Função para carregar dados do perfil do backend
+    /**
+     * Renderiza as imagens do portfólio de serviços e adiciona botões de remover no modo de edição.
+     * @param {string[]} imageUrls - Array de URLs das imagens de serviço.
+     */
+    function renderGaleriaServicos(imageUrls) {
+        if (!galeriaServicos) return;
+        galeriaServicos.innerHTML = ''; // Limpa a galeria existente
+
+        if (imageUrls && imageUrls.length > 0) {
+            imageUrls.forEach((url, index) => {
+                const wrapper = document.createElement('div');
+                wrapper.classList.add('servico-imagem-wrapper');
+
+                const img = document.createElement('img');
+                img.src = url;
+                img.alt = `Serviço ${index + 1}`;
+                img.classList.add('servico-imagem');
+
+                // Adiciona botão de remover imagem no modo de edição
+                const removeBtn = document.createElement('button');
+                removeBtn.classList.add('btn-remover-foto', 'oculto'); // Oculto por padrão
+                removeBtn.innerHTML = '<i class="fas fa-times-circle"></i>';
+                removeBtn.title = 'Remover Imagem';
+                // Usa um wrapper para passar o índice correto para a função removerFotoServico
+                removeBtn.addEventListener('click', () => removerFotoServico(index));
+                
+                wrapper.appendChild(img);
+                wrapper.appendChild(removeBtn);
+                galeriaServicos.appendChild(wrapper);
+            });
+            mensagemGaleriaVazia.style.display = 'none';
+        } else {
+            mensagemGaleriaVazia.style.display = 'block';
+        }
+        // Garante que os botões de remover foto estejam visíveis se estiver no modo de edição
+        if (btnSalvarPerfil && !btnSalvarPerfil.classList.contains('oculto')) {
+            document.querySelectorAll('.btn-remover-foto').forEach(btn => btn.classList.remove('oculto'));
+        }
+    }
+
+
+    // --- Funções Principais de Perfil ---
+
+    /**
+     * Carrega os dados completos do perfil do backend e preenche a UI.
+     */
     async function fetchUserProfile() {
+        if (!userId || !token) {
+            console.error('ID do usuário ou Token não encontrado. Não é possível buscar o perfil. Redirecionando...');
+            checkAuthAndRedirect(); // Tenta redirecionar
+            return;
+        }
+
         try {
             const response = await fetch(`${API_BASE_URL}/user/${userId}`, {
                 method: 'GET',
@@ -149,161 +257,180 @@ function checkAuthAndRedirect() {
                 }
             });
 
+            const data = await response.json();
+            console.log('Dados brutos do perfil recebidos do backend:', data); // DEBUG: MUITO IMPORTANTE!
+
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Falha ao carregar perfil.');
+                console.error(`Erro ao buscar perfil: ${response.status} - ${data.message || 'Erro desconhecido'}`);
+                showMessage(data.message || 'Erro ao carregar perfil.', 'error', document.querySelector('.perfil-box'));
+                return;
             }
 
-            userProfileData = await response.json(); // Armazena os dados do perfil
-            console.log('Dados do perfil carregados:', userProfileData);
+            // ATENÇÃO: Assumimos que o backend retorna os dados do usuário DENTRO de uma propriedade 'user'.
+            // Se o seu backend retornar o objeto de usuário diretamente, use `const user = data;`
+            const user = data.user;
+            if (!user) {
+                console.error('Dados de usuário ausentes na resposta do backend (propriedade "user" não encontrada).');
+                showMessage('Erro: Dados do usuário incompletos.', 'error', document.querySelector('.perfil-box'));
+                return;
+            }
 
-            // Atualiza os elementos de exibição
-            fotoPerfil.src = userProfileData.fotoPerfilUrl || 'https://via.placeholder.com/130?text=Perfil';
-            nomePerfil.textContent = userProfileData.nome || 'Nome não definido';
-            idadePerfil.textContent = (userProfileData.idade ? `${userProfileData.idade} anos` : 'Não definida');
-            cidadePerfil.textContent = userProfileData.cidade || 'Não definida';
-            areaPerfil.textContent = userProfileData.atuacao || 'Não definida';
-            descricaoPerfil.textContent = userProfileData.descricao || 'Nenhuma descrição fornecida.';
-            whatsappPerfil.href = `https://wa.me/${userProfileData.telefone || ''}`;
-            whatsappPerfil.textContent = userProfileData.telefone || 'Não fornecido';
-            emailPerfil.href = `mailto:${userProfileData.email || ''}`;
-            emailPerfil.textContent = userProfileData.email || 'Não fornecido';
+            userProfileData = user; // Armazena os dados para uso no modo de edição e outras funções
 
-            // Renderiza a média de avaliação
-            if (userProfileData.mediaAvaliacao !== undefined && userProfileData.mediaAvaliacao !== null) {
-                renderStars(mediaEstrelas, userProfileData.mediaAvaliacao);
-                totalAvaliacoes.textContent = `(${userProfileData.totalAvaliacoes || 0} avaliações)`;
+            // Preencher os elementos de exibição do HTML com os dados do perfil
+            if (nomePerfil) nomePerfil.textContent = user.nome || 'Não informado';
+            if (idadePerfil) idadePerfil.textContent = user.idade ? `${user.idade} anos` : 'Não informado';
+            if (cidadePerfil) cidadePerfil.textContent = user.cidade || 'Não informado';
+            if (areaPerfil) areaPerfil.textContent = user.atuacao || 'Não informado';
+            if (descricaoPerfil) descricaoPerfil.textContent = user.descricao || 'Nenhuma descrição fornecida.';
+
+            // Lidar com informações de contato
+            if (whatsappPerfil) {
+                whatsappPerfil.innerHTML = user.telefone ?
+                    `<i class="fab fa-whatsapp"></i> <a href="https://wa.me/55${user.telefone.replace(/\D/g,'')}" target="_blank">${user.telefone}</a>` : // Adicionado 55 para DDI Brasil
+                    '<i class="fab fa-whatsapp"></i> Não informado';
+            }
+            if (emailPerfil) {
+                emailPerfil.innerHTML = user.email ?
+                    `<i class="fas fa-envelope"></i> <a href="mailto:${user.email}">${user.email}</a>` :
+                    '<i class="fas fa-envelope"></i> Não informado';
+            }
+
+            // Exibir foto de perfil
+            if (fotoPerfil) { // Verifica se o elemento existe
+                if (userData.fotoPerfil) { // Se o backend enviou uma URL de foto do S3
+                    fotoPerfil.src = userData.fotoPerfil;
+                } else {
+                    fotoPerfil.src = 'imagens/default-profile.png'; // Fallback para a imagem padrão local
+                }
+            }
+
+            if (userAvatarHeader) { // Verifica se o elemento existe
+                if (userData.fotoPerfil) { // Se o backend enviou uma URL de foto do S3
+                    userAvatarHeader.src = userData.fotoPerfil;
+                } else {
+                    userAvatarHeader.src = 'imagens/default-user.png'; // Fallback para a imagem padrão local
+                }
+            }
+
+            // Atualizar cabeçalho (já é feito por loadUserInfo, mas reconfirmamos)
+            // Também salva no localStorage para que o header do index.html também seja atualizado.
+            localStorage.setItem('userName', user.nome || '');
+            localStorage.setItem('userPhotoUrl', user.fotoPerfilUrl || '');
+            loadUserInfo(); 
+
+            // Renderizar avaliações
+            if (user.mediaAvaliacao !== undefined && user.totalAvaliacoes !== undefined) {
+                renderAverageStars(user.mediaAvaliacao, mediaEstrelasDisplay);
+                if (totalAvaliacoes) totalAvaliacoes.textContent = `(${user.totalAvaliacoes} avaliações)`;
             } else {
-                mediaEstrelas.innerHTML = '<p>Ainda sem avaliações.</p>';
-                totalAvaliacoes.textContent = '';
-            }
-
-            // Exibe ou oculta a seção de avaliação baseada no tipo de usuário
-            if (userType === 'cliente' && userId !== userProfileData._id) { // Cliente vendo perfil de trabalhador
-                formAvaliacao.classList.remove('oculto');
-                document.querySelector('.avaliacao h3').textContent = 'Avalie este profissional';
-            } else if (userType === 'trabalhador' && userId === userProfileData._id) { // Trabalhador vendo seu próprio perfil
-                formAvaliacao.classList.add('oculto'); // Esconde o formulário de avaliação do próprio perfil
-                document.querySelector('.avaliacao h3').textContent = 'Minhas Avaliações';
-            } else { // Cliente vendo seu próprio perfil, ou outro caso
-                formAvaliacao.classList.add('oculto');
-                document.querySelector('.avaliacao h3').textContent = 'Avaliações';
+                if (mediaEstrelasDisplay) mediaEstrelasDisplay.innerHTML = '';
+                if (totalAvaliacoes) totalAvaliacoes.textContent = '(0 avaliações)';
             }
 
             // Renderizar galeria de serviços
-            renderizarGaleriaServicos(userProfileData.servicosImagens);
+            renderGaleriaServicos(user.servicosImagens);
+            
+            // Gerenciar visibilidade do formulário de avaliação e botão de anexar fotos
+            const isViewingOwnProfile = (user._id === userId); // user._id é o ID do perfil sendo visualizado, userId é o ID do usuário logado
+
+            if (formAvaliacao) {
+                if (isViewingOwnProfile || userType === 'trabalhador') { // Trabalhadores não podem avaliar a si mesmos, nem clientes podem ver formulário de avaliação no perfil de cliente.
+                    formAvaliacao.style.display = 'none';
+                } else { // Se o usuário logado é um cliente visitando o perfil de um trabalhador
+                    formAvaliacao.style.display = 'block';
+                }
+            }
+
+            if (btnAnexarFoto) {
+                if (userType === 'trabalhador' && isViewingOwnProfile) { // Apenas trabalhador pode anexar fotos no próprio perfil
+                    btnAnexarFoto.classList.remove('oculto');
+                } else {
+                    btnAnexarFoto.classList.add('oculto');
+                }
+            }
 
         } catch (error) {
-            console.error('Erro ao carregar perfil:', error);
-            // Redireciona para o feed se o perfil não puder ser carregado (ex: perfil não encontrado ou erro de auth)
-            alert('Não foi possível carregar o perfil. Você pode ser redirecionado para o feed.');
-            window.location.href = 'index.html';
+            console.error('Erro ao buscar ou processar dados do perfil:', error);
+            showMessage('Erro: Não foi possível carregar o perfil. Verifique sua conexão ou tente novamente.', 'error', document.querySelector('.perfil-box'));
         }
     }
 
-    // Função para renderizar a galeria de serviços
-    function renderizarGaleriaServicos(imagens) {
-        galeriaServicos.innerHTML = ''; // Limpa a galeria existente
-        if (imagens && imagens.length > 0) {
-            mensagemGaleriaVazia.classList.add('oculto');
-            imagens.forEach((imageUrl, index) => {
-                const wrapper = document.createElement('div');
-                wrapper.classList.add('servico-imagem-wrapper');
-
-                const img = document.createElement('img');
-                img.src = imageUrl;
-                img.alt = `Serviço ${index + 1}`;
-                img.classList.add('servico-imagem');
-
-                // Botão de remover (apenas em modo de edição, ou se o usuário for o dono do perfil)
-                const btnRemover = document.createElement('button');
-                btnRemover.classList.add('btn-remover-foto', 'oculto'); // Oculto por padrão, só aparece em modo de edição
-                btnRemover.innerHTML = '<i class="fas fa-times"></i>';
-                btnRemover.addEventListener('click', () => removerFotoServico(index)); // Passa o índice para remover
-
-                wrapper.appendChild(img);
-                wrapper.appendChild(btnRemover);
-                galeriaServicos.appendChild(wrapper);
-            });
-        } else {
-            mensagemGaleriaVazia.classList.remove('oculto');
-        }
-    }
-
-
-    // --- Funções de Edição de Perfil ---
-
-    // Função para alternar entre modo de exibição e edição
+    /**
+     * Alterna entre o modo de exibição e edição do perfil.
+     * @param {boolean} enable - True para habilitar o modo de edição, false para desabilitar.
+     */
     function toggleEditMode(enable) {
         const displayElements = [nomePerfil, idadePerfil, cidadePerfil, areaPerfil, descricaoPerfil, whatsappPerfil, emailPerfil];
         const inputElements = [inputNome, inputIdade, inputCidade, inputAtuacao, inputDescricao, inputWhatsapp, inputEmail];
 
         if (enable) { // Entrar no modo de edição
-            // Ocultar elementos de exibição
-            displayElements.forEach(el => el.classList.add('oculto'));
-            // Mostrar elementos de input
-            inputElements.forEach(el => el.classList.remove('oculto'));
+            displayElements.forEach(el => el && el.classList.add('oculto'));
+            inputElements.forEach(el => el && el.classList.remove('oculto'));
 
-            // Preencher inputs com os dados atuais do perfil
+            // Preencher inputs com os dados atuais do perfil (se houver dados carregados)
             if (userProfileData) {
-                inputNome.value = userProfileData.nome || '';
-                inputIdade.value = userProfileData.idade || '';
-                inputCidade.value = userProfileData.cidade || '';
-                inputAtuacao.value = userProfileData.atuacao || '';
-                inputDescricao.value = userProfileData.descricao || '';
-                inputWhatsapp.value = userProfileData.telefone || '';
-                inputEmail.value = userProfileData.email || '';
+                if (inputNome) inputNome.value = userProfileData.nome || '';
+                if (inputIdade) inputIdade.value = userProfileData.idade || '';
+                if (inputCidade) inputCidade.value = userProfileData.cidade || '';
+                if (inputAtuacao) inputAtuacao.value = userProfileData.atuacao || '';
+                if (inputDescricao) inputDescricao.value = userProfileData.descricao || '';
+                if (inputWhatsapp) inputWhatsapp.value = userProfileData.telefone || '';
+                if (inputEmail) inputEmail.value = userProfileData.email || '';
             }
 
             // Mostrar input de foto e label
-            fotoPerfil.classList.add('oculto');
-            inputFotoPerfil.classList.remove('oculto');
-            labelInputFotoPerfil.classList.remove('oculto');
+            if (fotoPerfil) fotoPerfil.classList.add('oculto');
+            if (inputFotoPerfil) inputFotoPerfil.classList.remove('oculto');
+            if (labelInputFotoPerfil) labelInputFotoPerfil.classList.remove('oculto');
 
             // Trocar botões
-            btnEditarPerfil.classList.add('oculto');
-            btnSalvarPerfil.classList.remove('oculto');
-            btnCancelarEdicao.classList.remove('oculto');
+            if (btnEditarPerfil) btnEditarPerfil.classList.add('oculto');
+            if (btnSalvarPerfil) btnSalvarPerfil.classList.remove('oculto');
+            if (btnCancelarEdicao) btnCancelarEdicao.classList.remove('oculto');
 
             // Mostrar botões de remover foto de serviço
-            document.querySelectorAll('.btn-remover-foto').forEach(btn => btn.classList.remove('oculto'));
-            btnAnexarFoto.classList.remove('oculto'); // Mostrar botão de anexar fotos
+            if (userType === 'trabalhador' && userProfileData && userProfileData._id === userId) {
+                document.querySelectorAll('.btn-remover-foto').forEach(btn => btn.classList.remove('oculto'));
+                if (btnAnexarFoto) btnAnexarFoto.classList.remove('oculto');
+            }
+
         } else { // Sair do modo de edição
-            // Mostrar elementos de exibição
-            displayElements.forEach(el => el.classList.remove('oculto'));
-            // Ocultar elementos de input
-            inputElements.forEach(el => el.classList.add('oculto'));
+            displayElements.forEach(el => el && el.classList.remove('oculto'));
+            inputElements.forEach(el => el && el.classList.add('oculto'));
 
             // Esconder input de foto e label, mostrar foto do perfil
-            inputFotoPerfil.classList.add('oculto');
-            labelInputFotoPerfil.classList.add('oculto');
-            fotoPerfil.classList.remove('oculto');
+            if (inputFotoPerfil) inputFotoPerfil.classList.add('oculto');
+            if (labelInputFotoPerfil) labelInputFotoPerfil.classList.add('oculto');
+            if (fotoPerfil) fotoPerfil.classList.remove('oculto');
 
             // Trocar botões
-            btnEditarPerfil.classList.remove('oculto');
-            btnSalvarPerfil.classList.add('oculto');
-            btnCancelarEdicao.classList.add('oculto');
+            if (btnEditarPerfil) btnEditarPerfil.classList.remove('oculto');
+            if (btnSalvarPerfil) btnSalvarPerfil.classList.add('oculto');
+            if (btnCancelarEdicao) btnCancelarEdicao.classList.add('oculto');
 
             // Esconder botões de remover foto de serviço
             document.querySelectorAll('.btn-remover-foto').forEach(btn => btn.classList.add('oculto'));
-            btnAnexarFoto.classList.add('oculto'); // Esconder botão de anexar fotos
+            if (btnAnexarFoto) btnAnexarFoto.classList.add('oculto');
         }
     }
 
-    // Função para salvar as alterações do perfil
+    /**
+     * Salva as alterações do perfil enviando os dados para o backend.
+     */
     async function saveProfileChanges() {
         const formData = new FormData();
-        // Adiciona campos de texto
-        formData.append('nome', inputNome.value);
-        formData.append('idade', inputIdade.value);
-        formData.append('cidade', inputCidade.value);
-        formData.append('atuacao', inputAtuacao.value);
-        formData.append('descricao', inputDescricao.value);
-        formData.append('telefone', inputWhatsapp.value); // Backend espera 'telefone' para WhatsApp
-        formData.append('email', inputEmail.value);
+        // Adiciona campos de texto se os elementos existirem
+        if (inputNome) formData.append('nome', inputNome.value);
+        if (inputIdade) formData.append('idade', inputIdade.value);
+        if (inputCidade) formData.append('cidade', inputCidade.value);
+        if (inputAtuacao) formData.append('atuacao', inputAtuacao.value);
+        if (inputDescricao) formData.append('descricao', inputDescricao.value);
+        if (inputWhatsapp) formData.append('telefone', inputWhatsapp.value); // Backend espera 'telefone' para WhatsApp
+        if (inputEmail) formData.append('email', inputEmail.value);
 
         // Adiciona nova foto de perfil, se selecionada
-        if (inputFotoPerfil.files && inputFotoPerfil.files[0]) {
+        if (inputFotoPerfil && inputFotoPerfil.files && inputFotoPerfil.files[0]) {
             formData.append('fotoPerfil', inputFotoPerfil.files[0]);
         }
 
@@ -312,7 +439,7 @@ function checkAuthAndRedirect() {
                 method: 'PUT',
                 headers: {
                     'Authorization': `Bearer ${token}`
-                    // 'Content-Type': 'multipart/form-data' NÃO defina isso, o navegador faz por você com FormData
+                    // Não defina 'Content-Type': 'multipart/form-data', o navegador faz isso automaticamente com FormData
                 },
                 body: formData
             });
@@ -320,24 +447,27 @@ function checkAuthAndRedirect() {
             const data = await response.json();
 
             if (response.ok && data.success) {
-                alert('Perfil atualizado com sucesso!');
+                showMessage('Perfil atualizado com sucesso!', 'success', document.querySelector('.perfil-box .form-message')); // Use a função showMessage
                 // Atualiza o localStorage com os novos dados
-                localStorage.setItem('userName', data.user.nome);
-                localStorage.setItem('userPhotoUrl', data.user.fotoPerfilUrl);
-                // Recarrega o perfil para exibir os dados atualizados
-                await fetchUserProfile();
-                loadUserInfo(); // Atualiza o cabeçalho
+                if (data.user) {
+                    localStorage.setItem('userName', data.user.nome || '');
+                    localStorage.setItem('userPhotoUrl', data.user.fotoPerfilUrl || '');
+                }
+                await fetchUserProfile(); // Recarrega o perfil para exibir os dados atualizados
                 toggleEditMode(false); // Sai do modo de edição
             } else {
-                alert(data.message || 'Erro ao salvar alterações no perfil.');
+                showMessage(data.message || 'Erro ao salvar alterações no perfil.', 'error', document.querySelector('.perfil-box .form-message'));
             }
         } catch (error) {
             console.error('Erro ao salvar perfil:', error);
-            alert('Erro ao salvar alterações. Tente novamente mais tarde.');
+            showMessage('Erro ao salvar alterações. Tente novamente mais tarde.', 'error', document.querySelector('.perfil-box .form-message'));
         }
     }
 
-    // Função para adicionar foto de serviço
+    /**
+     * Adiciona uma ou mais fotos ao portfólio de serviços.
+     * @param {Event} event - O evento de mudança do input de arquivo.
+     */
     async function adicionarFotoServico(event) {
         const files = event.target.files;
         if (!files || files.length === 0) return;
@@ -358,18 +488,21 @@ function checkAuthAndRedirect() {
 
             const data = await response.json();
             if (response.ok && data.success) {
-                alert('Foto(s) de serviço adicionada(s) com sucesso!');
+                showMessage('Foto(s) de serviço adicionada(s) com sucesso!', 'success', document.querySelector('.portfolio-servicos .form-message') || galeriaServicos.closest('.container').querySelector('.form-message'));
                 fetchUserProfile(); // Recarrega o perfil para mostrar as novas fotos
             } else {
-                alert(data.message || 'Erro ao adicionar foto(s) de serviço.');
+                showMessage(data.message || 'Erro ao adicionar foto(s) de serviço.', 'error', document.querySelector('.portfolio-servicos .form-message') || galeriaServicos.closest('.container').querySelector('.form-message'));
             }
         } catch (error) {
             console.error('Erro ao adicionar foto de serviço:', error);
-            alert('Erro ao adicionar foto(s) de serviço. Tente novamente mais tarde.');
+            showMessage('Erro ao adicionar foto(s) de serviço. Tente novamente mais tarde.', 'error', document.querySelector('.portfolio-servicos .form-message') || galeriaServicos.closest('.container').querySelector('.form-message'));
         }
     }
 
-    // Função para remover foto de serviço
+    /**
+     * Remove uma foto específica do portfólio de serviços.
+     * @param {number} imageIndex - O índice da imagem a ser removida.
+     */
     async function removerFotoServico(imageIndex) {
         if (!confirm('Tem certeza que deseja remover esta foto?')) {
             return;
@@ -385,70 +518,132 @@ function checkAuthAndRedirect() {
 
             const data = await response.json();
             if (response.ok && data.success) {
-                alert('Foto de serviço removida com sucesso!');
+                showMessage('Foto de serviço removida com sucesso!', 'success', document.querySelector('.portfolio-servicos .form-message') || galeriaServicos.closest('.container').querySelector('.form-message'));
                 fetchUserProfile(); // Recarrega o perfil para atualizar a galeria
             } else {
-                alert(data.message || 'Erro ao remover foto de serviço.');
+                showMessage(data.message || 'Erro ao remover foto de serviço.', 'error', document.querySelector('.portfolio-servicos .form-message') || galeriaServicos.closest('.container').querySelector('.form-message'));
             }
         } catch (error) {
             console.error('Erro ao remover foto de serviço:', error);
-            alert('Erro ao remover foto de serviço. Tente novamente mais tarde.');
+            showMessage('Erro ao remover foto de serviço. Tente novamente mais tarde.', 'error', document.querySelector('.portfolio-servicos .form-message') || galeriaServicos.closest('.container').querySelector('.form-message'));
+        }
+    }
+
+    /**
+     * Envia uma avaliação para um trabalhador.
+     * @param {Event} event - O evento de submit do formulário.
+     */
+    async function submitAvaliacao(event) {
+        event.preventDefault();
+
+        if (!currentRating || currentRating === 0) {
+            showMessage('Por favor, selecione uma nota para a avaliação.', 'error', formAvaliacaoMessage);
+            return;
+        }
+
+        const comentario = comentarioAvaliacaoInput.value.trim();
+        const avaliadorId = localStorage.getItem('userId'); // Quem está avaliando
+        const trabalhadorId = userProfileData ? userProfileData._id : null; // O ID do perfil que está sendo avaliado
+
+        if (!trabalhadorId) {
+            showMessage('Erro: Não foi possível identificar o trabalhador a ser avaliado.', 'error', formAvaliacaoMessage);
+            return;
+        }
+        if (!avaliadorId) {
+            showMessage('Erro: ID do avaliador não encontrado. Faça login novamente.', 'error', formAvaliacaoMessage);
+            return;
+        }
+
+        // Removido a obrigatoriedade do comentário para avaliações
+        // if (!comentario) {
+        //     showMessage('Por favor, digite um comentário para a avaliação.', 'error', formAvaliacaoMessage);
+        //     return;
+        // }
+
+        showMessage('Enviando avaliação...', 'info', formAvaliacaoMessage);
+        try {
+            const response = await fetch(`${API_BASE_URL}/user/${trabalhadorId}/avaliar`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ estrelas: currentRating, comentario: comentario, avaliadorId: avaliadorId })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                showMessage('Avaliação enviada com sucesso!', 'success', formAvaliacaoMessage);
+                comentarioAvaliacaoInput.value = '';
+                updateStarRating(0); // Reseta as estrelas visuais
+                if (notaSelecionadaDisplay) notaSelecionadaDisplay.textContent = ''; // Limpa o texto da nota selecionada
+                fetchUserProfile(); // Recarrega o perfil para atualizar a média de avaliações
+            } else {
+                showMessage(data.message || 'Erro ao enviar avaliação.', 'error', formAvaliacaoMessage);
+            }
+        } catch (error) {
+            console.error('Erro ao enviar avaliação:', error);
+            showMessage('Erro: Não foi possível enviar a avaliação.', 'error', formAvaliacaoMessage);
         }
     }
 
 
     // --- Event Listeners ---
 
-    // Botão de voltar ao feed
-    document.getElementById('back-to-feed-button').addEventListener('click', () => {
-        window.location.href = 'index.html';
-    });
+    if (backToFeedButton) {
+        backToFeedButton.addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+    }
 
-    // Logout
-    const logoutButton = document.getElementById('logout-button');
-    const logoutConfirmModal = document.getElementById('logout-confirm-modal');
-    const confirmLogoutYesBtn = document.getElementById('confirm-logout-yes');
-    const confirmLogoutNoBtn = document.getElementById('confirm-logout-no');
+    // Modal de Logout
+    if (logoutButton) {
+        logoutButton.addEventListener('click', () => {
+            if (logoutConfirmModal) logoutConfirmModal.classList.remove('hidden');
+        });
+    }
+    if (confirmLogoutYesBtn) {
+        confirmLogoutYesBtn.addEventListener('click', () => {
+            localStorage.clear(); // Limpa todo o localStorage
+            window.location.href = 'login.html';
+        });
+    }
+    if (confirmLogoutNoBtn) {
+        confirmLogoutNoBtn.addEventListener('click', () => {
+            if (logoutConfirmModal) logoutConfirmModal.classList.add('hidden');
+        });
+    }
 
-    logoutButton.addEventListener('click', () => {
-        logoutConfirmModal.classList.remove('hidden');
-    });
+    // Botões de ação do perfil (Editar, Salvar, Cancelar)
+    if (btnEditarPerfil) {
+        btnEditarPerfil.addEventListener('click', () => toggleEditMode(true));
+    }
+    if (btnSalvarPerfil) {
+        btnSalvarPerfil.addEventListener('click', saveProfileChanges);
+    }
+    if (btnCancelarEdicao) {
+        btnCancelarEdicao.addEventListener('click', () => {
+            toggleEditMode(false);
+            fetchUserProfile(); // Recarrega o perfil para descartar quaisquer edições não salvas
+        });
+    }
 
-    confirmLogoutYesBtn.addEventListener('click', () => {
-        localStorage.removeItem('jwtToken');
-        localStorage.removeItem('userId');
-        localStorage.removeItem('userType');
-        localStorage.removeItem('userName');
-        localStorage.removeItem('userPhotoUrl');
-        window.location.href = 'login.html';
-    });
+    // Pré-visualização da imagem de perfil ao selecionar um arquivo
+    if (inputFotoPerfil) {
+        inputFotoPerfil.addEventListener('change', function() {
+            if (this.files && this.files[0] && fotoPerfil) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    fotoPerfil.src = e.target.result;
+                };
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+    }
 
-    confirmLogoutNoBtn.addEventListener('click', () => {
-        logoutConfirmModal.classList.add('hidden');
-    });
-
-    // Event listeners para os botões de ação do perfil
-    btnEditarPerfil.addEventListener('click', () => toggleEditMode(true));
-    btnSalvarPerfil.addEventListener('click', saveProfileChanges);
-    btnCancelarEdicao.addEventListener('click', () => {
-        toggleEditMode(false);
-        // Opcional: recarregar o perfil para descartar quaisquer edições não salvas
-        fetchUserProfile();
-    });
-
-    // Pré-visualização da imagem de perfil (opcional)
-    inputFotoPerfil.addEventListener('change', function() {
-        if (this.files && this.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                fotoPerfil.src = e.target.result;
-            };
-            reader.readAsDataURL(this.files[0]);
-        }
-    });
-
-    // Lógica de avaliação de estrelas
-    estrelasAvaliacao.forEach(starSpan => {
+    // Lógica de avaliação de estrelas (clicável para avaliar)
+    estrelasAvaliacaoClickable.forEach(starSpan => {
         starSpan.addEventListener('click', function() {
             const rating = parseInt(this.dataset.value);
             updateStarRating(rating);
@@ -456,65 +651,32 @@ function checkAuthAndRedirect() {
     });
 
     // Envio do formulário de avaliação
-    if (formAvaliacao) { // Garante que o formulário existe (apenas para trabalhadores)
-        formAvaliacao.addEventListener('submit', async function(event) {
-            event.preventDefault();
-
-            if (!currentRating || currentRating === 0) {
-                showMessage('Por favor, selecione uma nota para a avaliação.', 'error', formAvaliacaoMessage);
-                return;
-            }
-
-            const comentario = comentarioAvaliacaoInput.value.trim();
-            const avaliadorId = localStorage.getItem('userId');
-            const trabalhadorId = userProfileData._id; // O ID do perfil que está sendo avaliado
-
-            if (!comentario) {
-                showMessage('Por favor, digite um comentário para a avaliação.', 'error', formAvaliacaoMessage);
-                return;
-            }
-
-            showMessage('Enviando avaliação...', 'info', formAvaliacaoMessage);
-            try {
-                // A rota de avaliação agora deve receber o ID do trabalhador a ser avaliado
-                const response = await fetch(`${API_BASE_URL}/user/${trabalhadorId}/avaliar`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ estrelas: currentRating, comentario: comentario, avaliadorId: avaliadorId }) // Backend espera 'estrelas', 'comentario' e 'avaliadorId'
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.success) {
-                    showMessage('Avaliação enviada com sucesso!', 'success', formAvaliacaoMessage);
-                    comentarioAvaliacaoInput.value = '';
-                    updateStarRating(0); // Reseta as estrelas visuais
-                    if (notaSelecionadaDisplay) notaSelecionadaDisplay.textContent = ''; // Limpa o texto da nota selecionada
-                    fetchUserProfile(); // Recarrega o perfil para atualizar a média de avaliações
-                } else {
-                    showMessage(data.message || 'Erro ao enviar avaliação.', 'error', formAvaliacaoMessage);
-                }
-            } catch (error) {
-                console.error('Erro ao enviar avaliação:', error);
-                showMessage('Erro: Não foi possível enviar a avaliação.', 'error', formAvaliacaoMessage);
-            }
-        });
+    if (formAvaliacao) {
+        formAvaliacao.addEventListener('submit', submitAvaliacao);
     }
 
-    // Adicionar foto de serviço
-    btnAnexarFoto.addEventListener('click', () => {
-        inputFotoServico.click(); // Simula o clique no input file
-    });
+    // Adicionar foto de serviço (clique no botão para abrir o input de arquivo)
+    if (btnAnexarFoto) {
+        btnAnexarFoto.addEventListener('click', () => {
+            if (inputFotoServico) inputFotoServico.click();
+        });
+    }
+    // Lidar com a seleção de arquivos para adicionar fotos de serviço
+    if (inputFotoServico) {
+        inputFotoServico.addEventListener('change', adicionarFotoServico);
+    }
 
-    inputFotoServico.addEventListener('change', adicionarFotoServico);
 
-    // --- Inicialização ---
-    // Carrega informações do usuário no header
+    // --- Inicialização da Página ---
+
+    // Garante que o modo de exibição esteja ativo ao carregar a página (inputs escondidos)
+    toggleEditMode(false);
+
+    // Carrega informações básicas do usuário no cabeçalho
     loadUserInfo();
+
+    // Verifica a autenticação e carrega os dados completos do perfil
     if (checkAuthAndRedirect()) {
-        fetchUserProfile(); // Carrega os dados do perfil principal
+        fetchUserProfile();
     }
 });
