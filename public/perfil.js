@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', async function() {
     // --- Configurações Iniciais ---
-    const API_BASE_URL = 'http://localhost:3000/api';
+    const API_BASE_URL = 'https://helpy-app-fullstack.vercel.app/api/';
 
     // Variáveis de estado globais (obtidas do localStorage)
     const userId = localStorage.getItem('userId');
@@ -17,13 +17,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     const nomePerfil = document.getElementById('nomePerfil');
     const idadePerfil = document.getElementById('idadePerfil');
     const cidadePerfil = document.getElementById('cidadePerfil');
-    const areaPerfil = document.getElementById('areaPerfil'); // 
+    const areaPerfil = document.getElementById('areaPerfil'); // Corresponde a 'atuacao' no backend
     
     // Elementos do cabeçalho
     const userAvatarHeader = document.getElementById('user-avatar-header');
     const userNameHeader = document.getElementById('userName-header');
 
-        const backToFeedButton = document.getElementById('back-to-feed-button');
+    const backToFeedButton = document.getElementById('back-to-feed-button');
     const logoutButton = document.getElementById('logout-button');
 
 
@@ -192,7 +192,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             userNameHeader.textContent = userName || 'Usuário';
         }
         if (userAvatarHeader) {
-            userAvatarHeader.src = userPhotoUrl || 'https://via.placeholder.com/50?text=User';
+            // Removendo via.placeholder.com e usando fallback local
+            userAvatarHeader.src = userPhotoUrl || 'imagens/default-user.png';
         }
     }
 
@@ -298,16 +299,18 @@ document.addEventListener('DOMContentLoaded', async function() {
 
             // Exibir foto de perfil
             if (fotoPerfil) { // Verifica se o elemento existe
-                if (userData.fotoPerfil) { // Se o backend enviou uma URL de foto do S3
-                    fotoPerfil.src = userData.fotoPerfil;
+                // CORREÇÃO: Usar 'user.fotoPerfilUrl' ou 'user.fotoPerfil' conforme o backend retorna.
+                // Assumindo que 'fotoPerfilUrl' é o campo que o backend usa para a URL pública da foto de perfil.
+                if (user.fotoPerfilUrl) { 
+                    fotoPerfil.src = user.fotoPerfilUrl;
                 } else {
                     fotoPerfil.src = 'imagens/default-profile.png'; // Fallback para a imagem padrão local
                 }
             }
-
-            if (userAvatarHeader) { // Verifica se o elemento existe
-                if (userData.fotoPerfil) { // Se o backend enviou uma URL de foto do S3
-                    userAvatarHeader.src = userData.fotoPerfil;
+            // CORREÇÃO: Usar 'user.fotoPerfilUrl' para o userAvatarHeader também
+            if (userAvatarHeader) { 
+                if (user.fotoPerfilUrl) { 
+                    userAvatarHeader.src = user.fotoPerfilUrl;
                 } else {
                     userAvatarHeader.src = 'imagens/default-user.png'; // Fallback para a imagem padrão local
                 }
@@ -316,7 +319,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             // Atualizar cabeçalho (já é feito por loadUserInfo, mas reconfirmamos)
             // Também salva no localStorage para que o header do index.html também seja atualizado.
             localStorage.setItem('userName', user.nome || '');
-            localStorage.setItem('userPhotoUrl', user.fotoPerfilUrl || '');
+            localStorage.setItem('userPhotoUrl', user.fotoPerfilUrl || ''); // Certifique-se de salvar a URL correta aqui
             loadUserInfo(); 
 
             // Renderizar avaliações
@@ -553,12 +556,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             showMessage('Erro: ID do avaliador não encontrado. Faça login novamente.', 'error', formAvaliacaoMessage);
             return;
         }
-
-        // Removido a obrigatoriedade do comentário para avaliações
-        // if (!comentario) {
-        //     showMessage('Por favor, digite um comentário para a avaliação.', 'error', formAvaliacaoMessage);
-        //     return;
-        // }
 
         showMessage('Enviando avaliação...', 'info', formAvaliacaoMessage);
         try {
