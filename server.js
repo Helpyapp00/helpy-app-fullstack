@@ -3,46 +3,26 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs'); // Manter se ainda for usado em alguma lógica não visível
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const sharp = require('sharp');
-const { PassThrough } = require('stream');
+const { PassThrough } = require('stream'); // Manter se for usado em alguma lógica não visível
 
 // --- NOVAS IMPORTAÇÕES PARA AWS S3 (V3) ---
-require('dotenv').config();
-const { S3Client, DeleteObjectCommand } = require('@aws-sdk/client-s3');
+require('dotenv').config(); // Garante que as variáveis de ambiente do .env sejam carregadas
+const { S3Client, DeleteObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3'); // Adicionado PutObjectCommand
 const multerS3 = require('multer-s3');
-
-function verifyToken(req, res, next) {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-
-    if (token == null) {
-        console.log('Backend - Token não fornecido. Acesso negado.');
-        return res.sendStatus(401); // Não Autorizado
-    }
-
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-        if (err) {
-            console.log('Backend - Token inválido ou expirado. Acesso negado.');
-            return res.sendStatus(403); // Proibido
-        }
-        req.user = user; // Anexa o payload do token ao objeto de requisição
-        console.log('Backend - Token verificado com sucesso para userId:', user.userId);
-        next(); // Prossegue para a próxima rota/middleware
-    });
-}
-
 // ------------------------------------
 
 const app = express();
-const port = 3000;
+// Na Vercel, a porta é definida automaticamente, mas você pode manter 3000 para desenvolvimento local
+const port = process.env.PORT || 3000;
 
 // --- Configuração da Conexão ao MongoDB ---
-const DB_URI = 'mongodb+srv://helpyuser:gaL0QVzTcG1DI12M@cluster.jzlyekf.mongodb.net/helpy_db?retryWrites=true&w=majority';
+const DB_URI = process.env.MONGODB_URI || 'mongodb+srv://helpyuser:gaL0QVzTcG1DI12M@cluster.jzlyekf.mongodb.net/helpy_db?retryWrites=true&w=majority';
 
 mongoose.connect(DB_URI)
     .then(() => console.log('Conectado ao MongoDB Atlas com sucesso!'))
@@ -55,7 +35,7 @@ const userSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     senha: { type: String, required: true },
     tipo: { type: String, required: true }, // 'cliente' ou 'trabalhador'
-    avatarUrl: { type: String, default: 'https://via.placeholder.com/50?text=User' }, // CORRIGIDO: de 'avatar' para 'avatarUrl'
+    avatarUrl: { type: String, default: 'https://via.placeholder.com/50?text=User' },
     cidade: { type: String },
     telefone: { type: String },
     atuacao: { type: String },
@@ -91,6 +71,7 @@ const postSchema = new mongoose.Schema({
 const Post = mongoose.model('Post', postSchema);
 
 // --- Configuração do S3 ---
+// Usar variáveis de ambiente para AWS S3
 const bucketName = process.env.S3_BUCKET_NAME;
 const region = process.env.S3_BUCKET_REGION;
 const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
@@ -113,7 +94,6 @@ const upload = multer({
             cb(null, {fieldName: file.fieldname});
         },
         key: function (req, file, cb) {
-            // Define o nome do arquivo no S3
             cb(null, 'uploads/' + Date.now() + '-' + file.originalname);
         }
     }),
@@ -149,37 +129,33 @@ const avatarUpload = multer({
 app.use(cors());
 app.use(express.json()); // Para parsing de application/json
 app.use(express.urlencoded({ extended: true })); // Para parsing de application/x-www-form-urlencoded
-app.use(express.static('C:/Users/frati/OneDrive/Documentos/helpy-site'));
 
-// Servir arquivos estáticos do frontend
+// Servir arquivos estáticos do frontend (pasta public)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- JWT Secret ---
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey'; // Use uma variável de ambiente real em produção!
-
-// --- Middleware de Autenticação JWT ---
+// --- Middleware de Autenticação JWT (UNIFICADO) ---
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
-    console.log('Backend - Header de Autorização recebido:', authHeader); // ADICIONE ESTA LINHA
+    console.log('Backend - Header de Autorização recebido:', authHeader);
 
     const token = authHeader && authHeader.split(' ')[1];
-    console.log('Backend - Token extraído:', token); // ADICIONE ESTA LINHA
+    console.log('Backend - Token extraído:', token);
 
     if (token == null) {
-        console.log('Backend - Token é nulo, enviando 401.'); // ADICIONE ESTA LINHA
+        console.log('Backend - Token é nulo, enviando 401.');
         return res.sendStatus(401);
     }
 
-    // Certifique-se de que JWT_SECRET está definido.
-    // Adicione esta linha temporariamente para depuração, mas não em produção real!
-    console.log('Backend - JWT_SECRET usado para verificação:', process.env.JWT_SECRET ? 'DEFINIDO' : 'NÃO DEFINIDO'); // ADICIONE ESTA LINHA
+    // Usar process.env.JWT_SECRET diretamente
+    console.log('Backend - JWT_SECRET usado para verificação:', process.env.JWT_SECRET ? 'DEFINIDO' : 'NÃO DEFINIDO');
 
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
         if (err) {
-            console.error('Backend - Erro de verificação do token:', err.message); // Modificado para logar a mensagem do erro
+            console.error('Backend - Erro de verificação do token:', err.message);
             return res.sendStatus(403);
         }
         req.user = user;
+        console.log('Backend - Token verificado com sucesso para userId:', user.userId);
         next();
     });
 };
@@ -192,21 +168,19 @@ app.post('/api/register', avatarUpload.single('avatar'), async (req, res) => {
         let avatarUrl = 'https://via.placeholder.com/50?text=User'; // Default avatar
 
         if (req.file) {
-            // Redimensionar a imagem do avatar para um tamanho adequado (ex: 100x100 pixels)
             const resizedAvatarBuffer = await sharp(req.file.buffer)
                 .resize(100, 100, {
-                    fit: sharp.fit.cover, // Garante que a imagem preencha as dimensões, cortando se necessário
-                    withoutEnlargement: true // Não aumenta a imagem se ela for menor
+                    fit: sharp.fit.cover,
+                    withoutEnlargement: true
                 })
                 .toBuffer();
 
-            // Enviar a imagem redimensionada para o S3
             const uploadParams = {
                 Bucket: bucketName,
-                Key: `avatars/${Date.now()}-${req.file.originalname}`, // Pasta específica para avatares
+                Key: `avatars/${Date.now()}-${req.file.originalname}`,
                 Body: resizedAvatarBuffer,
                 ContentType: req.file.mimetype,
-                ACL: 'public-read' // Torna o arquivo publicamente acessível
+                ACL: 'public-read'
             };
             await s3.send(new PutObjectCommand(uploadParams));
             avatarUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${uploadParams.Key}`;
@@ -218,7 +192,7 @@ app.post('/api/register', avatarUpload.single('avatar'), async (req, res) => {
             email,
             senha,
             tipo,
-            avatar: avatarUrl,
+            avatarUrl, // Correto, usando o campo avatarUrl do schema
             cidade,
             telefone,
             atuacao,
@@ -251,15 +225,15 @@ app.post('/api/login', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Credenciais inválidas.' });
         }
 
-        const token = jwt.sign({ userId: user._id, email: user.email, tipo: user.tipo }, JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign({ userId: user._id, email: user.email, tipo: user.tipo }, process.env.JWT_SECRET, { expiresIn: '1h' });
         res.status(200).json({
             success: true,
             message: 'Login bem-sucedido!',
             token,
             userId: user._id,
-            userType: user.tipo, // CORRIGIDO: de 'tipo' para 'userType' para corresponder ao frontend
-            userName: user.nome, // ADICIONADO: para o frontend
-            userPhotoUrl: user.avatarUrl // ADICIONADO: para o frontend, usando 'avatarUrl'
+            userType: user.tipo,
+            userName: user.nome,
+            userPhotoUrl: user.avatarUrl
         });
     } catch (error) {
         console.error('Erro no login:', error);
@@ -268,24 +242,22 @@ app.post('/api/login', async (req, res) => {
 });
 
 // server.js (trecho importante da rota GET /api/user/:id)
-app.get('/api/user/:id', verifyToken, async (req, res) => {
+app.get('/api/user/:id', authenticateToken, async (req, res) => { // Usando authenticateToken
     try {
-        const userIdFromParams = req.params.id; // ID do usuário da URL
-        const userIdFromToken = req.user.userId; // ID do usuário do token JWT
+        const userIdFromParams = req.params.id;
+        const userIdFromToken = req.user.userId;
 
         console.log(`Backend - Requisição GET para /api/user/${userIdFromParams} recebida.`);
         console.log(`Backend - User ID da URL: ${userIdFromParams}`);
         console.log(`Backend - User ID do Token JWT: ${userIdFromToken}`);
 
-        // Verificação de autorização: garante que o usuário esteja buscando o próprio perfil
-        // ou que o token seja válido (se for para ver outros perfis, a lógica seria diferente)
         if (userIdFromParams !== userIdFromToken) {
             console.warn(`Backend - Tentativa de acesso não autorizado ao perfil. ID da URL: ${userIdFromParams}, ID do Token: ${userIdFromToken}`);
             return res.status(403).json({ success: false, message: 'Acesso não autorizado ao perfil.' });
         }
 
         const user = await User.findById(userIdFromParams)
-                               .select('-senha'); // Exclui a senha da resposta
+                               .select('-senha');
 
         if (!user) {
             console.warn(`Backend - Usuário não encontrado para o ID: ${userIdFromParams}`);
@@ -293,7 +265,7 @@ app.get('/api/user/:id', verifyToken, async (req, res) => {
         }
 
         console.log('Backend - Usuário encontrado:', user.nome, user._id);
-        console.log('Backend - Dados do usuário para enviar:', JSON.stringify(user, null, 2)); // Loga os dados completos
+        console.log('Backend - Dados do usuário para enviar:', JSON.stringify(user, null, 2));
 
         res.status(200).json({ success: true, user: user });
 
@@ -302,22 +274,35 @@ app.get('/api/user/:id', verifyToken, async (req, res) => {
         res.status(500).json({ success: false, message: 'Erro interno do servidor ao buscar dados do usuário.' });
     }
 });
+
 // Rota para atualizar perfil do usuário (protegida)
-app.put('/api/user/:id', authenticateToken, upload.single('avatar'), async (req, res) => {
+app.put('/api/user/:id', authenticateToken, avatarUpload.single('avatar'), async (req, res) => {
     try {
         const userId = req.params.id;
-        // Permite apenas que o próprio usuário atualize seu perfil
-        if (req.user.userId !== userId) { // CORRIGIDO: de 'req.user.id' para 'req.user.userId'
+        if (req.user.userId !== userId) {
             return res.status(403).json({ success: false, message: 'Acesso não autorizado para atualizar este perfil.' });
         }
 
         const updates = req.body;
-        // Se uma nova imagem de avatar foi enviada, adicione sua URL aos updates
-        if (req.file && req.file.location) {
-            updates.avatarUrl = req.file.location; // CORRIGIDO: de 'avatar' para 'avatarUrl'
+        if (req.file && req.file.buffer) { // Verifica se uma nova imagem de avatar foi enviada
+            const resizedAvatarBuffer = await sharp(req.file.buffer)
+                .resize(100, 100, {
+                    fit: sharp.fit.cover,
+                    withoutEnlargement: true
+                })
+                .toBuffer();
+
+            const uploadParams = {
+                Bucket: bucketName,
+                Key: `avatars/${Date.now()}-${req.file.originalname}`,
+                Body: resizedAvatarBuffer,
+                ContentType: req.file.mimetype,
+                ACL: 'public-read'
+            };
+            await s3.send(new PutObjectCommand(uploadParams));
+            updates.avatarUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${uploadParams.Key}`; // Correto: avatarUrl
         }
 
-        // Se a senha for atualizada, faça o hash
         if (updates.senha) {
             updates.senha = await bcrypt.hash(updates.senha, 10);
         }
@@ -329,10 +314,9 @@ app.put('/api/user/:id', authenticateToken, upload.single('avatar'), async (req,
         }
 
         res.status(200).json({ success: true, message: 'Perfil atualizado com sucesso!', user: updatedUser });
-
     } catch (error) {
         console.error('Erro ao atualizar perfil:', error);
-        if (error.code === 11000) { // Erro de email duplicado
+        if (error.code === 11000) {
             return res.status(409).json({ success: false, message: 'Este e-mail já está em uso por outro usuário.' });
         }
         res.status(500).json({ success: false, message: 'Erro interno do servidor ao atualizar perfil.' });
@@ -344,8 +328,7 @@ app.put('/api/user/:id', authenticateToken, upload.single('avatar'), async (req,
 app.post('/api/user/:id/servicos-imagens', authenticateToken, upload.array('servicoImagens', 5), async (req, res) => {
     try {
         const userId = req.params.id;
-        // Apenas o próprio usuário pode adicionar imagens ao seu portfólio
-        if (req.user.userId !== userId || req.user.tipo !== 'trabalhador') { // CORRIGIDO: de 'req.user.id' para 'req.user.userId'
+        if (req.user.userId !== userId || req.user.tipo !== 'trabalhador') {
             return res.status(403).json({ success: false, message: 'Acesso não autorizado ou tipo de usuário incorreto.' });
         }
 
@@ -376,7 +359,7 @@ app.delete('/api/user/:userId/servicos-imagens/:imageIndex', authenticateToken, 
     try {
         const { userId, imageIndex } = req.params;
 
-        if (req.user.userId !== userId || req.user.tipo !== 'trabalhador') { // CORRIGIDO: de 'req.user.id' para 'req.user.userId'
+        if (req.user.userId !== userId || req.user.tipo !== 'trabalhador') {
             return res.status(403).json({ success: false, message: 'Acesso não autorizado ou tipo de usuário incorreto.' });
         }
 
@@ -403,7 +386,6 @@ app.delete('/api/user/:userId/servicos-imagens/:imageIndex', authenticateToken, 
                 console.log(`Imagem ${s3Key} deletada do S3 com sucesso.`);
             } catch (s3DeleteError) {
                 console.error(`Erro ao deletar imagem ${s3Key} do S3:`, s3DeleteError);
-                // Pode optar por não retornar erro fatal aqui, se a remoção do DB for mais importante
             }
         }
 
@@ -418,60 +400,6 @@ app.delete('/api/user/:userId/servicos-imagens/:imageIndex', authenticateToken, 
     }
 });
 
-
-// Rota para atualizar perfil do usuário (protegida)
-app.put('/api/user/:id', authenticateToken, avatarUpload.single('avatar'), async (req, res) => {
-    try {
-        const userId = req.params.id;
-        if (req.user.userId !== userId) {
-            return res.status(403).json({ success: false, message: 'Acesso não autorizado para atualizar este perfil.' });
-        }
-
-        const updates = req.body;
-
-        if (req.file && req.file.buffer) { // Verifica se uma nova imagem de avatar foi enviada
-            // Redimensionar a imagem do avatar
-            const resizedAvatarBuffer = await sharp(req.file.buffer)
-                .resize(100, 100, {
-                    fit: sharp.fit.cover,
-                    withoutEnlargement: true
-                })
-                .toBuffer();
-
-            // Enviar a imagem redimensionada para o S3
-            const uploadParams = {
-                Bucket: bucketName,
-                Key: `avatars/${Date.now()}-${req.file.originalname}`,
-                Body: resizedAvatarBuffer,
-                ContentType: req.file.mimetype,
-                ACL: 'public-read'
-            };
-            await s3.send(new PutObjectCommand(uploadParams));
-            updates.avatar = `https://${bucketName}.s3.${region}.amazonaws.com/${uploadParams.Key}`;
-        }
-
-        if (updates.senha) {
-            updates.senha = await bcrypt.hash(updates.senha, 10);
-        }
-
-        const updatedUser = await User.findByIdAndUpdate(userId, updates, { new: true, runValidators: true }).select('-senha');
-
-        if (!updatedUser) {
-            return res.status(404).json({ success: false, message: 'Usuário não encontrado para atualização.' });
-        }
-
-        res.status(200).json({ success: true, message: 'Perfil atualizado com sucesso!', user: updatedUser });
-    } catch (error) {
-        console.error('Erro ao atualizar perfil:', error);
-        if (error.code === 11000) {
-            return res.status(409).json({ success: false, message: 'Este e-mail já está em uso por outro usuário.' });
-        }
-        res.status(500).json({ success: false, message: 'Erro interno do servidor ao atualizar perfil.' });
-    }
-});
-
-
-// --- Rotas de Publicações (Posts) ---
 
 // Rota para Criar uma Publicação (protegida)
 app.post('/api/posts', authenticateToken, upload.single('image'), async (req, res) => {
@@ -507,7 +435,7 @@ app.post('/api/posts', authenticateToken, upload.single('image'), async (req, re
 // --- Rota para Obter Todas as Publicações (Feed) ---
 app.get('/api/posts', authenticateToken, async (req, res) => {
     try {
-        const posts = await Post.find().sort({ createdAt: -1 }).populate('userId', 'nome avatarUrl tipo'); // CORRIGIDO: de 'avatar' para 'avatarUrl'
+        const posts = await Post.find().sort({ createdAt: -1 }).populate('userId', 'nome avatarUrl tipo');
         res.status(200).json({ success: true, posts: posts });
     } catch (error) {
         console.error('Erro ao obter publicações:', error);
@@ -528,14 +456,12 @@ app.delete('/api/posts/:id', authenticateToken, async (req, res) => {
             return res.status(404).json({ success: false, message: 'Publicação não encontrada.' });
         }
 
-        // Verifique se o usuário logado é o proprietário da publicação
         if (post.userId.toString() !== userId) {
             return res.status(403).json({ success: false, message: 'Você não tem permissão para excluir esta publicação.' });
         }
 
-        // Se houver uma imagem, tente deletá-la do S3
         if (post.imageUrl) {
-            const key = new URL(post.imageUrl).pathname.substring(1); // Extrai a chave do S3 da URL
+            const key = new URL(post.imageUrl).pathname.substring(1);
 
             const deleteParams = {
                 Bucket: bucketName,
@@ -547,11 +473,9 @@ app.delete('/api/posts/:id', authenticateToken, async (req, res) => {
                 console.log(`Imagem ${key} deletada do S3 com sucesso.`);
             } catch (s3DeleteError) {
                 console.error(`Erro ao deletar imagem ${key} do S3:`, s3DeleteError);
-                // Pode optar por não retornar erro fatal aqui, se o post for mais importante
             }
         }
 
-        // Deletar a publicação do banco de dados
         await Post.deleteOne({ _id: postId });
 
         res.status(200).json({ success: true, message: 'Publicação excluída com sucesso.' });
@@ -559,6 +483,58 @@ app.delete('/api/posts/:id', authenticateToken, async (req, res) => {
     } catch (error) {
         console.error('Erro ao excluir publicação:', error);
         res.status(500).json({ success: false, message: 'Erro interno do servidor ao excluir publicação.' });
+    }
+});
+
+// --- Rota para avaliar trabalhadores ---
+app.post('/api/user/:id/avaliar', authenticateToken, async (req, res) => {
+    try {
+        const trabalhadorId = req.params.id;
+        const { estrelas, comentario } = req.body;
+        const avaliadorId = req.user.userId; // ID do usuário que está fazendo a avaliação
+
+        // Validação básica
+        if (!estrelas || estrelas < 1 || estrelas > 5) {
+            return res.status(400).json({ success: false, message: 'A avaliação deve ter entre 1 e 5 estrelas.' });
+        }
+        if (!trabalhadorId || trabalhadorId === avaliadorId) {
+            return res.status(400).json({ success: false, message: 'Não é possível avaliar seu próprio perfil ou um ID inválido.' });
+        }
+
+        const trabalhador = await User.findById(trabalhadorId);
+        if (!trabalhador || trabalhador.tipo !== 'trabalhador') {
+            return res.status(404).json({ success: false, message: 'Trabalhador não encontrado ou tipo de usuário incorreto.' });
+        }
+
+        // Evitar avaliações duplicadas pelo mesmo usuário
+        const avaliacaoExistente = trabalhador.avaliacoes.find(
+            avaliacao => avaliacao.usuarioId.toString() === avaliadorId
+        );
+
+        if (avaliacaoExistente) {
+            // Se já avaliou, pode-se permitir atualizar a avaliação ou proibir nova avaliação
+            return res.status(409).json({ success: false, message: 'Você já avaliou este trabalhador. Para alterar, edite sua avaliação existente.' });
+        }
+
+        trabalhador.avaliacoes.push({
+            usuarioId: avaliadorId,
+            estrelas,
+            comentario,
+            data: new Date()
+        });
+
+        // Recalcular média de avaliação
+        const totalEstrelas = trabalhador.avaliacoes.reduce((acc, aval) => acc + aval.estrelas, 0);
+        trabalhador.mediaAvaliacao = totalEstrelas / trabalhador.avaliacoes.length;
+        trabalhador.totalAvaliacoes = trabalhador.avaliacoes.length;
+
+        await trabalhador.save();
+
+        res.status(201).json({ success: true, message: 'Avaliação adicionada com sucesso!', mediaAvaliacao: trabalhador.mediaAvaliacao });
+
+    } catch (error) {
+        console.error('Erro ao avaliar trabalhador:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor ao avaliar trabalhador.' });
     }
 });
 
