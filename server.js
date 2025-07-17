@@ -15,6 +15,27 @@ const { PassThrough } = require('stream');
 require('dotenv').config();
 const { S3Client, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const multerS3 = require('multer-s3');
+
+function verifyToken(req, res, next) {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (token == null) {
+        console.log('Backend - Token não fornecido. Acesso negado.');
+        return res.sendStatus(401); // Não Autorizado
+    }
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
+        if (err) {
+            console.log('Backend - Token inválido ou expirado. Acesso negado.');
+            return res.sendStatus(403); // Proibido
+        }
+        req.user = user; // Anexa o payload do token ao objeto de requisição
+        console.log('Backend - Token verificado com sucesso para userId:', user.userId);
+        next(); // Prossegue para a próxima rota/middleware
+    });
+}
+
 // ------------------------------------
 
 const app = express();
@@ -247,31 +268,40 @@ app.post('/api/login', async (req, res) => {
 });
 
 // server.js (trecho importante da rota GET /api/user/:id)
-app.get('/api/user/:id', authenticateToken, async (req, res) => {
+app.get('/api/user/:id', verifyToken, async (req, res) => {
     try {
-        const userId = req.params.id;
-        // Opcional: verifique se o usuário logado está tentando acessar o próprio perfil
-        if (req.user.userId !== userId) { // CORRIGIDO: de 'req.user.id' para 'req.user.userId'
-             // Dependendo da sua regra de negócio, você pode permitir ver outros perfis publicamente
-             // ou retornar um 403 se for estritamente privado
-            // return res.status(403).json({ success: false, message: 'Acesso não autorizado ao perfil.' });
+        const userIdFromParams = req.params.id; // ID do usuário da URL
+        const userIdFromToken = req.user.userId; // ID do usuário do token JWT
+
+        console.log(`Backend - Requisição GET para /api/user/${userIdFromParams} recebida.`);
+        console.log(`Backend - User ID da URL: ${userIdFromParams}`);
+        console.log(`Backend - User ID do Token JWT: ${userIdFromToken}`);
+
+        // Verificação de autorização: garante que o usuário esteja buscando o próprio perfil
+        // ou que o token seja válido (se for para ver outros perfis, a lógica seria diferente)
+        if (userIdFromParams !== userIdFromToken) {
+            console.warn(`Backend - Tentativa de acesso não autorizado ao perfil. ID da URL: ${userIdFromParams}, ID do Token: ${userIdFromToken}`);
+            return res.status(403).json({ success: false, message: 'Acesso não autorizado ao perfil.' });
         }
 
-        const user = await User.findById(userId).select('-senha'); // Não retorne a senha!
+        const user = await User.findById(userIdFromParams)
+                               .select('-senha'); // Exclui a senha da resposta
 
         if (!user) {
+            console.warn(`Backend - Usuário não encontrado para o ID: ${userIdFromParams}`);
             return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
         }
 
-        // Retorne todos os dados do usuário, incluindo avatarUrl e servicosImagens
+        console.log('Backend - Usuário encontrado:', user.nome, user._id);
+        console.log('Backend - Dados do usuário para enviar:', JSON.stringify(user, null, 2)); // Loga os dados completos
+
         res.status(200).json({ success: true, user: user });
 
     } catch (error) {
-        console.error('Erro ao buscar dados do usuário:', error);
+        console.error('Backend - Erro ao buscar dados do usuário:', error);
         res.status(500).json({ success: false, message: 'Erro interno do servidor ao buscar dados do usuário.' });
     }
 });
-
 // Rota para atualizar perfil do usuário (protegida)
 app.put('/api/user/:id', authenticateToken, upload.single('avatar'), async (req, res) => {
     try {
