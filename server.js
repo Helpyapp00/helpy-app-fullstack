@@ -3,13 +3,11 @@
 const express = require('express');
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs'); // Manter se ainda for usado em alguma lógica não visível
 const bcrypt = require('bcryptjs');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const sharp = require('sharp');
-const { PassThrough } = require('stream'); // Manter se for usado em alguma lógica não visível
 
 // --- NOVAS IMPORTAÇÕES PARA AWS S3 (V3) ---
 require('dotenv').config(); // Garante que as variáveis de ambiente do .env sejam carregadas
@@ -60,7 +58,7 @@ userSchema.pre('save', async function(next) {
 
 const User = mongoose.model('User', userSchema);
 
-// Esquema para Publicações (Posts)
+// Esquema para Publicações (Posts) //
 const postSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     content: { type: String, required: true },
@@ -132,6 +130,7 @@ app.use(express.urlencoded({ extended: true })); // Para parsing de application/
 
 // Servir arquivos estáticos do frontend (pasta public)
 app.use(express.static(path.join(__dirname, 'public')));
+
 
 // --- Middleware de Autenticação JWT (UNIFICADO) ---
 const authenticateToken = (req, res, next) => {

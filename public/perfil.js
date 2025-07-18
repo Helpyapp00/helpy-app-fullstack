@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', async function() {
     // --- Configurações Iniciais ---
-    const API_BASE_URL = 'https://helpy-app-fullstack.vercel.app/api/';
+    const API_BASE_URL = 'https://helpy-app-fullstack-hdt4p4x3z-helpyapp.vercel.app/api';
 
     // Variáveis de estado globais (obtidas do localStorage)
     const userId = localStorage.getItem('userId');
