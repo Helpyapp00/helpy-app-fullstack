@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function() {
         showMessage('Verificando credenciais...', 'info');
 
         try {
-            const response = await fetch('https://www.helpyapp.net/api', {
+            const response = await fetch('https://www.helpyapp.net/api/login', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
