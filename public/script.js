@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const confirmLogoutNoBtn = document.getElementById('confirm-logout-no');
 
     // --- Backend API URL ---
-    const API_BASE_URL = 'http://localhost:3000/api';
+    const API_BASE_URL = 'https://helpyapp.net/api';
 
     // --- Funções de Feedback ---
     function showMessage(message, type, element = postFormMessage) {
