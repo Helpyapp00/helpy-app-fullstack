@@ -120,9 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData(formCadastro);
 
         // 3. Definir o URL da sua API de backend
-        // MUITO IMPORTANTE: Substitua '/api/register' pela URL real do seu servidor!
-        // Por exemplo: 'http://localhost:3000/register' se o seu backend Node.js estiver rodando localmente
-        const backendApiUrl = 'https://www.helpyapp.net/api/register'; 
+        const backendApiUrl = 'https://www.helpyapp.net/api'; 
 
         // 4. Exibir mensagem de carregamento
         showMessage('Enviando dados...', 'info'); 
