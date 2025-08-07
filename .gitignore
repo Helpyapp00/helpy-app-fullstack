@@ -16,3 +16,4 @@ Thumbs.db
 # Arquivos de IDEs (opcional, se você usa alguma específica e quer ignorar)
 .vscode/ # Ignora configurações do VS Code específicas para o projeto
 .idea/   # Ignora configurações do IntelliJ/WebStorm
+.vercel
