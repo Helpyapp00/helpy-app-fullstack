@@ -127,9 +127,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         try {
             // 5. Enviar os dados usando a Fetch API
-            const response = await fetch(backendApiUrl, {
-                method: 'POST',
-                body: formData // FormData cuida de configurar o Content-Type: multipart/form-data automaticamente
+            const response = await fetch(backendApiUrl + '/register', {
+            method: 'POST',
+            body: formData
             });
 
             // 6. Verificar o status da resposta HTTP
