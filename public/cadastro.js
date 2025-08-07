@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData(formCadastro);
 
         // 3. Definir o URL da sua API de backend
-        const backendApiUrl = 'https://www.helpyapp.net/api'; 
+        const backendApiUrl = '/api'; 
 
         // 4. Exibir mensagem de carregamento
         showMessage('Enviando dados...', 'info'); 
