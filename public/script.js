@@ -156,7 +156,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             div.dataset.postId = p._id;
 
             // Usa p.userPhotoUrl e p.userName que vêm da publicação no backend
-            const userAvatar = p.userPhotoUrl ? `<img src="${p.userPhotoUrl}" alt="Avatar" class="user-avatar">` : `<i class="fas fa-user-circle user-avatar"></i>`;
+            const userAvatar = p.userId && p.userId.avatarUrl ? `<img src="${p.userId.avatarUrl}" alt="Avatar" class="user-avatar">` : `<i class="fas fa-user-circle user-avatar"></i>`;
             const postImageHtml = p.imageUrl ? `<img src="${p.imageUrl}" alt="Imagem da publicação" class="post-image">` : '';
             const postDate = new Date(p.createdAt).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' });
 
@@ -180,17 +180,16 @@ document.addEventListener('DOMContentLoaded', async function() {
                 <div class="post-header">
                     ${userAvatar}
                     <div class="post-meta">
-                        <span class="user-name">${p.userName || 'Usuário Desconhecido'}</span>
-                        <span class="post-date-display">${postDate}</span>
-                    </div>
+                        <span class="user-name">${p.userId ? p.userId.nome : 'Usuário Desconhecido'}</span>
+                    </div>p
                     ${deleteButtonHtml}
                 </div>
                 <p class="post-content">${p.content}</p>
                 ${postImageHtml}
                 <div style="margin-top:10px; display: flex; align-items: center; justify-content: space-between;">
                     <div>
-                        <button disabled title="Funcionalidade em desenvolvimento">Curtir</button>
-                        <button disabled title="Funcionalidade em desenvolvimento">💬 Comentar</button>
+                        <button title="Funcionalidade em desenvolvimento">Curtir</button>
+                        <button title="Funcionalidade em desenvolvimento">💬 Comentar</button>
                     </div>
                 </div>
             `;

@@ -115,8 +115,6 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        // 2. Coletar todos os dados do formulário usando FormData
-        // FormData é essencial para enviar arquivos como a foto
         const formData = new FormData(formCadastro);
 
         // 3. Definir o URL da sua API de backend
