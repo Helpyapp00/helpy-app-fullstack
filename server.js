@@ -107,18 +107,28 @@ const upload = multer({
     }
 });
 
-// Configuração do Multer para upload de imagens de avatar para memória para processamento com sharp
-const avatarUpload = multer({
-    storage: multer.memoryStorage(), // Usa armazenamento em memória para permitir processamento com sharp
+// --- NOVO multer para avatares ---
+const uploadAvatar = multer({
+    storage: multerS3({
+        s3: s3,
+        bucket: bucketName,
+        metadata: function (req, file, cb) {
+            cb(null, { fieldName: file.fieldname });
+        },
+        key: function (req, file, cb) {
+            // Salva a imagem na pasta 'avatars' com um nome único
+            cb(null, 'avatars/' + Date.now() + '-' + file.originalname);
+        }
+    }),
     fileFilter: (req, file, cb) => {
         if (file.mimetype.startsWith('image/')) {
             cb(null, true);
         } else {
-            cb(new Error('Apenas imagens são permitidas para avatares!'), false);
+            cb(new Error('Apenas imagens são permitidas!'), false);
         }
     },
     limits: {
-        fileSize: 5 * 1024 * 1024 // 5 MB limite para a imagem original
+        fileSize: 2 * 1024 * 1024 // Limite de 2 MB para avatares
     }
 });
 
@@ -161,7 +171,7 @@ const authenticateToken = (req, res, next) => {
 // --- Rotas de Autenticação e Usuário ---
 
 // Rota de Registro
-app.post('/api/register', avatarUpload.single('avatar'), async (req, res) => {
+app.post('/api/register', avatarUpload.single('fotoPerfil'), async (req, res) => {
     try {
         const { nome, idade, email, senha, tipo, cidade, telefone, atuacao, descricao } = req.body;
         let avatarUrl = 'https://via.placeholder.com/50?text=User'; // Default avatar
