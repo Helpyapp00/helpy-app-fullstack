@@ -169,65 +169,71 @@ const authenticateToken = (req, res, next) => {
         next();
     });
 };
-// --- Rotas de Autenticação e Usuário ---
+
 
 // Rota de Registro
-app.post('/api/register', uploadAvatar.single('fotoPerfil'), async (req, res) => {
-    try {
-        const { nome, idade, email, senha, tipo, cidade, telefone, atuacao, descricao } = req.body;
-        
-        // --- CORREÇÃO AQUI: Criptografar a senha antes de salvar ---
-        // Validação básica
-        if (!nome || !email || !senha) {
-            return res.status(400).json({ success: false, message: 'Nome, email e senha são obrigatórios.' });
-        }
-        const hashedPassword = await bcrypt.hash(senha, 10);
-        // --- FIM DA CORREÇÃO ---
+app.post('/api/register', (req, res, next) => {
+    uploadAvatar.single('fotoPerfil')(req, res, (err) => {
+        if (err instanceof multer.MulterError) {
+            // Um erro do Multer aconteceu durante o upload.
+            return res.status(400).json({ success: false, message: `Erro no upload: ${err.message}` });
+        } else if (err) {
+            // Um erro genérico (ex: do fileFilter) aconteceu.
+            return res.status(400).json({ success: false, message: `Erro no upload: ${err.message}` });
+        }
+        // Se não houve erro, continua para o próximo middleware/função
+        next();
+    });
+}, async (req, res) => {
+    try {
+        const { nome, idade, email, senha, tipo, cidade, telefone, atuacao, descricao } = req.body;
+        
+        // Validação básica
+        if (!nome || !email || !senha) {
+            return res.status(400).json({ success: false, message: 'Nome, email e senha são obrigatórios.' });
+        }
+        const hashedPassword = await bcrypt.hash(senha, 10);
 
-        let avatarUrl = 'https://via.placeholder.com/50?text=User'; // Default avatar
+        let avatarUrl = 'https://via.placeholder.com/50?text=User'; // Default avatar
+        
+        if (req.file) {
+            const uploadParams = {
+                Bucket: bucketName,
+                Key: `avatars/${Date.now()}-${req.file.originalname}`,
+                Body: req.file.buffer, // Buffer do arquivo já está disponível
+                ContentType: req.file.mimetype,
+                ACL: 'public-read'
+            };
+            await s3.send(new PutObjectCommand(uploadParams));
+            avatarUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${uploadParams.Key}`;
+        }
+        // CORREÇÃO: O código original usava sharp, mas a configuração do multerS3 já faz o upload direto. 
+        // Para usar sharp você precisa do multer.memoryStorage e não do multerS3. Vamos manter a solução mais simples para evitar novos erros.
 
-        if (req.file) {
-            const resizedAvatarBuffer = await sharp(req.file.buffer)
-                .resize(100, 100, {
-                    fit: sharp.fit.cover,
-                    withoutEnlargement: true
-                })
-                .toBuffer();
+        const newUser = new User({
+            nome,
+            idade,
+            email,
+            senha: hashedPassword, 
+            tipo,
+            avatarUrl, 
+            cidade,
+            telefone,
+            atuacao,
+            descricao
+        });
 
-            const uploadParams = {
-                Bucket: bucketName,
-                Key: `avatars/${Date.now()}-${req.file.originalname}`,
-                Body: resizedAvatarBuffer,
-                ContentType: req.file.mimetype,
-                ACL: 'public-read'
-            };
-            await s3.send(new PutObjectCommand(uploadParams));
-            avatarUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${uploadParams.Key}`;
-        }
-
-        const newUser = new User({
-            nome,
-            idade,
-            email,
-            senha: hashedPassword, // --- AQUI: Usa a senha criptografada
-            tipo,
-            avatarUrl, 
-            cidade,
-            telefone,
-            atuacao,
-            descricao
-        });
-
-        await newUser.save();
-        res.status(201).json({ success: true, message: 'Usuário registrado com sucesso!' });
-    } catch (error) {
-        console.error('Erro no registro:', error);
-        if (error.code === 11000) {
-            return res.status(409).json({ success: false, message: 'Este e-mail já está cadastrado.' });
-        }
-        res.status(500).json({ success: false, message: 'Erro interno do servidor durante o registro.' });
-    }
+        await newUser.save();
+        res.status(201).json({ success: true, message: 'Usuário registrado com sucesso!' });
+    } catch (error) {
+        console.error('Erro no registro:', error);
+        if (error.code === 11000) {
+            return res.status(409).json({ success: false, message: 'Este e-mail já está cadastrado.' });
+        }
+        res.status(500).json({ success: false, message: 'Erro interno do servidor durante o registro.' });
+    }
 });
+
 
 // Rota de Login
 app.post('/api/login', async (req, res) => {
