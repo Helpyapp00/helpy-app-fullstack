@@ -20,12 +20,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // --- Configuração da Conexão ao MongoDB ---
-const DB_URI = process.env.MONGODB_URI; // Agora ele busca a URL apenas da variável de ambiente
-
-if (!DB_URI) {
-    console.error('ERRO: Variável de ambiente MONGODB_URI não está definida!');
-    process.exit(1); // Encerra o processo se a variável não estiver presente
-}
+const DB_URI = process.env.MONGODB_URI || 'mongodb+srv://helpyuser:gaL0QVzTcG1DI12M@cluster.jzlyekf.mongodb.net/helpy_db?retryWrites=true&w=majority';
 
 mongoose.connect(DB_URI)
     .then(() => console.log('Conectado ao MongoDB Atlas com sucesso!'))
@@ -169,52 +164,65 @@ const authenticateToken = (req, res, next) => {
         next();
     });
 };
-
+// --- Rotas de Autenticação e Usuário ---
 
 // Rota de Registro
 app.post('/api/register', uploadAvatar.single('fotoPerfil'), async (req, res) => {
-    try {
-        const { nome, idade, email, senha, tipo, cidade, telefone, atuacao, descricao } = req.body;
-        
-        // Validação básica
-        if (!nome || !email || !senha) {
-            return res.status(400).json({ success: false, message: 'Nome, email e senha são obrigatórios.' });
-        }
-        
-        // Criptografia da senha
-        const hashedPassword = await bcrypt.hash(senha, 10);
+    try {
+        const { nome, idade, email, senha, tipo, cidade, telefone, atuacao, descricao } = req.body;
+        
+        // --- CORREÇÃO AQUI: Criptografar a senha antes de salvar ---
+        // Validação básica
+        if (!nome || !email || !senha) {
+            return res.status(400).json({ success: false, message: 'Nome, email e senha são obrigatórios.' });
+        }
+        const hashedPassword = await bcrypt.hash(senha, 10);
+        // --- FIM DA CORREÇÃO ---
 
-        let avatarUrl = 'https://via.placeholder.com/50?text=User'; // Avatar padrão
-        
-        // CORREÇÃO: Usa a URL que o multerS3 já forneceu. Não tenta fazer o upload novamente.
-        if (req.file) {
-            avatarUrl = req.file.location;
-        }
+        let avatarUrl = 'https://via.placeholder.com/50?text=User'; // Default avatar
 
-        const newUser = new User({
-            nome,
-            idade,
-            email,
-            senha: hashedPassword, 
-            tipo,
-            avatarUrl, 
-            cidade,
-            telefone,
-            atuacao,
-            descricao
-        });
+        if (req.file) {
+            const resizedAvatarBuffer = await sharp(req.file.buffer)
+                .resize(100, 100, {
+                    fit: sharp.fit.cover,
+                    withoutEnlargement: true
+                })
+                .toBuffer();
 
-        await newUser.save();
-        res.status(201).json({ success: true, message: 'Usuário registrado com sucesso!' });
-    } catch (error) {
-        console.error('Erro no registro:', error);
-        if (error.code === 11000) {
-            return res.status(409).json({ success: false, message: 'Este e-mail já está cadastrado.' });
-        }
-        res.status(500).json({ success: false, message: 'Erro interno do servidor durante o registro.' });
-    }
+            const uploadParams = {
+                Bucket: bucketName,
+                Key: `avatars/${Date.now()}-${req.file.originalname}`,
+                Body: resizedAvatarBuffer,
+                ContentType: req.file.mimetype,
+                ACL: 'public-read'
+            };
+            await s3.send(new PutObjectCommand(uploadParams));
+            avatarUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${uploadParams.Key}`;
+        }
+
+        const newUser = new User({
+            nome,
+            idade,
+            email,
+            senha: hashedPassword, // --- AQUI: Usa a senha criptografada
+            tipo,
+            avatarUrl, 
+            cidade,
+            telefone,
+            atuacao,
+            descricao
+        });
+
+        await newUser.save();
+        res.status(201).json({ success: true, message: 'Usuário registrado com sucesso!' });
+    } catch (error) {
+        console.error('Erro no registro:', error);
+        if (error.code === 11000) {
+            return res.status(409).json({ success: false, message: 'Este e-mail já está cadastrado.' });
+        }
+        res.status(500).json({ success: false, message: 'Erro interno do servidor durante o registro.' });
+    }
 });
-
 
 // Rota de Login
 app.post('/api/login', async (req, res) => {
