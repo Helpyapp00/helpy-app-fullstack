@@ -298,29 +298,27 @@ document.addEventListener('DOMContentLoaded', async function() {
             }
 
             // Exibir foto de perfil
-            if (fotoPerfil) { // Verifica se o elemento existe
-                // CORREÇÃO: Usar 'user.fotoPerfilUrl' ou 'user.fotoPerfil' conforme o backend retorna.
-                // Assumindo que 'fotoPerfilUrl' é o campo que o backend usa para a URL pública da foto de perfil.
-                if (user.fotoPerfilUrl) { 
-                    fotoPerfil.src = user.fotoPerfilUrl;
+            if (fotoPerfil) { 
+                if (user.avatarUrl) { // CORREÇÃO: de fotoPerfilUrl para avatarUrl
+                    fotoPerfil.src = user.avatarUrl;
                 } else {
-                    fotoPerfil.src = 'imagens/default-profile.png'; // Fallback para a imagem padrão local
+                    fotoPerfil.src = 'imagens/default-profile.png';
                 }
             }
-            // CORREÇÃO: Usar 'user.fotoPerfilUrl' para o userAvatarHeader também
+            
+
             if (userAvatarHeader) { 
-                if (user.fotoPerfilUrl) { 
-                    userAvatarHeader.src = user.fotoPerfilUrl;
+                if (user.avatarUrl) { // CORREÇÃO: de fotoPerfilUrl para avatarUrl
+                    userAvatarHeader.src = user.avatarUrl;
                 } else {
-                    userAvatarHeader.src = 'imagens/default-user.png'; // Fallback para a imagem padrão local
+                    userAvatarHeader.src = 'imagens/default-user.png';
                 }
             }
 
-            // Atualizar cabeçalho (já é feito por loadUserInfo, mas reconfirmamos)
-            // Também salva no localStorage para que o header do index.html também seja atualizado.
-            localStorage.setItem('userName', user.nome || '');
-            localStorage.setItem('userPhotoUrl', user.fotoPerfilUrl || ''); // Certifique-se de salvar a URL correta aqui
-            loadUserInfo(); 
+            // Salva a URL correta no localStorage para que o header também funcione
+localStorage.setItem('userName', user.nome || '');
+localStorage.setItem('userPhotoUrl', user.avatarUrl || ''); // CORREÇÃO
+loadUserInfo(); 
 
             // Renderizar avaliações
             if (user.mediaAvaliacao !== undefined && user.totalAvaliacoes !== undefined) {
@@ -454,7 +452,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // Atualiza o localStorage com os novos dados
                 if (data.user) {
                     localStorage.setItem('userName', data.user.nome || '');
-                    localStorage.setItem('userPhotoUrl', data.user.fotoPerfilUrl || '');
+                    localStorage.setItem('userPhotoUrl', data.user.avatarUrl || ''); // CORREÇÃO: de fotoPerfilUrl para avatarUrl
                 }
                 await fetchUserProfile(); // Recarrega o perfil para exibir os dados atualizados
                 toggleEditMode(false); // Sai do modo de edição
