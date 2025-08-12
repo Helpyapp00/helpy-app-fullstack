@@ -79,7 +79,7 @@ const s3 = new S3Client({
     }
 });
 
-// --- Configuração do Multer (ÚNICO) ---
+// --- Configuração do Multer (ÚNICO E CORRETO) ---
 // Usando memoryStorage para permitir o processamento com Sharp antes do upload
 const upload = multer({
     storage: multer.memoryStorage(),
@@ -207,7 +207,6 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// server.js (trecho importante da rota GET /api/user/:id)
 app.get('/api/user/:id', authenticateToken, async (req, res) => {
     try {
         const userIdFromParams = req.params.id;
@@ -529,14 +528,4 @@ app.post('/api/user/:id/avaliar', authenticateToken, async (req, res) => {
 
 app.listen(port, () => {
     console.log(`Servidor de backend rodando em http://localhost:${port}`);
-    console.log(`Frontend deve fazer requisições POST para http://localhost:${port}/api/register`);
-    console.log(`Frontend deve fazer requisições POST para http://localhost:${port}/api/login`);
-    console.log(`Frontend pode criar publicações em POST http://localhost:${port}/api/posts (protegida)`);
-    console.log(`Frontend pode obter publicações em GET http://localhost:${port}/api/posts (protegida)`);
-    console.log(`Frontend pode deletar publicações em DELETE http://localhost:${port}/api/posts/:id (protegida)`);
-    console.log(`Frontend pode obter dados do usuário em GET http://localhost:${port}/api/user/:id (protegida)`);
-    console.log(`Frontend pode atualizar dados do usuário em PUT http://localhost:${port}/api/user/:id (protegida)`);
-    console.log(`Frontend pode adicionar imagens de serviço em POST http://localhost:${port}/api/user/:id/servicos-imagens (protegida)`);
-    console.log(`Frontend pode remover imagens de serviço em DELETE http://localhost:${port}/api/user/:userId/servicos-imagens/:imageIndex (protegida)`);
-    console.log(`Frontend pode avaliar trabalhadores em POST http://localhost:${port}/api/user/:id/avaliar (protegida)`);
 });
