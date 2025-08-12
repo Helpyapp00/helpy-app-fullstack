@@ -145,7 +145,7 @@ app.post('/api/register', upload.single('fotoPerfil'), async (req, res) => {
                 Key: `avatars/${Date.now()}-${req.file.originalname}`,
                 Body: resizedAvatarBuffer,
                 ContentType: req.file.mimetype,
-                ACL: 'public-read'
+                
             };
             await s3.send(new PutObjectCommand(uploadParams));
             avatarUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${uploadParams.Key}`;
@@ -254,7 +254,7 @@ app.put('/api/user/:id', authenticateToken, upload.single('avatar'), async (req,
                 Key: `avatars/${Date.now()}-${req.file.originalname}`,
                 Body: resizedAvatarBuffer,
                 ContentType: req.file.mimetype,
-                ACL: 'public-read'
+                
             };
             await s3.send(new PutObjectCommand(uploadParams));
             updates.avatarUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${uploadParams.Key}`;
@@ -306,7 +306,7 @@ app.post('/api/user/:id/servicos-imagens', authenticateToken, upload.array('serv
                 Key: `servicos/${Date.now()}-${file.originalname}`,
                 Body: resizedImageBuffer,
                 ContentType: file.mimetype,
-                ACL: 'public-read'
+                
             };
             await s3.send(new PutObjectCommand(uploadParams));
             newImageUrls.push(`https://${bucketName}.s3.${region}.amazonaws.com/${uploadParams.Key}`);
@@ -393,7 +393,7 @@ app.post('/api/posts', authenticateToken, upload.single('image'), async (req, re
                 Key: `posts/${Date.now()}-${req.file.originalname}`,
                 Body: resizedPostBuffer,
                 ContentType: req.file.mimetype,
-                ACL: 'public-read'
+                
             };
             await s3.send(new PutObjectCommand(uploadParams));
             imageUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${uploadParams.Key}`;
