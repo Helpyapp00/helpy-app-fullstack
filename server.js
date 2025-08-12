@@ -172,19 +172,7 @@ const authenticateToken = (req, res, next) => {
 
 
 // Rota de Registro
-app.post('/api/register', (req, res, next) => {
-    uploadAvatar.single('fotoPerfil')(req, res, (err) => {
-        if (err instanceof multer.MulterError) {
-            // Um erro do Multer aconteceu durante o upload.
-            return res.status(400).json({ success: false, message: `Erro no upload: ${err.message}` });
-        } else if (err) {
-            // Um erro genérico (ex: do fileFilter) aconteceu.
-            return res.status(400).json({ success: false, message: `Erro no upload: ${err.message}` });
-        }
-        // Se não houve erro, continua para o próximo middleware/função
-        next();
-    });
-}, async (req, res) => {
+app.post('/api/register', uploadAvatar.single('fotoPerfil'), async (req, res) => {
     try {
         const { nome, idade, email, senha, tipo, cidade, telefone, atuacao, descricao } = req.body;
         
@@ -192,23 +180,16 @@ app.post('/api/register', (req, res, next) => {
         if (!nome || !email || !senha) {
             return res.status(400).json({ success: false, message: 'Nome, email e senha são obrigatórios.' });
         }
+        
+        // Criptografia da senha
         const hashedPassword = await bcrypt.hash(senha, 10);
 
-        let avatarUrl = 'https://via.placeholder.com/50?text=User'; // Default avatar
+        let avatarUrl = 'https://via.placeholder.com/50?text=User'; // Avatar padrão
         
+        // CORREÇÃO: Usa a URL que o multerS3 já forneceu. Não tenta fazer o upload novamente.
         if (req.file) {
-            const uploadParams = {
-                Bucket: bucketName,
-                Key: `avatars/${Date.now()}-${req.file.originalname}`,
-                Body: req.file.buffer, // Buffer do arquivo já está disponível
-                ContentType: req.file.mimetype,
-                ACL: 'public-read'
-            };
-            await s3.send(new PutObjectCommand(uploadParams));
-            avatarUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${uploadParams.Key}`;
+            avatarUrl = req.file.location;
         }
-        // CORREÇÃO: O código original usava sharp, mas a configuração do multerS3 já faz o upload direto. 
-        // Para usar sharp você precisa do multer.memoryStorage e não do multerS3. Vamos manter a solução mais simples para evitar novos erros.
 
         const newUser = new User({
             nome,
