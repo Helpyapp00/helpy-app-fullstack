@@ -12,7 +12,7 @@ const sharp = require('sharp'); // Importação do Sharp
 // --- NOVAS IMPORTAÇÕES PARA AWS S3 (V3) ---
 require('dotenv').config(); // Garante que as variáveis de ambiente do .env sejam carregadas
 const { S3Client, DeleteObjectCommand, PutObjectCommand } = require('@aws-sdk/client-s3');
-const { URL } = require('url');
+const { URL } = require('url'); // Adicionado, necessário para a rota DELETE
 // ------------------------------------
 
 const app = express();
