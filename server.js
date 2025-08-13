@@ -134,7 +134,7 @@ app.post('/api/register', upload.single('fotoPerfil'), async (req, res) => {
 
         if (req.file) {
             const resizedAvatarBuffer = await sharp(req.file.buffer)
-                .resize(100, 100, {
+                .resize(400, 400, {
                     fit: sharp.fit.cover,
                     withoutEnlargement: true
                 })
@@ -243,7 +243,7 @@ app.put('/api/user/:id', authenticateToken, upload.single('avatar'), async (req,
         const updates = req.body;
         if (req.file) {
             const resizedAvatarBuffer = await sharp(req.file.buffer)
-                .resize(100, 100, {
+                .resize(400, 400, {
                     fit: sharp.fit.cover,
                     withoutEnlargement: true
                 })
