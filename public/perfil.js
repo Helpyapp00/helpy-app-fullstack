@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('jwtToken');
     const userType = localStorage.getItem('userType');
 
+    // Elementos do DOM
     const perfilBox = document.querySelector('.perfil-box');
     const fotoPerfil = document.getElementById('fotoPerfil');
     const nomePerfil = document.getElementById('nomePerfil');
@@ -40,12 +41,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const userAvatarHeader = document.getElementById('user-avatar-header');
     const userNameHeader = document.getElementById('user-name-header');
-
+    
     // Elementos do novo Modal de Imagem
     const imageModal = document.getElementById('image-modal');
     const modalImage = document.getElementById('modal-image');
     const closeImageModalBtn = document.getElementById('close-image-modal');
 
+    // Botão Voltar ao Feed (NOVO)
+    const btnVoltarFeed = document.getElementById('btnVoltarFeed');
 
     // Função para carregar a info do usuário no header
     const loadUserInfo = () => {
@@ -60,7 +63,6 @@ document.addEventListener('DOMContentLoaded', () => {
             userAvatarHeader.src = 'imagens/default-user.png';
         }
     };
-
 
     const fetchUserProfile = async () => {
         if (!userId || !token) {
@@ -188,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-
+    // Event Listeners
     btnEditarPerfil.addEventListener('click', () => {
         // Esconder elementos de visualização
         nomePerfil.classList.add('oculto');
@@ -316,7 +318,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-
     // Lógica para remoção de fotos de serviço
     galeriaServicos.addEventListener('click', async (event) => {
         if (event.target.classList.contains('btn-remover-foto')) {
@@ -344,7 +345,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
-
 
     // Lógica para avaliação com estrelas
     estrelasAvaliacao.forEach(star => {
@@ -398,23 +398,34 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    
     // Lógica do Modal de visualização de Imagem
-    fotoPerfil.addEventListener('click', () => {
-        modalImage.src = fotoPerfil.src;
-        imageModal.classList.add('visible');
-    });
+    if (fotoPerfil) {
+        fotoPerfil.addEventListener('click', () => {
+            modalImage.src = fotoPerfil.src;
+            imageModal.classList.add('visible');
+        });
+    }
 
-    closeImageModalBtn.addEventListener('click', () => {
-        imageModal.classList.remove('visible');
-    });
-
-    // Opcional: Fechar o modal ao clicar fora da imagem
-    imageModal.addEventListener('click', (e) => {
-        if (e.target.id === 'image-modal') {
+    if (closeImageModalBtn) {
+        closeImageModalBtn.addEventListener('click', () => {
             imageModal.classList.remove('visible');
-        }
-    });
+        });
+    }
+
+    if (imageModal) {
+        imageModal.addEventListener('click', (e) => {
+            if (e.target.id === 'image-modal') {
+                imageModal.classList.remove('visible');
+            }
+        });
+    }
+
+    // Lógica para o botão Voltar ao Feed (NOVO)
+    if (btnVoltarFeed) {
+        btnVoltarFeed.addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+    }
 
     fetchUserProfile();
     loadUserInfo();
