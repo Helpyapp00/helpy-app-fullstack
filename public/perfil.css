@@ -517,7 +517,10 @@ textarea.input-perfil {
 
 /* Estilos para o Modal de Visualização de Imagem */
 .image-modal-overlay {
+    /* Por padrão, o modal está invisível */
     display: none;
+    
+    /* Posição e dimensões para cobrir a tela inteira */
     position: fixed;
     z-index: 1000;
     left: 0;
@@ -525,11 +528,16 @@ textarea.input-perfil {
     width: 100%;
     height: 100%;
     overflow: auto;
+    
+    /* Fundo escuro com transparência */
     background-color: rgba(0, 0, 0, 0.9);
+    
+    /* Centraliza a imagem no meio da tela */
     justify-content: center;
     align-items: center;
 }
 
+/* Classe que torna o modal visível quando adicionada pelo JavaScript */
 .image-modal-overlay.visible {
     display: flex;
 }
@@ -539,9 +547,7 @@ textarea.input-perfil {
     max-width: 90%;
     max-height: 90%;
     margin: auto;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    display: block;
 }
 
 #modal-image {
@@ -549,8 +555,10 @@ textarea.input-perfil {
     max-width: 100%;
     max-height: 100%;
     display: block;
+    object-fit: contain; /* Garante que a imagem se ajuste sem distorcer */
 }
 
+/* Botão de fechar (o 'x') */
 .close-modal-btn {
     position: absolute;
     top: 20px;
