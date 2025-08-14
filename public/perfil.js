@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const userId = localStorage.getItem('userId');
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('jwtToken');
     const userType = localStorage.getItem('userType');
 
     const perfilBox = document.querySelector('.perfil-box');
