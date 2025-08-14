@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalImage = document.getElementById('modal-image');
     const closeImageModalBtn = document.getElementById('close-image-modal');
     
-    // Botão Voltar ao Feed (NOVO - Mantenha este ID no HTML)
+    // Botão Voltar ao Feed (ID corrigido para "back-to-feed-button")
     const btnVoltarFeed = document.getElementById('back-to-feed-button');
 
     // Função para carregar a info do usuário no header
@@ -398,11 +398,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     
-    // Lógica do Modal de visualização de Imagem (CORRIGIDA)
+    // Lógica do Modal de visualização de Imagem
     if (fotoPerfil) {
         fotoPerfil.style.cursor = 'pointer'; // Adiciona o cursor de 'mãozinha'
         fotoPerfil.addEventListener('click', () => {
-            if (fotoPerfil.src) {
+            if (fotoPerfil.src && imageModal && modalImage) {
                 modalImage.src = fotoPerfil.src;
                 imageModal.classList.add('visible');
             }
@@ -423,7 +423,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     
-    // Lógica para o botão Voltar ao Feed (NOVO - Mantenha este ID no HTML)
+    // Lógica para o botão Voltar ao Feed
     if (btnVoltarFeed) {
         btnVoltarFeed.addEventListener('click', () => {
             window.location.href = 'index.html';
