@@ -42,12 +42,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const userAvatarHeader = document.getElementById('user-avatar-header');
     const userNameHeader = document.getElementById('user-name-header');
     
-    // Elementos do novo Modal de Imagem
+    // Elementos do Modal de Imagem
     const imageModal = document.getElementById('image-modal');
     const modalImage = document.getElementById('modal-image');
     const closeImageModalBtn = document.getElementById('close-image-modal');
     
-    // Botão Voltar ao Feed (ID corrigido para "back-to-feed-button")
+    // Elementos do Modal de Confirmação de Logout
+    const logoutButton = document.getElementById('logout-button');
+    const logoutConfirmModal = document.getElementById('logout-confirm-modal');
+    const confirmLogoutYesBtn = document.getElementById('confirm-logout-yes');
+    const confirmLogoutNoBtn = document.getElementById('confirm-logout-no');
+
+    // Botão Voltar ao Feed
     const btnVoltarFeed = document.getElementById('back-to-feed-button');
 
     // Função para carregar a info do usuário no header
@@ -400,7 +406,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Lógica do Modal de visualização de Imagem
     if (fotoPerfil) {
-        fotoPerfil.style.cursor = 'pointer'; // Adiciona o cursor de 'mãozinha'
+        fotoPerfil.style.cursor = 'pointer';
         fotoPerfil.addEventListener('click', () => {
             if (fotoPerfil.src && imageModal && modalImage) {
                 modalImage.src = fotoPerfil.src;
@@ -422,11 +428,31 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-    
+
     // Lógica para o botão Voltar ao Feed
     if (btnVoltarFeed) {
         btnVoltarFeed.addEventListener('click', () => {
             window.location.href = 'index.html';
+        });
+    }
+
+    // Lógica para o botão de Logout (NOVA ADIÇÃO)
+    if (logoutButton) {
+        logoutButton.addEventListener('click', () => {
+            logoutConfirmModal.classList.add('visible');
+        });
+    }
+    
+    if (confirmLogoutYesBtn) {
+        confirmLogoutYesBtn.addEventListener('click', () => {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        });
+    }
+    
+    if (confirmLogoutNoBtn) {
+        confirmLogoutNoBtn.addEventListener('click', () => {
+            logoutConfirmModal.classList.remove('visible');
         });
     }
     

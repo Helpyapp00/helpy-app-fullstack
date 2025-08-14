@@ -532,7 +532,8 @@ textarea.input-perfil {
     /* Fundo escuro com transparência */
     background-color: rgba(0, 0, 0, 0.9);
     
-    /* Centraliza a imagem no meio da tela */
+    /* Centraliza o conteúdo (a caixa branca) no meio da tela */
+    display: flex;
     justify-content: center;
     align-items: center;
 }
@@ -542,36 +543,45 @@ textarea.input-perfil {
     display: flex;
 }
 
+/* O contêiner da imagem e do botão de fechar */
 .image-modal-content {
     position: relative;
     max-width: 90%;
     max-height: 90%;
-    margin: auto;
-    display: block;
+    background-color: white; /* Adicionado um fundo para visualização */
+    
+    /* Usa flexbox para centralizar a imagem dentro desta div */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px; /* Adiciona um espaço interno */
+    border-radius: 8px;
 }
 
+/* A imagem dentro do modal */
 #modal-image {
     width: auto;
     max-width: 100%;
     max-height: 100%;
     display: block;
-    object-fit: contain; /* Garante que a imagem se ajuste sem distorcer */
+    object-fit: contain;
 }
 
 /* Botão de fechar (o 'x') */
 .close-modal-btn {
     position: absolute;
-    top: 20px;
-    right: 35px;
-    color: #f1f1f1;
+    top: 10px; 
+    right: 25px; 
+    color: #333;
     font-size: 40px;
     font-weight: bold;
     transition: 0.3s;
     cursor: pointer;
+    z-index: 1001;
 }
 
 .close-modal-btn:hover,
 .close-modal-btn:focus {
-    color: #bbb;
+    color: #f1f1f1;
     text-decoration: none;
 }
