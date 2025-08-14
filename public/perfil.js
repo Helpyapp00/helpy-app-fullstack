@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const userId = localStorage.getItem('userId');
     const token = localStorage.getItem('jwtToken');
     const userType = localStorage.getItem('userType');
-
+    
     // Elementos do DOM
     const perfilBox = document.querySelector('.perfil-box');
     const fotoPerfil = document.getElementById('fotoPerfil');
@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const emailPerfil = document.getElementById('emailPerfil');
     const galeriaServicos = document.getElementById('galeriaServicos');
     const mensagemGaleriaVazia = document.getElementById('mensagemGaleriaVazia');
-
+    
     const btnEditarPerfil = document.getElementById('btnEditarPerfil');
     const btnSalvarPerfil = document.getElementById('btnSalvarPerfil');
     const btnCancelarEdicao = document.getElementById('btnCancelarEdicao');
@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const inputEmail = document.getElementById('inputEmail');
     const btnAnexarFoto = document.getElementById('btnAnexarFoto');
     const inputFotoServico = document.getElementById('inputFotoServico');
-
+    
     const formAvaliacao = document.getElementById('formAvaliacao');
     const estrelasAvaliacao = document.querySelectorAll('.estrelas span');
     const notaSelecionada = document.getElementById('notaSelecionada');
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnEnviarAvaliacao = document.getElementById('btnEnviarAvaliacao');
     const mediaEstrelasDiv = document.getElementById('mediaEstrelas');
     const totalAvaliacoesP = document.getElementById('totalAvaliacoes');
-
+    
     const userAvatarHeader = document.getElementById('user-avatar-header');
     const userNameHeader = document.getElementById('user-name-header');
     
@@ -46,9 +46,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const imageModal = document.getElementById('image-modal');
     const modalImage = document.getElementById('modal-image');
     const closeImageModalBtn = document.getElementById('close-image-modal');
-
-    // Botão Voltar ao Feed (NOVO)
-    const btnVoltarFeed = document.getElementById('btnVoltarFeed');
+    
+    // Botão Voltar ao Feed (NOVO - Mantenha este ID no HTML)
+    const btnVoltarFeed = document.getElementById('back-to-feed-button');
 
     // Função para carregar a info do usuário no header
     const loadUserInfo = () => {
@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
             userAvatarHeader.src = 'imagens/default-user.png';
         }
     };
-
+    
     const fetchUserProfile = async () => {
         if (!userId || !token) {
             alert('Você precisa estar logado para acessar esta página.');
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Authorization': `Bearer ${token}`
                 }
             });
-
+    
             if (!response.ok) {
                 if (response.status === 403) {
                     alert('Acesso não autorizado ao perfil. Redirecionando para o login.');
@@ -86,7 +86,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 throw new Error('Falha ao buscar dados do perfil.');
             }
-
+    
             const { user } = await response.json();
             if (user.tipo === 'cliente') {
                 perfilBox.classList.add('perfil-cliente');
@@ -97,7 +97,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 perfilBox.classList.add('perfil-trabalhador');
                 btnAnexarFoto.style.display = 'inline-flex';
             }
-
+    
             if (fotoPerfil) {
                 if (user.avatarUrl) {
                     fotoPerfil.src = user.avatarUrl;
@@ -112,13 +112,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     userAvatarHeader.src = 'imagens/default-user.png';
                 }
             }
-
+    
             nomePerfil.textContent = user.nome || 'Nome não informado';
             idadePerfil.textContent = user.idade ? `${user.idade} anos` : 'Não informado';
             cidadePerfil.textContent = user.cidade || 'Não informado';
             areaPerfil.textContent = user.atuacao || 'Não informado';
             descricaoPerfil.textContent = user.descricao || 'Nenhuma descrição disponível.';
-
+    
             if (user.telefone) {
                 whatsappPerfil.href = `https://wa.me/55${user.telefone.replace(/\D/g, '')}`;
                 whatsappPerfil.innerHTML = `<i class="fab fa-whatsapp"></i> ${user.telefone}`;
@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             emailPerfil.innerHTML = `<i class="fas fa-envelope"></i> ${user.email || 'Não informado'}`;
             emailPerfil.href = `mailto:${user.email}`;
-
+    
             inputNome.value = user.nome || '';
             inputIdade.value = user.idade || '';
             inputCidade.value = user.cidade || '';
@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', () => {
             inputDescricao.value = user.descricao || '';
             inputWhatsapp.value = user.telefone || '';
             inputEmail.value = user.email || '';
-
+    
             // Carregar imagens do portfólio
             if (user.servicosImagens && user.servicosImagens.length > 0) {
                 mensagemGaleriaVazia.classList.add('oculto');
@@ -149,7 +149,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 mensagemGaleriaVazia.classList.remove('oculto');
             }
-
+    
             // Carregar média de avaliação
             if (user.totalAvaliacoes > 0) {
                 renderMediaAvaliacao(user.mediaAvaliacao);
@@ -158,12 +158,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 mediaEstrelasDiv.innerHTML = '<p class="mensagem-vazia">Nenhuma avaliação ainda.</p>';
                 totalAvaliacoesP.textContent = '';
             }
-
+    
             // Salvar a URL correta no localStorage para que o header também funcione
             localStorage.setItem('userName', user.nome || '');
             localStorage.setItem('userPhotoUrl', user.avatarUrl || '');
             loadUserInfo();
-
+    
         } catch (error) {
             console.error('Erro ao buscar perfil:', error);
             alert('Erro ao carregar os dados do perfil.');
@@ -171,13 +171,13 @@ document.addEventListener('DOMContentLoaded', () => {
             window.location.href = 'index.html';
         }
     };
-
+    
     // Função para renderizar as estrelas da média de avaliação
     const renderMediaAvaliacao = (media) => {
         mediaEstrelasDiv.innerHTML = '';
         const estrelasCheias = Math.floor(media);
         const temMeiaEstrela = media % 1 !== 0;
-
+    
         for (let i = 0; i < estrelasCheias; i++) {
             mediaEstrelasDiv.innerHTML += '<i class="fas fa-star"></i>';
         }
@@ -189,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
             mediaEstrelasDiv.innerHTML += '<i class="far fa-star"></i>';
         }
     };
-
+    
     // Event Listeners
     btnEditarPerfil.addEventListener('click', () => {
         // Esconder elementos de visualização
@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', () => {
         whatsappPerfil.classList.add('oculto');
         emailPerfil.classList.add('oculto');
         btnEditarPerfil.classList.add('oculto');
-
+    
         // Mostrar elementos de edição
         inputNome.classList.remove('oculto');
         inputIdade.classList.remove('oculto');
@@ -214,7 +214,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnCancelarEdicao.classList.remove('oculto');
         labelInputFotoPerfil.classList.remove('oculto');
     });
-
+    
     btnCancelarEdicao.addEventListener('click', () => {
         // Mostrar elementos de visualização
         nomePerfil.classList.remove('oculto');
@@ -225,7 +225,7 @@ document.addEventListener('DOMContentLoaded', () => {
         whatsappPerfil.classList.remove('oculto');
         emailPerfil.classList.remove('oculto');
         btnEditarPerfil.classList.remove('oculto');
-
+    
         // Esconder elementos de edição
         inputNome.classList.add('oculto');
         inputIdade.classList.add('oculto');
@@ -238,7 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnCancelarEdicao.classList.add('oculto');
         labelInputFotoPerfil.classList.add('oculto');
     });
-
+    
     btnSalvarPerfil.addEventListener('click', async () => {
         const formData = new FormData();
         formData.append('nome', inputNome.value);
@@ -251,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (inputFotoPerfil.files[0]) {
             formData.append('avatar', inputFotoPerfil.files[0]);
         }
-
+    
         try {
             const response = await fetch(`/api/user/${userId}`, {
                 method: 'PUT',
@@ -260,20 +260,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: formData
             });
-
+    
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.message || 'Falha ao salvar as alterações do perfil.');
             }
-
+    
             const data = await response.json();
             alert(data.message);
-
+    
             if (data.user) {
                 localStorage.setItem('userName', data.user.nome || '');
                 localStorage.setItem('userPhotoUrl', data.user.avatarUrl || '');
             }
-
+    
             btnCancelarEdicao.click();
             fetchUserProfile();
         } catch (error) {
@@ -281,20 +281,20 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Erro ao salvar as alterações do perfil: ' + error.message);
         }
     });
-
+    
     btnAnexarFoto.addEventListener('click', () => {
         inputFotoServico.click();
     });
-
+    
     inputFotoServico.addEventListener('change', async (event) => {
         const files = event.target.files;
         if (files.length === 0) return;
-
+    
         const formData = new FormData();
         for (const file of files) {
             formData.append('servicoImagens', file);
         }
-
+    
         try {
             const response = await fetch(`/api/user/${userId}/servicos-imagens`, {
                 method: 'POST',
@@ -303,12 +303,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: formData
             });
-
+    
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.message || 'Falha ao fazer upload das fotos de serviço.');
             }
-
+    
             const data = await response.json();
             alert('Fotos de serviço adicionadas com sucesso!');
             fetchUserProfile();
@@ -317,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Erro ao fazer upload de fotos de serviço: ' + error.message);
         }
     });
-
+    
     // Lógica para remoção de fotos de serviço
     galeriaServicos.addEventListener('click', async (event) => {
         if (event.target.classList.contains('btn-remover-foto')) {
@@ -330,12 +330,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             'Authorization': `Bearer ${token}`
                         }
                     });
-
+    
                     if (!response.ok) {
                         const errorData = await response.json();
                         throw new Error(errorData.message || 'Falha ao remover a foto.');
                     }
-
+    
                     alert('Foto removida com sucesso!');
                     fetchUserProfile();
                 } catch (error) {
@@ -345,7 +345,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
     });
-
+    
     // Lógica para avaliação com estrelas
     estrelasAvaliacao.forEach(star => {
         star.addEventListener('click', () => {
@@ -361,17 +361,17 @@ document.addEventListener('DOMContentLoaded', () => {
             comentarioAvaliacaoInput.focus();
         });
     });
-
+    
     btnEnviarAvaliacao.addEventListener('click', async (e) => {
         e.preventDefault();
         const estrelas = document.querySelectorAll('.estrelas span i.fas').length;
         const comentario = comentarioAvaliacaoInput.value;
-
+    
         if (estrelas === 0) {
             alert('Por favor, selecione pelo menos uma estrela para avaliar.');
             return;
         }
-
+    
         try {
             const response = await fetch(`/api/user/${userId}/avaliar`, {
                 method: 'POST',
@@ -381,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 },
                 body: JSON.stringify({ estrelas, comentario })
             });
-
+    
             const data = await response.json();
             if (response.ok) {
                 alert(data.message);
@@ -397,21 +397,24 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Erro interno do servidor ao enviar avaliação.');
         }
     });
-
-    // Lógica do Modal de visualização de Imagem
+    
+    // Lógica do Modal de visualização de Imagem (CORRIGIDA)
     if (fotoPerfil) {
+        fotoPerfil.style.cursor = 'pointer'; // Adiciona o cursor de 'mãozinha'
         fotoPerfil.addEventListener('click', () => {
-            modalImage.src = fotoPerfil.src;
-            imageModal.classList.add('visible');
+            if (fotoPerfil.src) {
+                modalImage.src = fotoPerfil.src;
+                imageModal.classList.add('visible');
+            }
         });
     }
-
+    
     if (closeImageModalBtn) {
         closeImageModalBtn.addEventListener('click', () => {
             imageModal.classList.remove('visible');
         });
     }
-
+    
     if (imageModal) {
         imageModal.addEventListener('click', (e) => {
             if (e.target.id === 'image-modal') {
@@ -419,14 +422,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-
-    // Lógica para o botão Voltar ao Feed (NOVO)
+    
+    // Lógica para o botão Voltar ao Feed (NOVO - Mantenha este ID no HTML)
     if (btnVoltarFeed) {
         btnVoltarFeed.addEventListener('click', () => {
             window.location.href = 'index.html';
         });
     }
-
+    
     fetchUserProfile();
     loadUserInfo();
 });
