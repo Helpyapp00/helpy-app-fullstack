@@ -17,7 +17,7 @@ body {
     border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     width: 100%;
-    max-width: 850px;
+    max-width: 1000px; /* AQUI! Ajuste este valor para a largura que você quer */
     box-sizing: border-box;
     margin: 20px auto; /* Esta regra centraliza o contêiner na página horizontalmente */
 }
