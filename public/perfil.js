@@ -168,33 +168,45 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // Função para renderizar o portfólio
-    const renderPortfolio = (servicos) => {
-        if (!servicos || servicos.length === 0) {
-            mensagemGaleriaVazia.classList.remove('oculto');
-            galeriaServicos.innerHTML = '';
-        } else {
-            mensagemGaleriaVazia.classList.add('oculto');
-            galeriaServicos.innerHTML = servicos.map(servico => `
-                <div class="servico-item" data-id="${servico._id}">
-                    <img src="${servico.url}" alt="Imagem de Serviço" class="foto-servico">
+    /// Função para renderizar o portfólio
+const renderPortfolio = (servicos) => {
+    if (!servicos || servicos.length === 0) {
+        mensagemGaleriaVazia.classList.remove('oculto');
+        galeriaServicos.innerHTML = '';
+    } else {
+        mensagemGaleriaVazia.classList.add('oculto');
+        
+        // Mapeia os serviços para a nova estrutura HTML
+        const htmlContent = servicos.map(servico => {
+            // Verifica se o serviço é uma URL (formato antigo) ou um objeto
+            const imageUrl = typeof servico === 'string' ? servico : servico.url;
+            const titulo = (typeof servico === 'object' && servico.titulo) ? servico.titulo : 'Título do Serviço';
+            const descricao = (typeof servico === 'object' && servico.descricao) ? servico.descricao : 'Detalhes do serviço...';
+            const servicoId = (typeof servico === 'object' && servico._id) ? servico._id : '';
+
+            return `
+                <div class="servico-item" data-id="${servicoId}">
+                    <img src="${imageUrl}" alt="Imagem de Serviço" class="foto-servico">
                     
                     <div class="servico-info">
-                        <div class="servico-titulo" contenteditable="true">${servico.titulo || 'Título do Serviço'}</div>
-                        <div class="servico-descricao" contenteditable="true">${servico.descricao || 'Detalhes do serviço...'}</div>
+                        <div class="servico-titulo" contenteditable="true">${titulo}</div>
+                        <div class="servico-descricao" contenteditable="true">${descricao}</div>
                     </div>
                 </div>
-            `).join('');
+            `;
+        }).join('');
 
-            // Adiciona event listeners para as novas imagens
-            document.querySelectorAll('.foto-servico').forEach(img => {
-                img.addEventListener('click', () => {
-                    modalImage.src = img.src;
-                    imageModal.classList.add('visible');
-                });
+        galeriaServicos.innerHTML = htmlContent;
+
+        // Adiciona event listeners para as novas imagens
+        document.querySelectorAll('.foto-servico').forEach(img => {
+            img.addEventListener('click', () => {
+                modalImage.src = img.src;
+                imageModal.classList.add('visible');
             });
-        }
-    };
+        });
+    }
+};
     
     // Função para renderizar as estrelas da média de avaliação
     const renderMediaAvaliacao = (media) => {
