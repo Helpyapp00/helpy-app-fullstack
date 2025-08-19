@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutConfirmModal = document.getElementById('logout-confirm-modal');
     const confirmLogoutYesBtn = document.getElementById('confirm-logout-yes');
     const confirmLogoutNoBtn = document.getElementById('confirm-logout-no');
-
+    
     // Botão Voltar ao Feed
     const btnVoltarFeed = document.getElementById('back-to-feed-button');
 
@@ -143,18 +143,8 @@ document.addEventListener('DOMContentLoaded', () => {
             inputWhatsapp.value = user.telefone || '';
             inputEmail.value = user.email || '';
     
-            // Carregar imagens do portfólio
-            if (user.servicosImagens && user.servicosImagens.length > 0) {
-                mensagemGaleriaVazia.classList.add('oculto');
-                galeriaServicos.innerHTML = user.servicosImagens.map((url, index) => `
-                    <div class="servico-imagem-wrapper">
-                        <img src="${url}" alt="Imagem de Serviço ${index + 1}" class="servico-imagem" data-index="${index}">
-                        <button class="btn-remover-foto" data-index="${index}">&times;</button>
-                    </div>
-                `).join('');
-            } else {
-                mensagemGaleriaVazia.classList.remove('oculto');
-            }
+            // Renderizar portfólio de serviços
+            renderPortfolio(user.servicos);
     
             // Carregar média de avaliação
             if (user.totalAvaliacoes > 0) {
@@ -175,6 +165,34 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Erro ao carregar os dados do perfil.');
             localStorage.clear();
             window.location.href = 'index.html';
+        }
+    };
+    
+    // Função para renderizar o portfólio
+    const renderPortfolio = (servicos) => {
+        if (!servicos || servicos.length === 0) {
+            mensagemGaleriaVazia.classList.remove('oculto');
+            galeriaServicos.innerHTML = '';
+        } else {
+            mensagemGaleriaVazia.classList.add('oculto');
+            galeriaServicos.innerHTML = servicos.map(servico => `
+                <div class="servico-item" data-id="${servico._id}">
+                    <img src="${servico.url}" alt="Imagem de Serviço" class="foto-servico">
+                    
+                    <div class="servico-info">
+                        <div class="servico-titulo" contenteditable="true">${servico.titulo || 'Título do Serviço'}</div>
+                        <div class="servico-descricao" contenteditable="true">${servico.descricao || 'Detalhes do serviço...'}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Adiciona event listeners para as novas imagens
+            document.querySelectorAll('.foto-servico').forEach(img => {
+                img.addEventListener('click', () => {
+                    modalImage.src = img.src;
+                    imageModal.classList.add('visible');
+                });
+            });
         }
     };
     
@@ -298,11 +316,11 @@ document.addEventListener('DOMContentLoaded', () => {
     
         const formData = new FormData();
         for (const file of files) {
-            formData.append('servicoImagens', file);
+            formData.append('servicos', file);
         }
     
         try {
-            const response = await fetch(`/api/user/${userId}/servicos-imagens`, {
+            const response = await fetch(`/api/user/${userId}/servicos`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`
@@ -326,11 +344,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Lógica para remoção de fotos de serviço
     galeriaServicos.addEventListener('click', async (event) => {
+        const item = event.target.closest('.servico-item');
         if (event.target.classList.contains('btn-remover-foto')) {
-            const imageIndex = event.target.dataset.index;
-            if (confirm('Tem certeza que deseja remover esta foto?')) {
+            const servicoId = item.dataset.id;
+            if (confirm('Tem certeza que deseja remover este serviço?')) {
                 try {
-                    const response = await fetch(`/api/user/${userId}/servicos-imagens/${imageIndex}`, {
+                    const response = await fetch(`/api/user/${userId}/servicos/${servicoId}`, {
                         method: 'DELETE',
                         headers: {
                             'Authorization': `Bearer ${token}`
@@ -339,14 +358,14 @@ document.addEventListener('DOMContentLoaded', () => {
     
                     if (!response.ok) {
                         const errorData = await response.json();
-                        throw new Error(errorData.message || 'Falha ao remover a foto.');
+                        throw new Error(errorData.message || 'Falha ao remover o serviço.');
                     }
     
-                    alert('Foto removida com sucesso!');
+                    alert('Serviço removido com sucesso!');
                     fetchUserProfile();
                 } catch (error) {
-                    console.error('Erro ao remover foto:', error);
-                    alert('Erro ao remover a foto: ' + error.message);
+                    console.error('Erro ao remover serviço:', error);
+                    alert('Erro ao remover o serviço: ' + error.message);
                 }
             }
         }
@@ -436,7 +455,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Lógica para o botão de Logout (NOVA ADIÇÃO)
+    // Lógica para o botão de Logout
     if (logoutButton) {
         logoutButton.addEventListener('click', () => {
             logoutConfirmModal.classList.add('visible');
