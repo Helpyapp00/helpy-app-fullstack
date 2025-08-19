@@ -10,8 +10,8 @@ body {
     min-height: 100vh; /* Garante que a página ocupe toda a altura da tela */
 }
 
-/* Estilos para o contêiner principal */
-.container {
+/* Estilos para o contêiner principal - SÓ AFETA A PÁGINA DE PERFIL */
+main .container {
     background-color: #ffffff;
     padding: 40px;
     border-radius: 10px;
