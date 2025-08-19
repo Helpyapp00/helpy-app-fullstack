@@ -16,14 +16,15 @@ body {
     width: 100%;
     max-width: 850px;
     box-sizing: border-box;
-    margin: 20px auto;
-    text-align: center;
+    margin: 20px auto; /* Esta regra centraliza o contêiner na página horizontalmente */
 }
+
 
 .perfil-box {
     display: flex;
-    flex-direction: column;
-    align-items: center;
+    flex-direction: column;  /* Alinha os itens em coluna (de cima para baixo) */
+    align-items: center; /* Centraliza horizontalmente os itens (foto, textos, etc.) */
+    width: 100%; /* Garante que o contêiner de perfil ocupe a largura total de seu pai */
 }
 
 .foto-perfil {
