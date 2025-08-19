@@ -1,13 +1,16 @@
-/* Estilos gerais */
+/* Estilos para o corpo da página, para garantir o alinhamento central */
 body {
-    font-family: Arial, sans-serif;
     background-color: #f0f2f5;
-    min-height: 100vh;
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
     margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+    display: flex; /* Adicionado para usar flexbox no corpo da página */
+    flex-direction: column; /* Organiza o conteúdo em coluna */
+    align-items: center; /* Centraliza o conteúdo horizontalmente */
+    min-height: 100vh; /* Garante que a página ocupe toda a altura da tela */
 }
 
+/* Estilos para o contêiner principal */
 .container {
     background-color: #ffffff;
     padding: 40px;
@@ -19,12 +22,12 @@ body {
     margin: 20px auto; /* Esta regra centraliza o contêiner na página horizontalmente */
 }
 
-
+/* Estilos para a caixa de perfil */
 .perfil-box {
-    display: flex;
-    flex-direction: column;  /* Alinha os itens em coluna (de cima para baixo) */
-    align-items: center; /* Centraliza horizontalmente os itens (foto, textos, etc.) */
-    width: 100%; /* Garante que o contêiner de perfil ocupe a largura total de seu pai */
+    display: flex; /* Habilita o flexbox para alinhamento */
+    flex-direction: column; /* Alinha os itens em coluna (de cima para baixo) */
+    align-items: center; /* Centraliza horizontalmente os itens (foto, textos, botões) */
+    width: 100%;
 }
 
 .foto-perfil {
