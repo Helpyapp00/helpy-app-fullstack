@@ -10,16 +10,16 @@ body {
     min-height: 100vh; /* Garante que a página ocupe toda a altura da tela */
 }
 
-/* Estilos para o contêiner principal - SÓ AFETA A PÁGINA DE PERFIL */
-main .container {
+/* Estilos para o contêiner principal - Solução PROFISSIONAL de largura */
+body.profile-page .container {
     background-color: #ffffff;
     padding: 40px;
     border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     width: 100%;
-    max-width: 1000px; /* AQUI! Ajuste este valor para a largura que você quer */
+    max-width: 1000px; /* Altere para a largura que você quer */
     box-sizing: border-box;
-    margin: 20px auto; /* Esta regra centraliza o contêiner na página horizontalmente */
+    margin: 20px auto;
 }
 
 /* Estilos para a caixa de perfil */
