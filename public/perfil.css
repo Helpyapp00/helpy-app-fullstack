@@ -1,16 +1,11 @@
 /* Estilos gerais para o corpo da página */
 body {
     font-family: Arial, sans-serif;
-    background-color: #f0f2f5; /* AQUI: Esta é a cor de fundo que você precisa */
+    background-color: #f0f2f5; /* A cor de fundo para a página */
     min-height: 100vh;
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-
-    /* Propriedades de centralização */
-    display: flex;
-    flex-direction: column;
-    align-items: center;
 }
 
 /* Estilos para o contêiner principal - Solução PROFISSIONAL de largura */
@@ -31,6 +26,14 @@ body.profile-page .container {
     flex-direction: column; /* Alinha os itens em coluna (de cima para baixo) */
     align-items: center; /* Centraliza horizontalmente os itens (foto, textos, botões) */
     width: 100%;
+}
+
+/* Adiciona espaçamento entre o cabeçalho e o conteúdo principal */
+main {
+    margin-top: 20px; /* Adiciona 20px de margem no topo */
+    width: 100%; /* Garante que o main ocupe toda a largura */
+    display: flex; /* Permite a centralização do conteúdo dentro dele */
+    justify-content: center; /* Centraliza horizontalmente */
 }
 
 .foto-perfil {
