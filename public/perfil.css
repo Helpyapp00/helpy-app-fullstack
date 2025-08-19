@@ -1,13 +1,16 @@
-/* Estilos para o corpo da página, para garantir o alinhamento central */
+/* Estilos gerais para o corpo da página */
 body {
-    background-color: #f0f2f5;
     font-family: Arial, sans-serif;
-    line-height: 1.6;
+    background-color: #f0f2f5; /* AQUI: Esta é a cor de fundo que você precisa */
+    min-height: 100vh;
     margin: 0;
-    display: flex; /* Adicionado para usar flexbox no corpo da página */
-    flex-direction: column; /* Organiza o conteúdo em coluna */
-    align-items: center; /* Centraliza o conteúdo horizontalmente */
-    min-height: 100vh; /* Garante que a página ocupe toda a altura da tela */
+    padding: 0;
+    box-sizing: border-box;
+
+    /* Propriedades de centralização */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 /* Estilos para o contêiner principal - Solução PROFISSIONAL de largura */
