@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
             inputEmail.value = user.email || '';
     
             // Renderizar portfólio de serviços
-            renderPortfolio(user.servicos);
+            renderPortfolio(user.servicosImagens); // Altere user.servicos para user.servicosImagens
     
             // Carregar média de avaliação
             if (user.totalAvaliacoes > 0) {
@@ -169,74 +169,63 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     // Função para renderizar o portfólio
-const renderPortfolio = (servicos) => {
-    if (!servicos || servicos.length === 0) {
-        mensagemGaleriaVazia.classList.remove('oculto');
-        galeriaServicos.innerHTML = '';
-    } else {
-        mensagemGaleriaVazia.classList.add('oculto');
-        
-        // Mapeia os serviços para a nova estrutura HTML
-        const htmlContent = servicos.map(servico => {
-            // Tenta encontrar a URL da imagem em diferentes propriedades
-            let imageUrl = '';
-            if (typeof servico === 'string') {
-                imageUrl = servico;
-            } else if (typeof servico === 'object') {
-                imageUrl = servico.url || servico.imageUrl || servico.photoUrl || '';
-            }
+    const renderPortfolio = (servicos) => {
+        if (!servicos || servicos.length === 0) {
+            mensagemGaleriaVazia.classList.remove('oculto');
+            galeriaServicos.innerHTML = '';
+        } else {
+            mensagemGaleriaVazia.classList.add('oculto');
             
-            const servicoId = typeof servico === 'object' ? servico._id : '';
+            const htmlContent = servicos.map(servico => {
+                const imageUrl = typeof servico === 'string' ? servico : (servico.url || servico.imageUrl || servico.photoUrl || servico);
+                const servicoId = typeof servico === 'object' ? servico._id : '';
 
-            // Adiciona um botão de remover foto apenas se for um usuário trabalhador
-            const btnRemover = userType === 'trabalhador' ? `<button class="btn-remover-foto" data-id="${servicoId}">&times;</button>` : '';
+                const btnRemover = userType === 'trabalhador' ? `<button class="btn-remover-foto" data-id="${servicoId}">&times;</button>` : '';
 
-            return `
-                <div class="servico-item" data-id="${servicoId}">
-                    <img src="${imageUrl}" alt="Imagem de Serviço" class="foto-servico">
-                    ${btnRemover}
-                </div>
-            `;
-        }).join('');
+                return `
+                    <div class="servico-item" data-id="${servicoId}">
+                        <img src="${imageUrl}" alt="Imagem de Serviço" class="foto-servico">
+                        ${btnRemover}
+                    </div>
+                `;
+            }).join('');
 
-        galeriaServicos.innerHTML = htmlContent;
+            galeriaServicos.innerHTML = htmlContent;
 
-        // Adiciona event listeners para as novas imagens
-        document.querySelectorAll('.foto-servico').forEach(img => {
-            img.addEventListener('click', () => {
-                modalImage.src = img.src;
-                imageModal.classList.add('visible');
+            document.querySelectorAll('.foto-servico').forEach(img => {
+                img.addEventListener('click', () => {
+                    modalImage.src = img.src;
+                    imageModal.classList.add('visible');
+                });
             });
-        });
-        
-        // Adiciona event listeners para os botões de remover
-        document.querySelectorAll('.btn-remover-foto').forEach(btn => {
-            btn.addEventListener('click', async (event) => {
-                const item = event.target.closest('.servico-item');
-                const servicoId = item.dataset.id;
-                if (confirm('Tem certeza que deseja remover este serviço?')) {
-                    try {
-                        const response = await fetch(`/api/user/${userId}/servicos/${servicoId}`, {
-                            method: 'DELETE',
-                            headers: {
-                                'Authorization': `Bearer ${token}`
+            
+            document.querySelectorAll('.btn-remover-foto').forEach(btn => {
+                btn.addEventListener('click', async (event) => {
+                    const item = event.target.closest('.servico-item');
+                    const servicoId = item.dataset.id;
+                    if (confirm('Tem certeza que deseja remover este serviço?')) {
+                        try {
+                            const response = await fetch(`/api/user/${userId}/servicos/${servicoId}`, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Authorization': `Bearer ${token}`
+                                }
+                            });
+                            if (!response.ok) {
+                                const errorData = await response.json();
+                                throw new Error(errorData.message || 'Falha ao remover o serviço.');
                             }
-                        });
-                        if (!response.ok) {
-                            const errorData = await response.json();
-                            throw new Error(errorData.message || 'Falha ao remover o serviço.');
+                            alert('Serviço removido com sucesso!');
+                            fetchUserProfile();
+                        } catch (error) {
+                            console.error('Erro ao remover serviço:', error);
+                            alert('Erro ao remover o serviço: ' + error.message);
                         }
-                        alert('Serviço removido com sucesso!');
-                        fetchUserProfile();
-                    } catch (error) {
-                        console.error('Erro ao remover serviço:', error);
-                        alert('Erro ao remover o serviço: ' + error.message);
                     }
-                }
+                });
             });
-        });
-    }
-};
+        }
+    };
     
     // Função para renderizar as estrelas da média de avaliação
     const renderMediaAvaliacao = (media) => {
@@ -258,7 +247,6 @@ const renderPortfolio = (servicos) => {
     
     // Event Listeners
     btnEditarPerfil.addEventListener('click', () => {
-        // Esconder elementos de visualização
         nomePerfil.classList.add('oculto');
         idadePerfil.classList.add('oculto');
         cidadePerfil.classList.add('oculto');
@@ -268,7 +256,6 @@ const renderPortfolio = (servicos) => {
         emailPerfil.classList.add('oculto');
         btnEditarPerfil.classList.add('oculto');
     
-        // Mostrar elementos de edição
         inputNome.classList.remove('oculto');
         inputIdade.classList.remove('oculto');
         inputCidade.classList.remove('oculto');
@@ -282,7 +269,6 @@ const renderPortfolio = (servicos) => {
     });
     
     btnCancelarEdicao.addEventListener('click', () => {
-        // Mostrar elementos de visualização
         nomePerfil.classList.remove('oculto');
         idadePerfil.classList.remove('oculto');
         cidadePerfil.classList.remove('oculto');
@@ -292,7 +278,6 @@ const renderPortfolio = (servicos) => {
         emailPerfil.classList.remove('oculto');
         btnEditarPerfil.classList.remove('oculto');
     
-        // Esconder elementos de edição
         inputNome.classList.add('oculto');
         inputIdade.classList.add('oculto');
         inputCidade.classList.add('oculto');
@@ -381,35 +366,6 @@ const renderPortfolio = (servicos) => {
         } catch (error) {
             console.error('Erro ao fazer upload de fotos de serviço:', error);
             alert('Erro ao fazer upload de fotos de serviço: ' + error.message);
-        }
-    });
-    
-    // Lógica para remoção de fotos de serviço
-    galeriaServicos.addEventListener('click', async (event) => {
-        const item = event.target.closest('.servico-item');
-        if (event.target.classList.contains('btn-remover-foto')) {
-            const servicoId = item.dataset.id;
-            if (confirm('Tem certeza que deseja remover este serviço?')) {
-                try {
-                    const response = await fetch(`/api/user/${userId}/servicos/${servicoId}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Authorization': `Bearer ${token}`
-                        }
-                    });
-    
-                    if (!response.ok) {
-                        const errorData = await response.json();
-                        throw new Error(errorData.message || 'Falha ao remover o serviço.');
-                    }
-    
-                    alert('Serviço removido com sucesso!');
-                    fetchUserProfile();
-                } catch (error) {
-                    console.error('Erro ao remover serviço:', error);
-                    alert('Erro ao remover o serviço: ' + error.message);
-                }
-            }
         }
     });
     

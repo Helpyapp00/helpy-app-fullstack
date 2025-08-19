@@ -6,11 +6,9 @@ body {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    
-    /* Configurações do Flexbox para centralizar apenas horizontalmente */
     display: flex;
     flex-direction: column;
-    align-items: center; /* Centraliza o conteúdo horizontalmente */
+    align-items: center;
 }
 
 /* O contêiner principal */
@@ -22,25 +20,23 @@ body {
     width: 100%;
     max-width: 1000px; /* A largura que você quer */
     box-sizing: border-box;
-    margin-bottom: 20px; /* Adiciona margem na parte de baixo para um respiro visual */
+    margin-bottom: 20px;
 }
 
-
-
-/* Estilos para a caixa de perfil */
+/* O contêiner de perfil interno, para centralizar o conteúdo */
 .perfil-box {
-    display: flex; /* Habilita o flexbox para alinhamento */
-    flex-direction: column; /* Alinha os itens em coluna (de cima para baixo) */
-    align-items: center; /* Centraliza horizontalmente os itens (foto, textos, botões) */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     width: 100%;
 }
 
-/* Adiciona espaçamento entre o cabeçalho e o conteúdo principal */
+/* Adiciona espaço entre o cabeçalho e o conteúdo principal */
 main {
-    margin-top: 20px; /* Adiciona 20px de margem no topo */
-    width: 100%; /* Garante que o main ocupe toda a largura */
-    display: flex; /* Permite a centralização do conteúdo dentro dele */
-    justify-content: center; /* Centraliza horizontalmente */
+    margin-top: 20px;
+    width: 100%;
+    display: flex;
+    justify-content: center;
 }
 
 .foto-perfil {
@@ -555,37 +551,28 @@ textarea.input-perfil {
 
 /* Estilos para o Modal de Visualização de Imagem */
 .image-modal-overlay {
-    /* Por padrão, o modal está invisível */
     display: none;
-
-    /* Posição e dimensões para cobrir a tela inteira */
     position: fixed;
     z-index: 1000;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    
-    /* Fundo escuro com transparência */
     background-color: rgba(0, 0, 0, 0.9);
-}
-
-/* Classe que torna o modal visível quando adicionada pelo JavaScript */
-.image-modal-overlay.visible {
-    display: flex;
     justify-content: center;
     align-items: center;
 }
 
-/* O contêiner da imagem e do botão de fechar */
+.image-modal-overlay.visible {
+    display: flex;
+}
+
 .image-modal-content {
     position: relative;
     max-width: 90%;
     max-height: 90%;
-    display: block;
 }
 
-/* A imagem dentro do modal */
 #modal-image {
     width: auto;
     max-width: 100%;
@@ -595,7 +582,6 @@ textarea.input-perfil {
     object-fit: contain;
 }
 
-/* Botão de fechar (o 'x') */
 .close-modal-btn {
     position: absolute;
     top: 10px;
