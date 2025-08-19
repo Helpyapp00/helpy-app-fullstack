@@ -168,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    /// Função para renderizar o portfólio
+    // Função para renderizar o portfólio
 const renderPortfolio = (servicos) => {
     if (!servicos || servicos.length === 0) {
         mensagemGaleriaVazia.classList.remove('oculto');
@@ -180,18 +180,15 @@ const renderPortfolio = (servicos) => {
         const htmlContent = servicos.map(servico => {
             // Verifica se o serviço é uma URL (formato antigo) ou um objeto
             const imageUrl = typeof servico === 'string' ? servico : servico.url;
-            const titulo = (typeof servico === 'object' && servico.titulo) ? servico.titulo : 'Título do Serviço';
-            const descricao = (typeof servico === 'object' && servico.descricao) ? servico.descricao : 'Detalhes do serviço...';
-            const servicoId = (typeof servico === 'object' && servico._id) ? servico._id : '';
+            const servicoId = typeof servico === 'object' ? servico._id : '';
+
+            // Adiciona um botão de remover foto
+            const btnRemover = `<button class="btn-remover-foto" data-id="${servicoId}">&times;</button>`;
 
             return `
-                <div class="servico-item" data-id="${servicoId}">
+                <div class="servico-item">
                     <img src="${imageUrl}" alt="Imagem de Serviço" class="foto-servico">
-                    
-                    <div class="servico-info">
-                        <div class="servico-titulo" contenteditable="true">${titulo}</div>
-                        <div class="servico-descricao" contenteditable="true">${descricao}</div>
-                    </div>
+                    ${btnRemover}
                 </div>
             `;
         }).join('');
@@ -203,6 +200,32 @@ const renderPortfolio = (servicos) => {
             img.addEventListener('click', () => {
                 modalImage.src = img.src;
                 imageModal.classList.add('visible');
+            });
+        });
+        
+        // Adiciona event listeners para os botões de remover
+        document.querySelectorAll('.btn-remover-foto').forEach(btn => {
+            btn.addEventListener('click', async (event) => {
+                const servicoId = event.target.dataset.id;
+                if (confirm('Tem certeza que deseja remover este serviço?')) {
+                    try {
+                        const response = await fetch(`/api/user/${userId}/servicos/${servicoId}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        if (!response.ok) {
+                            const errorData = await response.json();
+                            throw new Error(errorData.message || 'Falha ao remover o serviço.');
+                        }
+                        alert('Serviço removido com sucesso!');
+                        fetchUserProfile();
+                    } catch (error) {
+                        console.error('Erro ao remover serviço:', error);
+                        alert('Erro ao remover o serviço: ' + error.message);
+                    }
+                }
             });
         });
     }

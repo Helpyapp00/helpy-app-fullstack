@@ -152,6 +152,42 @@ p.descricao-perfil {
     border: 1px solid #eee;
 }
 
+/* Estilos para cada item do portfólio de serviço */
+.servico-item {
+    position: relative;
+    width: 200px; /* Ajuste o tamanho da imagem conforme necessário */
+    height: 200px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 10px;
+}
+
+.foto-servico {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    cursor: pointer;
+}
+
+.btn-remover-foto {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
 .contato {
     margin-top: 25px;
     padding-top: 20px;
