@@ -178,15 +178,21 @@ const renderPortfolio = (servicos) => {
         
         // Mapeia os serviços para a nova estrutura HTML
         const htmlContent = servicos.map(servico => {
-            // Verifica se o serviço é uma URL (formato antigo) ou um objeto
-            const imageUrl = typeof servico === 'string' ? servico : servico.url;
+            // Tenta encontrar a URL da imagem em diferentes propriedades
+            let imageUrl = '';
+            if (typeof servico === 'string') {
+                imageUrl = servico;
+            } else if (typeof servico === 'object') {
+                imageUrl = servico.url || servico.imageUrl || servico.photoUrl || '';
+            }
+            
             const servicoId = typeof servico === 'object' ? servico._id : '';
 
-            // Adiciona um botão de remover foto
-            const btnRemover = `<button class="btn-remover-foto" data-id="${servicoId}">&times;</button>`;
+            // Adiciona um botão de remover foto apenas se for um usuário trabalhador
+            const btnRemover = userType === 'trabalhador' ? `<button class="btn-remover-foto" data-id="${servicoId}">&times;</button>` : '';
 
             return `
-                <div class="servico-item">
+                <div class="servico-item" data-id="${servicoId}">
                     <img src="${imageUrl}" alt="Imagem de Serviço" class="foto-servico">
                     ${btnRemover}
                 </div>
@@ -206,7 +212,8 @@ const renderPortfolio = (servicos) => {
         // Adiciona event listeners para os botões de remover
         document.querySelectorAll('.btn-remover-foto').forEach(btn => {
             btn.addEventListener('click', async (event) => {
-                const servicoId = event.target.dataset.id;
+                const item = event.target.closest('.servico-item');
+                const servicoId = item.dataset.id;
                 if (confirm('Tem certeza que deseja remover este serviço?')) {
                     try {
                         const response = await fetch(`/api/user/${userId}/servicos/${servicoId}`, {
