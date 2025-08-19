@@ -8,17 +8,19 @@ body {
     box-sizing: border-box;
 }
 
-/* Estilos para o contêiner principal - Solução PROFISSIONAL de largura */
-body.profile-page .container {
+/* Espaçamento e largura do contêiner principal */
+.container {
     background-color: #ffffff;
     padding: 40px;
     border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     width: 100%;
-    max-width: 1000px; /* Altere para a largura que você quer */
+    max-width: 1000px; /* A largura que você quer */
     box-sizing: border-box;
-    margin: 20px auto;
+    margin: 20px auto; /* Esta regra centraliza o contêiner horizontalmente */
+    text-align: center; /* Centraliza o conteúdo de texto e elementos de linha */
 }
+
 
 /* Estilos para a caixa de perfil */
 .perfil-box {
