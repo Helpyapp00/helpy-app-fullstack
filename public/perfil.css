@@ -6,9 +6,14 @@ body {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    
+    /* Configurações do Flexbox para centralizar apenas horizontalmente */
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Centraliza o conteúdo horizontalmente */
 }
 
-/* Espaçamento e largura do contêiner principal */
+/* O contêiner principal */
 .container {
     background-color: #ffffff;
     padding: 40px;
@@ -17,9 +22,9 @@ body {
     width: 100%;
     max-width: 1000px; /* A largura que você quer */
     box-sizing: border-box;
-    margin: 20px auto; /* Esta regra centraliza o contêiner horizontalmente */
-    text-align: center; /* Centraliza o conteúdo de texto e elementos de linha */
+    margin-bottom: 20px; /* Adiciona margem na parte de baixo para um respiro visual */
 }
+
 
 
 /* Estilos para a caixa de perfil */
