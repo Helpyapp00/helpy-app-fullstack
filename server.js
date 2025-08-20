@@ -529,3 +529,23 @@ app.post('/api/user/:id/avaliar', authenticateToken, async (req, res) => {
 app.listen(port, () => {
     console.log(`Servidor de backend rodando em http://localhost:${port}`);
 });
+
+// Rota para buscar detalhes de um serviço específico
+app.get('/api/servico/:servicoId', async (req, res) => {
+    try {
+        const { servicoId } = req.params;
+        
+        // A 'Servico' aqui é o nome do seu modelo de dados no banco de dados.
+        // Se o nome for diferente, por favor, ajuste-o.
+        const servico = await Servico.findById(servicoId).populate('avaliacoes'); 
+
+        if (!servico) {
+            return res.status(404).json({ message: 'Serviço não encontrado.' });
+        }
+
+        res.status(200).json(servico);
+    } catch (error) {
+        console.error('Erro ao buscar serviço:', error);
+        res.status(500).json({ message: 'Erro interno do servidor.' });
+    }
+});
