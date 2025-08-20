@@ -168,74 +168,89 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // Função para renderizar o portfólio
-    const renderPortfolio = (servicos) => {
-        if (!servicos || servicos.length === 0) {
-            mensagemGaleriaVazia.classList.remove('oculto');
-            galeriaServicos.innerHTML = '';
-        } else {
-            mensagemGaleriaVazia.classList.add('oculto');
-            
-            const htmlContent = servicos.map(servico => {
-                const imageUrl = typeof servico === 'string' ? servico : (servico.url || servico.imageUrl || servico.photoUrl || servico);
-                const servicoId = typeof servico === 'object' ? servico._id : '';
-
-                const btnRemover = userType === 'trabalhador' ? `<button class="btn-remover-foto" data-id="${servicoId}">&times;</button>` : '';
-
-                return `
-                    <div class="servico-item" data-id="${servicoId}">
-                        <img src="${imageUrl}" alt="Imagem de Serviço" class="foto-servico">
-                        ${btnRemover}
-                    </div>
-                `;
-            }).join('');
-
-            galeriaServicos.innerHTML = htmlContent;
-
-            // Adiciona event listeners para as novas imagens
-        document.querySelectorAll('.foto-servico').forEach(img => {
-        img.addEventListener('click', async () => {
-            const item = img.closest('.servico-item');
-            const servicoId = item.dataset.id;
-
-            // Oculta a área de informações por padrão
-            const infoArea = document.getElementById('modal-info-area');
-            infoArea.style.display = 'none';
-
-            modalImage.src = img.src;
-            imageModal.classList.add('visible');
-
-            if (servicoId) {
-                try {
-                    const response = await fetch(`/api/servico/${servicoId}`);
-                    if (response.ok) {
-                        const servico = await response.json();
-                        document.getElementById('servico-titulo-modal').textContent = servico.titulo || 'Título do Serviço';
-                        document.getElementById('servico-descricao-modal').textContent = servico.descricao || 'Detalhes do serviço...';
+            // Função para renderizar o portfólio
+            const renderPortfolio = (servicos) => {
+                if (!servicos || servicos.length === 0) {
+                    mensagemGaleriaVazia.classList.remove('oculto');
+                    galeriaServicos.innerHTML = '';
+                } else {
+                    mensagemGaleriaVazia.classList.add('oculto');
+                    
+                    const htmlContent = servicos.map(servico => {
+                        // Verifica se o item é um objeto com ID e URL, ou apenas uma URL string
+                        const servicoId = typeof servico === 'object' ? servico._id : '';
+                        const imageUrl = typeof servico === 'object' ? (servico.url || servico.imageUrl) : servico;
                         
-                        // Adicione a lógica para preencher as avaliações aqui
-                        const avaliacoesLista = document.getElementById('avaliacoes-lista');
-                        if (servico.avaliacoes && servico.avaliacoes.length > 0) {
-                            avaliacoesLista.innerHTML = servico.avaliacoes.map(avaliacao => `
-                                <div class="avaliacao-item">
-                                    <p class="avaliacao-comentario">${avaliacao.comentario}</p>
-                                    <div class="estrelas-avaliacao-item">
-                                        ${'<i class="fas fa-star"></i>'.repeat(avaliacao.estrelas)}
-                                        ${'<i class="far fa-star"></i>'.repeat(5 - avaliacao.estrelas)}
-                                    </div>
-                                </div>
-                            `).join('');
-                        } else {
-                            avaliacoesLista.innerHTML = '<p class="mensagem-vazia">Nenhuma avaliação ainda.</p>';
-                        }
-                        infoArea.style.display = 'block'; // Mostra a área de informações
-                    }
-                } catch (error) {
-                    console.error('Erro ao buscar detalhes do serviço:', error);
+                        // Se não houver URL válida, não renderiza o item
+                        if (!imageUrl) return '';
+
+                        const btnRemover = userType === 'trabalhador' ? `<button class="btn-remover-foto" data-id="${servicoId}">&times;</button>` : '';
+
+                        return `
+                            <div class="servico-item" data-id="${servicoId}">
+                                <img src="${imageUrl}" alt="Imagem de Serviço" class="foto-servico">
+                                ${btnRemover}
+                            </div>
+                        `;
+                    }).join('');
+
+                    galeriaServicos.innerHTML = htmlContent;
+
+                    // Re-adiciona os event listeners para os novos elementos
+                    document.querySelectorAll('.foto-servico').forEach(img => {
+                        img.addEventListener('click', async () => {
+                            const item = img.closest('.servico-item');
+                            const servicoId = item.dataset.id;
+                            
+                            // Se não houver ID, o modal não mostrará a área de informações
+                            if (!servicoId) {
+                                modalImage.src = img.src;
+                                document.getElementById('modal-info-area').style.display = 'none';
+                                imageModal.classList.add('visible');
+                                return;
+                            }
+
+                            const infoArea = document.getElementById('modal-info-area');
+                            infoArea.style.display = 'none';
+                            modalImage.src = img.src;
+                            imageModal.classList.add('visible');
+
+                            try {
+                                const response = await fetch(`/api/servico/${servicoId}`);
+                                if (response.ok) {
+                                    const servico = await response.json();
+                                    document.getElementById('servico-titulo-modal').textContent = servico.titulo || 'Título do Serviço';
+                                    document.getElementById('servico-descricao-modal').textContent = servico.descricao || 'Detalhes do serviço...';
+                                    
+                                    const avaliacoesLista = document.getElementById('avaliacoes-lista');
+                                    if (servico.avaliacoes && servico.avaliacoes.length > 0) {
+                                        avaliacoesLista.innerHTML = servico.avaliacoes.map(avaliacao => `
+                                            <div class="avaliacao-item">
+                                                <p class="avaliacao-comentario">${avaliacao.comentario}</p>
+                                                <div class="estrelas-avaliacao-item">
+                                                    ${'<i class="fas fa-star"></i>'.repeat(avaliacao.estrelas)}
+                                                    ${'<i class="far fa-star"></i>'.repeat(5 - avaliacao.estrelas)}
+                                                </div>
+                                            </div>
+                                        `).join('');
+                                    } else {
+                                        avaliacoesLista.innerHTML = '<p class="mensagem-vazia">Nenhuma avaliação ainda.</p>';
+                                    }
+                                    infoArea.style.display = 'block';
+                                }
+                            } catch (error) {
+                                console.error('Erro ao buscar detalhes do serviço:', error);
+                                // Em caso de erro, apenas mostra a imagem
+                                infoArea.style.display = 'none';
+                            }
+                        });
+                    });
+                    
+                    document.querySelectorAll('.btn-remover-foto').forEach(btn => {
+                        // ... (o seu código para remover a foto pode ficar aqui)
+                    });
                 }
-            }
-        });
-    });
+            };
             
             document.querySelectorAll('.btn-remover-foto').forEach(btn => {
                 btn.addEventListener('click', async (event) => {
@@ -262,8 +277,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
             });
-        }
-    };
+        } );
+
     
     // Função para renderizar as estrelas da média de avaliação
     const renderMediaAvaliacao = (media) => {
@@ -513,4 +528,3 @@ document.addEventListener('DOMContentLoaded', () => {
     
     fetchUserProfile();
     loadUserInfo();
-});

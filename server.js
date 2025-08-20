@@ -53,13 +53,36 @@ const userSchema = new mongoose.Schema({
     totalAvaliacoes: { type: Number, default: 0 }
 });
 
-const User = mongoose.model('User', userSchema);
+// --- Novo Schema para Avaliações ---
+const avaliacaoSchema = new mongoose.Schema({
+    usuarioId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    estrelas: { type: Number, required: true },
+    comentario: { type: String, trim: true },
+    data: { type: Date, default: Date.now }
+});
+
+// --- Novo Schema para Serviços ---
+const servicoSchema = new mongoose.Schema({
+    url: { type: String, required: true },
+    titulo: { type: String, default: '' },
+    descricao: { type: String, default: '' },
+    avaliacoes: [avaliacaoSchema]
+});
+
+// --- Criação do Modelo Servico ---
+const Servico = mongoose.model('Servico', servicoSchema);
+
+const User = mongoose.model('User', userSchema);({
+    
+    servicosImagens: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Servico' }],
+})
 
 const postSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     content: { type: String, required: true },
     imageUrl: { type: String }, // URL da imagem do S3
     createdAt: { type: Date, default: Date.now }
+    
 });
 
 const Post = mongoose.model('Post', postSchema);
@@ -281,49 +304,33 @@ app.put('/api/user/:id', authenticateToken, upload.single('avatar'), async (req,
 });
 
 
-// Rota para adicionar imagens ao portfólio de serviços (apenas trabalhadores)
-app.post('/api/user/:id/servicos-imagens', authenticateToken, upload.array('servicoImagens', 5), async (req, res) => {
+app.post('/api/user/:id/servicos', verifyToken, upload.array('servicos', 10), async (req, res) => {
     try {
-        const userId = req.params.id;
-        if (req.user.userId !== userId || req.user.tipo !== 'trabalhador') {
-            return res.status(403).json({ success: false, message: 'Acesso não autorizado ou tipo de usuário incorreto.' });
-        }
-
-        if (!req.files || req.files.length === 0) {
-            return res.status(400).json({ success: false, message: 'Nenhuma imagem enviada.' });
-        }
-
-        const newImageUrls = [];
-        for (const file of req.files) {
-            const resizedImageBuffer = await sharp(file.buffer)
-                .resize(800, 600, {
-                    fit: sharp.fit.cover,
-                    withoutEnlargement: true
-                })
-                .toBuffer();
-            const uploadParams = {
-                Bucket: bucketName,
-                Key: `servicos/${Date.now()}-${file.originalname}`,
-                Body: resizedImageBuffer,
-                ContentType: file.mimetype,
-                
-            };
-            await s3.send(new PutObjectCommand(uploadParams));
-            newImageUrls.push(`https://${bucketName}.s3.${region}.amazonaws.com/${uploadParams.Key}`);
-        }
-
-        const user = await User.findById(userId);
+        const user = await User.findById(req.params.id);
         if (!user) {
-            return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
+            return res.status(404).json({ message: 'Usuário não encontrado.' });
         }
 
-        user.servicosImagens.push(...newImageUrls);
+        if (user.tipo !== 'trabalhador') {
+            return res.status(403).json({ message: 'Apenas trabalhadores podem adicionar fotos de serviço.' });
+        }
+
+        const urls = req.files.map(file => file.location);
+
+        const servicosAdicionados = [];
+        for (const url of urls) {
+            const novoServico = new Servico({ url: url });
+            await novoServico.save();
+            servicosAdicionados.push(novoServico._id);
+        }
+
+        user.servicosImagens.push(...servicosAdicionados);
         await user.save();
 
-        res.status(200).json({ success: true, message: 'Imagens de serviço adicionadas com sucesso!', imageUrls: newImageUrls });
+        res.status(200).json({ message: 'Fotos de serviço adicionadas com sucesso!', servicos: servicosAdicionados });
     } catch (error) {
-        console.error('Erro ao adicionar imagens de serviço:', error);
-        res.status(500).json({ success: false, message: 'Erro interno do servidor ao adicionar imagens de serviço.' });
+        console.error('Erro ao fazer upload de fotos de serviço:', error);
+        res.status(500).json({ message: 'Erro interno do servidor.' });
     }
 });
 
@@ -337,7 +344,9 @@ app.delete('/api/user/:userId/servicos-imagens/:imageIndex', authenticateToken, 
             return res.status(403).json({ success: false, message: 'Acesso não autorizado ou tipo de usuário incorreto.' });
         }
 
-        const user = await User.findById(userId);
+        const user = await User.findById(req.params.userId)
+            .populate('servicosImagens') // AQUI! Adicione esta linha
+            .exec();
         if (!user) {
             return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
         }
@@ -537,7 +546,10 @@ app.get('/api/servico/:servicoId', async (req, res) => {
         
         // A 'Servico' aqui é o nome do seu modelo de dados no banco de dados.
         // Se o nome for diferente, por favor, ajuste-o.
-        const servico = await Servico.findById(servicoId).populate('avaliacoes'); 
+        // Localize e substitua a linha de busca do serviço
+        const servico = await Servico.findById(servicoId)
+        .populate('avaliacoes') // AQUI! Adicione esta linha
+        .exec(); 
 
         if (!servico) {
             return res.status(404).json({ message: 'Serviço não encontrado.' });
