@@ -106,10 +106,38 @@
     </body>
 
     <div id="image-modal" class="image-modal-overlay">
-        <span class="close-modal-btn" id="close-image-modal">&times;</span>
-        <img class="image-modal-content" id="modal-image">
+        <div class="image-modal-content">
+            <span id="close-image-modal" class="close-modal-btn">&times;</span>
+            <div class="modal-main-content">
+                <img id="modal-image" src="" alt="Imagem Ampliada">
+                
+                <div id="modal-info-area" class="modal-info-area">
+                    <div class="servico-info-modal">
+                        <h4 id="servico-titulo-modal" contenteditable="true" placeholder="Título do Serviço"></h4>
+                        <p id="servico-descricao-modal" contenteditable="true" placeholder="Detalhes do serviço..."></p>
+                    </div>
+    
+                    <div class="avaliacao-modal">
+                        <h4>Avaliações de Clientes</h4>
+                        <div id="avaliacoes-lista">
+                            <p class="mensagem-vazia">Nenhuma avaliação ainda.</p>
+                        </div>
+                        <form id="form-avaliacao-servico" class="avaliacao-form">
+                            <div class="estrelas-input">
+                                <span class="fa fa-star" data-value="1"></span>
+                                <span class="fa fa-star" data-value="2"></span>
+                                <span class="fa fa-star" data-value="3"></span>
+                                <span class="fa fa-star" data-value="4"></span>
+                                <span class="fa fa-star" data-value="5"></span>
+                            </div>
+                            <textarea id="comentario-input" placeholder="Escreva sua avaliação..." required></textarea>
+                            <button type="submit" class="btn-enviar-avaliacao">Enviar Avaliação</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-
     <script src="perfil.js"></script>
 </body>
 </html>

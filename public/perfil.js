@@ -192,12 +192,50 @@ document.addEventListener('DOMContentLoaded', () => {
 
             galeriaServicos.innerHTML = htmlContent;
 
-            document.querySelectorAll('.foto-servico').forEach(img => {
-                img.addEventListener('click', () => {
-                    modalImage.src = img.src;
-                    imageModal.classList.add('visible');
-                });
-            });
+            // Adiciona event listeners para as novas imagens
+        document.querySelectorAll('.foto-servico').forEach(img => {
+        img.addEventListener('click', async () => {
+            const item = img.closest('.servico-item');
+            const servicoId = item.dataset.id;
+
+            // Oculta a área de informações por padrão
+            const infoArea = document.getElementById('modal-info-area');
+            infoArea.style.display = 'none';
+
+            modalImage.src = img.src;
+            imageModal.classList.add('visible');
+
+            if (servicoId) {
+                try {
+                    const response = await fetch(`/api/servico/${servicoId}`);
+                    if (response.ok) {
+                        const servico = await response.json();
+                        document.getElementById('servico-titulo-modal').textContent = servico.titulo || 'Título do Serviço';
+                        document.getElementById('servico-descricao-modal').textContent = servico.descricao || 'Detalhes do serviço...';
+                        
+                        // Adicione a lógica para preencher as avaliações aqui
+                        const avaliacoesLista = document.getElementById('avaliacoes-lista');
+                        if (servico.avaliacoes && servico.avaliacoes.length > 0) {
+                            avaliacoesLista.innerHTML = servico.avaliacoes.map(avaliacao => `
+                                <div class="avaliacao-item">
+                                    <p class="avaliacao-comentario">${avaliacao.comentario}</p>
+                                    <div class="estrelas-avaliacao-item">
+                                        ${'<i class="fas fa-star"></i>'.repeat(avaliacao.estrelas)}
+                                        ${'<i class="far fa-star"></i>'.repeat(5 - avaliacao.estrelas)}
+                                    </div>
+                                </div>
+                            `).join('');
+                        } else {
+                            avaliacoesLista.innerHTML = '<p class="mensagem-vazia">Nenhuma avaliação ainda.</p>';
+                        }
+                        infoArea.style.display = 'block'; // Mostra a área de informações
+                    }
+                } catch (error) {
+                    console.error('Erro ao buscar detalhes do serviço:', error);
+                }
+            }
+        });
+    });
             
             document.querySelectorAll('.btn-remover-foto').forEach(btn => {
                 btn.addEventListener('click', async (event) => {
