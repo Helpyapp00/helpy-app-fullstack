@@ -3,141 +3,108 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Helpy - Meu Perfil</title>
-    <link rel="icon" href="/public/helpy.ico" type="image/x-icon">
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="perfil.css">
+    <title>Perfil</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="perfil.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <div class="logo-box">
-            <img src="imagens/helpy-perfil.png" alt="Logo Helpy">
-            <h1>Helpy</h1>
-        </div>
-        <input type="text" class="search" placeholder="Buscar serviços ou profissionais..." disabled>
-        <div class="user-info">
-            <img id="user-avatar-header" src="imagens/default-user.png" alt="Avatar do Usuário" class="user-avatar-header">
-            <span id="user-name-header"></span>
-            <button id="back-to-feed-button">Voltar ao Feed</button>
-            <button id="logout-button">Sair</button>
-        </div>
+    <header class="header">
+        <a href="index.html" class="logo">Helpy</a>
+        <nav class="navbar">
+            <a href="index.html">Início</a>
+            <a href="explorar.html">Explorar</a>
+            <a href="perfil.html">Perfil</a>
+            <a href="login.html" id="logout-btn">Sair</a>
+        </nav>
+        <div id="perfil-icon" class="fas fa-user"></div>
     </header>
 
-    <main>
-        <div class="container">
-            <div class="perfil-box">
-                <img id="fotoPerfil" class="foto-perfil" src="imagens/default-profile.png" alt="Foto de Perfil">
-                
-                <div class="campos-edicao oculto">
-                    <label id="labelInputFotoPerfil" class="btn-selecionar-foto oculto" for="inputFotoPerfil">
-                        Alterar Foto
-                    </label>
-                    <input type="file" id="inputFotoPerfil" accept="image/*" class="oculto">
-                    <input type="text" id="inputNome" class="input-perfil oculto" placeholder="Seu nome">
-                    <input type="number" id="inputIdade" class="input-perfil oculto" placeholder="Sua idade">
-                    <input type="text" id="inputCidade" class="input-perfil oculto" placeholder="Sua cidade">
-                    <input type="text" id="inputAtuacao" class="input-perfil oculto" placeholder="Sua área de atuação">
-                    <textarea id="inputDescricao" class="input-perfil oculto" placeholder="Sua descrição"></textarea>
-                    <input type="text" id="inputWhatsapp" class="input-perfil oculto" placeholder="Seu WhatsApp">
-                    <input type="email" id="inputEmail" class="input-perfil oculto" placeholder="Seu e-mail">
+    <div class="content-perfil">
+        <div class="perfil-card">
+            <div class="perfil-header">
+                <img id="fotoPerfil" class="perfil-img" src="imagens/default-user.png" alt="User Profile Image">
+                <h2 id="nomePerfil">Nome do Usuário</h2>
+                <p>Tipo de Usuário: <span id="tipoPerfil"></span></p>
+                <div id="media-avaliacao-container">
+                    <span id="mediaAvaliacao" class="media-avaliacao"></span>
+                    <span id="totalAvaliacoes" class="total-avaliacoes"></span>
                 </div>
-
-                <h2 id="nomePerfil"></h2>
-                <p id="idadePerfil"></p>
-                <p id="cidadePerfil"></p>
-                <p id="areaPerfil"></p>
-                <p class="descricao-perfil" id="descricaoPerfil"></p>
-
-                <div class="botoes-acao">
-                    <button id="btnEditarPerfil" class="btn-perfil">Editar Perfil</button>
-                    <button id="btnSalvarPerfil" class="btn-perfil oculto">Salvar Alterações</button>
-                    <button id="btnCancelarEdicao" class="btn-perfil oculto">Cancelar</button>
-                </div>
-
-                <div class="contato">
-                    <p><a id="whatsappPerfil" href="#" target="_blank"><i class="fab fa-whatsapp"></i></a></p>
-                    <p><a id="emailPerfil" href="#"></a></p>
-                </div>
-            </div>
-
-            <div id="formAvaliacao" class="avaliacao oculto">
-                <h3>Avalie este profissional</h3>
-                <div class="estrelas">
-                    <span data-value="1"><i class="far fa-star"></i></span>
-                    <span data-value="2"><i class="far fa-star"></i></span>
-                    <span data-value="3"><i class="far fa-star"></i></span>
-                    <span data-value="4"><i class="far fa-star"></i></span>
-                    <span data-value="5"><i class="far fa-star"></i></span>
-                </div>
-                <p id="notaSelecionada"></p>
-                <textarea id="comentarioAvaliacaoInput" class="input-perfil" placeholder="Deixe um comentário sobre o serviço..."></textarea>
-                <button id="btnEnviarAvaliacao" class="btn-perfil">Enviar Avaliação</button>
-            </div>
-
-            <div class="media-avaliacao">
-                <h3>Média de Avaliações</h3>
-                <div id="mediaEstrelas" class="estrelas-media"></div>
-                <p id="totalAvaliacoes"></p>
             </div>
             
-            <div class="portfolio-servicos">
-                <h3>Portfólio de Serviços</h3>
-                <button id="btnAnexarFoto" class="btn-anexar-foto"><i class="fas fa-camera"></i> Anexar Fotos</button>
-                <input type="file" id="inputFotoServico" class="oculto" multiple accept="image/*">
-                <div id="galeriaServicos" class="galeria-servicos">
-                    <p id="mensagemGaleriaVazia" class="mensagem-vazia">Nenhuma imagem no portfólio ainda.</p>
+            <div class="perfil-body">
+                <h3>Informações Pessoais</h3>
+                <ul class="perfil-info">
+                    <li><i class="fas fa-envelope"></i> Email: <span id="emailPerfil"></span></li>
+                    <li><i class="fas fa-calendar-alt"></i> Idade: <span id="idadePerfil"></span></li>
+                    <li><i class="fas fa-map-marker-alt"></i> Cidade: <span id="cidadePerfil"></span></li>
+                    <li><i class="fas fa-phone"></i> Telefone: <span id="telefonePerfil"></span></li>
+                    <li><i class="fas fa-briefcase"></i> Atuação: <span id="atuacaoPerfil"></span></li>
+                </ul>
+                <div class="perfil-descricao">
+                    <h4>Descrição:</h4>
+                    <p id="descricaoPerfil"></p>
                 </div>
+            </div>
+
+            <div class="perfil-footer">
+                <button id="editarPerfilBtn" class="edit-btn">Editar Perfil</button>
             </div>
         </div>
-    </main>
-    
-    <body class="profile-page">
-        <header>
-            ...
-        </header>
-    
-        <main>
-            <div class="container">
-                ...
-            </div>
-        </main>
-        ...
-    </body>
 
-    <div id="image-modal" class="image-modal-overlay">
-        <div class="image-modal-content">
-            <span id="close-image-modal" class="close-modal-btn">&times;</span>
-            <div class="modal-main-content">
-                <img id="modal-image" src="" alt="Imagem Ampliada">
-                
-                <div id="modal-info-area" class="modal-info-area">
-                    <div class="servico-info-modal">
-                        <h4 id="servico-titulo-modal" contenteditable="true" placeholder="Título do Serviço"></h4>
-                        <p id="servico-descricao-modal" contenteditable="true" placeholder="Detalhes do serviço..."></p>
-                    </div>
-    
-                    <div class="avaliacao-modal">
-                        <h4>Avaliações de Clientes</h4>
-                        <div id="avaliacoes-lista">
-                            <p class="mensagem-vazia">Nenhuma avaliação ainda.</p>
-                        </div>
-                        <form id="form-avaliacao-servico" class="avaliacao-form">
-                            <div class="estrelas-input">
-                                <span class="fa fa-star" data-value="1"></span>
-                                <span class="fa fa-star" data-value="2"></span>
-                                <span class="fa fa-star" data-value="3"></span>
-                                <span class="fa fa-star" data-value="4"></span>
-                                <span class="fa fa-star" data-value="5"></span>
-                            </div>
-                            <textarea id="comentario-input" placeholder="Escreva sua avaliação..." required></textarea>
-                            <button type="submit" class="btn-enviar-avaliacao">Enviar Avaliação</button>
-                        </form>
-                    </div>
-                </div>
+        <div class="perfil-acoes">
+            <button id="mostrarServicosBtn" class="perfil-btn ativo">Serviços</button>
+            <button id="mostrarPostagensBtn" class="perfil-btn">Postagens</button>
+        </div>
+
+        <div id="secao-servicos" class="secao-perfil ativa">
+            <div class="servicos-header">
+                <h3>Minhas Fotos de Serviço</h3>
+                <button id="addServicoBtn" class="add-btn">Adicionar Serviço</button>
             </div>
+            <div id="galeriaServicos" class="galeria-servicos">
+                </div>
+        </div>
+        
+        <div id="secao-postagens" class="secao-perfil">
+            <h3>Minhas Postagens</h3>
+            <div id="minhasPostagens" class="minhas-postagens">
+                </div>
         </div>
     </div>
+    
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <h4>Editar Perfil</h4>
+            <form id="editForm">
+                <label for="editNome">Nome:</label>
+                <input type="text" id="editNome" name="nome">
+                
+                <label for="editIdade">Idade:</label>
+                <input type="number" id="editIdade" name="idade">
+
+                <label for="editCidade">Cidade:</label>
+                <input type="text" id="editCidade" name="cidade">
+
+                <label for="editTelefone">Telefone:</label>
+                <input type="text" id="editTelefone" name="telefone">
+
+                <label for="editAtuacao">Atuação:</label>
+                <input type="text" id="editAtuacao" name="atuacao">
+
+                <label for="editDescricao">Descrição:</label>
+                <textarea id="editDescricao" name="descricao"></textarea>
+                
+                <label for="editAvatar">Nova Foto de Perfil:</label>
+                <input type="file" id="editAvatar" name="avatar">
+                
+                <button type="submit" class="salvar-btn">Salvar Alterações</button>
+            </form>
+        </div>
+    </div>
+
     <script src="perfil.js"></script>
+    <script src="menu.js"></script>
 </body>
 </html>
