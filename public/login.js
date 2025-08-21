@@ -1,62 +1,59 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const loginForm = document.getElementById('login-form');
-    const feedbackMessage = document.getElementById('feedback-message');
-    const togglePassword = document.getElementById('toggle-password');
-    const senhaInput = document.getElementById('senha-login');
-    const btnLogin = document.getElementById('btn-login');
+document.addEventListener('DOMContentLoaded', function() {
+    const formLogin = document.getElementById('form-login');
+    const emailInput = document.getElementById('email');
+    const senhaInput = document.getElementById('senha');
+    const formMessage = document.getElementById('form-message');
 
-    if (togglePassword && senhaInput) {
-        togglePassword.addEventListener('click', function (e) {
-            const type = senhaInput.getAttribute('type') === 'password' ? 'text' : 'password';
-            senhaInput.setAttribute('type', type);
-            this.classList.toggle('fa-eye-slash');
-        });
+    function showMessage(message, type) {
+        formMessage.textContent = message;
+        formMessage.className = `form-message ${type}`;
+        formMessage.classList.remove('hidden');
+        if (type !== 'info') {
+            setTimeout(() => {
+                formMessage.classList.add('hidden');
+            }, 5000);
+        }
     }
 
-    if (loginForm) {
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+    formLogin.addEventListener('submit', async function(event) {
+        event.preventDefault(); // <-- Linha crucial para evitar que a tela pisque
 
-            const email = document.getElementById('email-login').value;
-            const senha = senhaInput.value;
+        const email = emailInput.value;
+        const senha = senhaInput.value;
 
-            btnLogin.disabled = true;
-            feedbackMessage.textContent = 'Processando...';
-            feedbackMessage.className = 'feedback-message';
+        if (!email || !senha) {
+            showMessage('Por favor, preencha todos os campos.', 'error');
+            return;
+        }
 
-            try {
-                const response = await fetch('/api/login', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ email, senha })
-                });
+        showMessage('Verificando credenciais...', 'info');
 
-                const data = await response.json();
+        try {
+            const response = await fetch('/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, senha })
+            });
 
-                if (response.ok && data.success) {
-                    localStorage.setItem('jwtToken', data.token);
-                    localStorage.setItem('userId', data.userId);
-                    localStorage.setItem('userType', data.userType);
-                    localStorage.setItem('userName', data.userName);
-                    localStorage.setItem('userPhotoUrl', data.userPhotoUrl);
-                    
-                    feedbackMessage.textContent = 'Login bem-sucedido! Redirecionando...';
-                    feedbackMessage.classList.add('success');
-                    
-                    window.location.href = 'index.html';
-                } else {
-                    feedbackMessage.textContent = data.message || 'Erro desconhecido. Por favor, tente novamente.';
-                    feedbackMessage.classList.add('error');
-                }
-            } catch (error) {
-                console.error('Erro de rede ou servidor:', error);
-                feedbackMessage.textContent = 'Erro: Não foi possível conectar ao servidor ou processar o login.';
-                feedbackMessage.classList.add('error');
-            } finally {
-                btnLogin.disabled = false;
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                showMessage(data.message || 'Login realizado com sucesso!', 'success');
+                localStorage.setItem('jwtToken', data.token);
+                localStorage.setItem('userId', data.userId);
+                localStorage.setItem('userType', data.userType);
+                localStorage.setItem('userName', data.userName || 'Usuário');
+                localStorage.setItem('userPhotoUrl', data.userPhotoUrl || 'https://via.placeholder.com/50?text=User');
+                
+                window.location.href = 'index.html'; // <-- A linha que faz o redirecionamento
+            } else {
+                showMessage(data.message || 'Erro ao fazer login. Verifique suas credenciais.', 'error');
             }
-        });
-    }
+        } catch (error) {
+            console.error('Erro ao enviar o formulário de login:', error);
+            showMessage('Erro: Não foi possível conectar ao servidor ou processar o login.', 'error');
+        }
+    });
 });
