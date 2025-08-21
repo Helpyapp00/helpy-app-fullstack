@@ -376,7 +376,44 @@ app.delete('/api/posts/:id', authenticateToken, async (req, res) => {
         res.status(500).json({ success: false, message: 'Erro interno do servidor ao excluir publicação.' });
     }
 });
+    // Middleware para verificar o token JWT e obter o ID do usuário
+const verifyToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1];
 
+    if (!token) return res.status(401).json({ success: false, message: 'Acesso negado. Token não fornecido.' });
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.userId = decoded.id; // Adiciona o ID do usuário à requisição
+        next();
+    } catch (error) {
+        res.status(403).json({ success: false, message: 'Token inválido ou expirado.' });
+    }
+};
+
+// Rota para buscar dados do perfil do usuário
+app.get('/api/user/:id', verifyToken, async (req, res) => {
+    try {
+        const userId = req.params.id;
+
+        // Verifica se o token JWT corresponde ao ID do usuário solicitado na rota
+        if (req.userId !== userId) {
+            return res.status(403).json({ success: false, message: 'Acesso negado. Token não corresponde ao usuário.' });
+        }
+
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
+        }
+
+        res.status(200).json({ success: true, user: user });
+    } catch (error) {
+        console.error('Erro ao buscar dados do perfil:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor ao buscar dados do perfil.' });
+    }
+});
 
 app.post('/api/user/:id/avaliar', authenticateToken, async (req, res) => {
     try {
