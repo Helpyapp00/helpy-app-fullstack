@@ -101,6 +101,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.static(path.join(__dirname, ''))); // <-- Linha ADICIONADA para servir arquivos estáticos
 
 // Middleware de Autenticação JWT
 const authenticateToken = (req, res, next) => {
