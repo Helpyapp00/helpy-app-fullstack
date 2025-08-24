@@ -101,7 +101,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use(express.static(path.join(__dirname, '..', 'public'))); // <-- Corrigido para ambiente local
 
 // Middleware de Autenticação JWT
 const authenticateToken = (req, res, next) => {
@@ -115,6 +115,11 @@ const authenticateToken = (req, res, next) => {
         next();
     });
 };
+
+// --- Rota para a Página Principal (NOVA) ---
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+});
 
 // --- Rotas de Autenticação e Usuário ---
 
