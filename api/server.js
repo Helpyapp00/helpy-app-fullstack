@@ -102,6 +102,9 @@ app.use(cors({
     origin: ['https://helpy-app-fullstack.vercel.app', 'https://www.helpyapp.net'],
     optionsSuccessStatus: 200
 }));
+
+app.options('*', cors());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
