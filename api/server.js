@@ -98,10 +98,13 @@ const upload = multer({
 
 const app = express();
 // --- Middlewares ---
-app.use(cors());
+app.use(cors({
+    origin: ['https://helpy-app-fullstack.vercel.app', 'https://www.helpyapp.net'],
+    optionsSuccessStatus: 200
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, '..', 'public'))); // <-- Corrigido para ambiente local
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 // Middleware de Autenticação JWT
 const authenticateToken = (req, res, next) => {
