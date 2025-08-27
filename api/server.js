@@ -98,12 +98,23 @@ const upload = multer({
 
 const app = express();
 // --- Middlewares ---
-app.use(cors({
-    origin: ['https://helpy-app-fullstack.vercel.app', 'https://www.helpyapp.net'],
-    optionsSuccessStatus: 200
-}));
+// --- Middlewares ---
+const allowedOrigins = ['https://helpy-app-fullstack.vercel.app', 'https://www.helpyapp.net'];
 
-app.options('*', cors());
+app.use(cors({
+    origin: function (origin, callback) {
+        // Permite requisições sem 'origin' (como de apps móveis ou Postman)
+        // ou se a origem estiver na nossa lista de permissões
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Acesso não permitido pela política de CORS'));
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Permite todos os métodos HTTP
+    allowedHeaders: ['Content-Type', 'Authorization'], // Adiciona o cabeçalho 'Authorization'
+    credentials: true
+}));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
