@@ -74,22 +74,6 @@ const Postagem = mongoose.model('Postagem', postagemSchema);
 const Servico = mongoose.model('Servico', servicoSchema);
 const Avaliacao = mongoose.model('Avaliacao', avaliacaoSchema);
 
-// --- Middleware CORS Manual (NOVO E CORRETO) ---
-app.use((req, res, next) => {
-    const origin = req.headers.origin;
-    const allowedOrigins = ['https://www.helpyapp.net', 'https://helpy-app-fullstack.vercel.app'];
-    if (allowedOrigins.includes(origin)) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-    }
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    if (req.method === 'OPTIONS') {
-        return res.status(200).end();
-    }
-    next();
-});
-
 // --- Middlewares ---
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
