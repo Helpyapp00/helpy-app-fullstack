@@ -12,13 +12,10 @@ const fs = require('fs');
 
 dotenv.config();
 
-// --- Ordem correta: Primeiro, inicialize o app e a porta ---
 const app = express();
 const port = process.env.PORT || 3000;
 
-// --- Configuração da Conexão ao MongoDB ---
 const DB_URI = process.env.MONGODB_URI;
-
 if (!DB_URI) {
     console.error('ERRO: Variável de ambiente MONGODB_URI não está definida!');
     process.exit(1);
@@ -27,6 +24,7 @@ if (!DB_URI) {
 mongoose.connect(DB_URI)
     .then(() => console.log('Conectado ao MongoDB Atlas com sucesso!'))
     .catch(err => console.error('Erro ao conectar ao MongoDB Atlas:', err));
+
 
 // --- Schemas de Avaliação, Serviço, Postagem e Usuário ---
 const avaliacaoSchema = new mongoose.Schema({
@@ -218,15 +216,13 @@ app.delete('/api/posts/:id', authMiddleware, async (req, res) => {
             return res.status(404).json({ success: false, message: 'Postagem não encontrada.' });
         }
 
-        // Verifica se o usuário é o dono da postagem
         if (postagem.userId.toString() !== userId) {
             return res.status(403).json({ success: false, message: 'Acesso negado. Você não pode deletar esta postagem.' });
         }
 
-        // Deleta a imagem do S3 se ela existir
         if (postagem.imageUrl) {
             const urlObj = new URL(postagem.imageUrl);
-            const key = urlObj.pathname.substring(1); // Remove a primeira barra
+            const key = urlObj.pathname.substring(1);
             const command = new DeleteObjectCommand({
                 Bucket: bucketName,
                 Key: key,
@@ -258,7 +254,7 @@ app.get('/api/posts', async (req, res) => {
 app.get('/api/usuario/:id', async (req, res) => {
     try {
         const { id } = req.params;
-        const user = await User.findById(id).select('-senha'); // Exclui a senha da resposta
+        const user = await User.findById(id).select('-senha');
         if (!user) {
             return res.status(404).json({ message: 'Usuário não encontrado.' });
         }
@@ -288,14 +284,12 @@ app.put('/api/editar-perfil/:id', authMiddleware, upload.single('avatar'), async
         const { nome, idade, cidade, telefone, atuacao, descricao } = req.body;
         const avatarFile = req.file;
 
-        // Verifica se o ID do usuário logado corresponde ao ID do perfil
         if (req.user.id !== id) {
             return res.status(403).json({ success: false, message: 'Acesso negado. Você só pode editar seu próprio perfil.' });
         }
 
         let fotoUrl = null;
         if (avatarFile) {
-            // Se um novo avatar foi enviado, faça o upload para o S3
             const imageBuffer = await sharp(avatarFile.buffer)
                 .resize(400, 400, { fit: 'cover' })
                 .toFormat('jpeg')
@@ -338,7 +332,7 @@ app.get('/api/trabalhadores', async (req, res) => {
         let query = { tipo: 'trabalhador' };
 
         if (search) {
-            const searchRegex = new RegExp(search, 'i'); // 'i' para case-insensitive
+            const searchRegex = new RegExp(search, 'i');
             query = {
                 tipo: 'trabalhador',
                 $or: [
@@ -465,7 +459,6 @@ app.listen(port, () => {
     console.log(`Servidor de backend rodando em http://localhost:${port}`);
 });
 
-// Rota para buscar detalhes de um serviço específico
 app.get('/api/servico/:servicoId', async (req, res) => {
     try {
         const { servicoId } = req.params;
