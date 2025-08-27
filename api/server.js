@@ -1,6 +1,5 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
@@ -9,8 +8,13 @@ const path = require('path');
 const dotenv = require('dotenv');
 const sharp = require('sharp');
 const { URL } = require('url');
+const fs = require('fs');
 
 dotenv.config();
+
+// --- Ordem correta: Primeiro, inicialize o app e a porta ---
+const app = express();
+const port = process.env.PORT || 3000;
 
 // --- Configuração da Conexão ao MongoDB ---
 const DB_URI = process.env.MONGODB_URI;
@@ -33,384 +37,418 @@ const avaliacaoSchema = new mongoose.Schema({
 });
 
 const servicoSchema = new mongoose.Schema({
-    url: { type: String, required: true },
-    titulo: { type: String, default: '' },
-    descricao: { type: String, default: '' },
-    avaliacoes: [avaliacaoSchema]
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    title: { type: String, required: true },
+    description: { type: String, required: true },
+    images: { type: [String], default: [] },
+    createdAt: { type: Date, default: Date.now },
+    avaliacoes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Avaliacao' }]
 });
 
-const postSchema = new mongoose.Schema({
+const postagemSchema = new mongoose.Schema({
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    content: { type: String },
+    content: { type: String, required: true },
     imageUrl: { type: String },
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
 });
 
 const userSchema = new mongoose.Schema({
     nome: { type: String, required: true },
     idade: { type: Number },
+    cidade: { type: String },
+    tipo: { type: String, enum: ['cliente', 'trabalhador'], required: true },
+    atuacao: { type: String, default: null },
+    telefone: { type: String, default: null },
+    descricao: { type: String, default: null },
     email: { type: String, required: true, unique: true },
     senha: { type: String, required: true },
-    tipo: { type: String, enum: ['trabalhador', 'cliente'], required: true },
-    avatarUrl: { type: String, default: 'https://via.placeholder.com/50?text=User' },
-    cidade: { type: String },
-    telefone: { type: String },
-    atuacao: { type: String },
-    descricao: { type: String },
-    servicosImagens: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Servico' }],
-    avaliacoes: [avaliacaoSchema],
+    foto: { type: String, default: 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png' },
+    isVerified: { type: Boolean, default: false },
     mediaAvaliacao: { type: Number, default: 0 },
-    totalAvaliacoes: { type: Number, default: 0 }
-});
+    totalAvaliacoes: { type: Number, default: 0 },
+    avaliacoes: [avaliacaoSchema]
+}, { timestamps: true });
 
-// --- Modelos de Dados ---
 const User = mongoose.model('User', userSchema);
+const Postagem = mongoose.model('Postagem', postagemSchema);
 const Servico = mongoose.model('Servico', servicoSchema);
-const Post = mongoose.model('Post', postSchema);
+const Avaliacao = mongoose.model('Avaliacao', avaliacaoSchema);
 
-// --- Configuração do AWS S3 ---
-const bucketName = process.env.S3_BUCKET_NAME;
-const region = process.env.AWS_REGION;
-const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
-const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
-const jwtSecret = process.env.JWT_SECRET;
-
-const s3 = new S3Client({
-    region,
-    credentials: {
-        accessKeyId,
-        secretAccessKey
+// --- Middleware CORS Manual (NOVO E CORRETO) ---
+app.use((req, res, next) => {
+    const origin = req.headers.origin;
+    const allowedOrigins = ['https://www.helpyapp.net', 'https://helpy-app-fullstack.vercel.app'];
+    if (allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
     }
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+    next();
 });
 
-// --- Configuração do Multer ---
-const upload = multer({
-    storage: multer.memoryStorage(),
-    fileFilter: (req, file, cb) => {
-        if (file.mimetype.startsWith('image/')) {
-            cb(null, true);
-        } else {
-            cb(new Error('Apenas imagens são permitidas!'), false);
-        }
-    },
-    limits: { fileSize: 5 * 1024 * 1024 } // 5 MB
-});
-
-const app = express();
 // --- Middlewares ---
-// --- Middlewares ---
-const allowedOrigins = ['https://helpy-app-fullstack.vercel.app', 'https://www.helpyapp.net'];
-
-app.use(cors({
-    origin: function (origin, callback) {
-        // Permite requisições sem 'origin' (como de apps móveis ou Postman)
-        // ou se a origem estiver na nossa lista de permissões
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Acesso não permitido pela política de CORS'));
-        }
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Permite todos os métodos HTTP
-    allowedHeaders: ['Content-Type', 'Authorization'], // Adiciona o cabeçalho 'Authorization'
-    credentials: true
-}));
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
-// Middleware de Autenticação JWT
-const authenticateToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if (token == null) return res.status(401).json({ success: false, message: 'Token não fornecido.' });
-
-    jwt.verify(token, jwtSecret, (err, user) => {
-        if (err) return res.status(403).json({ success: false, message: 'Token inválido.' });
-        req.user = user;
-        next();
-    });
-};
-
-// --- Rota para a Página Principal (NOVA) ---
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
-});
-
-// --- Rotas de Autenticação e Usuário ---
-
-// Rota de Registro
-app.post('/api/register', upload.single('fotoPerfil'), async (req, res) => {
-    try {
-        const { nome, idade, email, senha, tipo, cidade, telefone, atuacao, descricao } = req.body;
-        
-        if (!nome || !email || !senha || !tipo) {
-            return res.status(400).json({ success: false, message: 'Nome, email, senha e tipo são obrigatórios.' });
-        }
-        
-        const hashedPassword = await bcrypt.hash(senha, 10);
-        let avatarUrl = 'https://via.placeholder.com/50?text=User';
-
-        if (req.file) {
-            const resizedAvatarBuffer = await sharp(req.file.buffer)
-                .resize(400, 400, { fit: 'cover', withoutEnlargement: true })
-                .toBuffer();
-
-            const key = `avatars/${Date.now()}-${req.file.originalname}`;
-            const uploadParams = {
-                Bucket: bucketName,
-                Key: key,
-                Body: resizedAvatarBuffer,
-                ContentType: req.file.mimetype,
-            };
-            await s3.send(new PutObjectCommand(uploadParams));
-            avatarUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
-        }
-
-        const newUser = new User({ nome, idade, email, senha: hashedPassword, tipo, avatarUrl, cidade, telefone, atuacao, descricao });
-        await newUser.save();
-        res.status(201).json({ success: true, message: 'Usuário registrado com sucesso!' });
-    } catch (error) {
-        console.error('Erro no registro:', error);
-        if (error.code === 11000) {
-            return res.status(409).json({ success: false, message: 'Este e-mail já está cadastrado.' });
-        }
-        res.status(500).json({ success: false, message: 'Erro interno do servidor durante o registro.' });
-    }
-});
-
-
-// Rota de Login
+// --- Rota de Login ---
 app.post('/api/login', async (req, res) => {
+    const { email, senha } = req.body;
     try {
-        const { email, senha } = req.body;
         const user = await User.findOne({ email });
-
         if (!user) {
-            return res.status(400).json({ success: false, message: 'Credenciais inválidas.' });
+            return res.status(404).json({ message: 'Usuário não encontrado.' });
         }
-
         const isMatch = await bcrypt.compare(senha, user.senha);
         if (!isMatch) {
-            return res.status(400).json({ success: false, message: 'Credenciais inválidas.' });
+            return res.status(400).json({ message: 'Credenciais inválidas.' });
         }
-
-        const token = jwt.sign({ userId: user._id, email: user.email, tipo: user.tipo }, jwtSecret, { expiresIn: '1h' });
-        res.status(200).json({
-            success: true,
-            message: 'Login bem-sucedido!',
-            token,
-            userId: user._id,
-            userType: user.tipo,
-            userName: user.nome,
-            userPhotoUrl: user.avatarUrl
-        });
+        const token = jwt.sign({ id: user._id, email: user.email, tipo: user.tipo }, process.env.JWT_SECRET, { expiresIn: '1d' });
+        res.json({ success: true, message: 'Login bem-sucedido!', token, user });
     } catch (error) {
         console.error('Erro no login:', error);
-        res.status(500).json({ success: false, message: 'Erro interno do servidor durante o login.' });
+        res.status(500).json({ message: 'Erro interno do servidor.' });
     }
 });
 
-// Rota para buscar dados do perfil do usuário
-app.get('/api/user/:id', authenticateToken, async (req, res) => {
+// --- Rota de Cadastro ---
+app.post('/api/cadastro', async (req, res) => {
     try {
-        const user = await User.findById(req.params.id)
-            .select('-senha')
-            .populate('servicosImagens')
-            .exec();
-        
-        if (!user) {
-            return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
-        }
-        res.status(200).json({ success: true, user: user });
+        const { nome, idade, cidade, tipo, atuacao, telefone, descricao, email, senha } = req.body;
+
+        const salt = await bcrypt.genSalt(10);
+        const senhaHash = await bcrypt.hash(senha, salt);
+
+        const newUser = new User({
+            nome,
+            idade,
+            cidade,
+            tipo,
+            atuacao: tipo === 'trabalhador' ? atuacao : null,
+            telefone,
+            descricao,
+            email,
+            senha: senhaHash
+        });
+
+        await newUser.save();
+
+        const token = jwt.sign({ id: newUser._id, email: newUser.email, tipo: newUser.tipo }, process.env.JWT_SECRET, { expiresIn: '1d' });
+
+        res.status(201).json({ success: true, message: 'Usuário cadastrado com sucesso!', token, user: newUser });
     } catch (error) {
-        console.error('Backend - Erro ao buscar dados do usuário:', error);
-        res.status(500).json({ success: false, message: 'Erro interno do servidor ao buscar dados do usuário.' });
-    }
-});
-
-app.put('/api/user/:id', authenticateToken, upload.single('avatar'), async (req, res) => {
-    try {
-        const userId = req.params.id;
-        if (req.user.userId !== userId) {
-            return res.status(403).json({ success: false, message: 'Acesso não autorizado para atualizar este perfil.' });
-        }
-
-        const updates = req.body;
-        if (req.file) {
-            const resizedAvatarBuffer = await sharp(req.file.buffer)
-                .resize(400, 400, { fit: 'cover', withoutEnlargement: true })
-                .toBuffer();
-
-            const key = `avatars/${Date.now()}-${req.file.originalname}`;
-            const uploadParams = {
-                Bucket: bucketName,
-                Key: key,
-                Body: resizedAvatarBuffer,
-                ContentType: req.file.mimetype,
-            };
-            await s3.send(new PutObjectCommand(uploadParams));
-            updates.avatarUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
-        }
-
-        if (updates.senha) {
-            updates.senha = await bcrypt.hash(updates.senha, 10);
-        }
-
-        const updatedUser = await User.findByIdAndUpdate(userId, updates, { new: true, runValidators: true }).select('-senha');
-        if (!updatedUser) {
-            return res.status(404).json({ success: false, message: 'Usuário não encontrado para atualização.' });
-        }
-        res.status(200).json({ success: true, message: 'Perfil atualizado com sucesso!', user: updatedUser });
-    } catch (error) {
-        console.error('Erro ao atualizar perfil:', error);
+        console.error('Erro ao cadastrar usuário:', error);
         if (error.code === 11000) {
-            return res.status(409).json({ success: false, message: 'Este e-mail já está em uso por outro usuário.' });
+            return res.status(409).json({ message: 'Email já cadastrado.' });
         }
-        res.status(500).json({ success: false, message: 'Erro interno do servidor ao atualizar perfil.' });
-    }
-});
-
-
-app.post('/api/user/:id/servicos', authenticateToken, upload.array('servicos', 10), async (req, res) => {
-    try {
-        const user = await User.findById(req.params.id);
-        if (!user) return res.status(404).json({ message: 'Usuário não encontrado.' });
-        if (user.tipo !== 'trabalhador') return res.status(403).json({ message: 'Apenas trabalhadores podem adicionar fotos de serviço.' });
-
-        const servicosAdicionados = [];
-        for (const file of req.files) {
-            const novoServico = new Servico({ url: file.location });
-            await novoServico.save();
-            servicosAdicionados.push(novoServico._id);
-        }
-
-        user.servicosImagens.push(...servicosAdicionados);
-        await user.save();
-        res.status(200).json({ message: 'Fotos de serviço adicionadas com sucesso!', servicos: servicosAdicionados });
-    } catch (error) {
-        console.error('Erro ao fazer upload de fotos de serviço:', error);
         res.status(500).json({ message: 'Erro interno do servidor.' });
     }
 });
 
-
-app.get('/api/servico/:servicoId', async (req, res) => {
+// --- Rotas de Autenticação (JWT) ---
+const authMiddleware = (req, res, next) => {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+        return res.status(401).json({ message: 'Nenhum token fornecido.' });
+    }
     try {
-        const { servicoId } = req.params;
-        const servico = await Servico.findById(servicoId).populate('avaliacoes').exec();
-        if (!servico) return res.status(404).json({ message: 'Serviço não encontrado.' });
-        res.status(200).json(servico);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+        next();
     } catch (error) {
-        console.error('Erro ao buscar serviço:', error);
-        res.status(500).json({ message: 'Erro interno do servidor.' });
+        res.status(401).json({ message: 'Token inválido.' });
+    }
+};
+
+// --- Configuração do S3 ---
+const s3Client = new S3Client({
+    region: process.env.AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     }
 });
 
-app.delete('/api/user/:userId/servicos-imagens/:servicoId', authenticateToken, async (req, res) => {
-    try {
-        const { userId, servicoId } = req.params;
-        if (req.user.userId !== userId) return res.status(403).json({ success: false, message: 'Acesso não autorizado.' });
+const bucketName = process.env.AWS_BUCKET_NAME;
 
-        const user = await User.findByIdAndUpdate(
-            userId,
-            { $pull: { servicosImagens: servicoId } },
-            { new: true }
-        );
+// Configuração do Multer para upload em memória
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
-        if (!user) return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
-
-        const servico = await Servico.findByIdAndDelete(servicoId);
-        if (!servico) return res.status(404).json({ success: false, message: 'Serviço não encontrado.' });
-
-        const s3Key = new URL(servico.url).pathname.substring(1);
-        if (s3Key) {
-            await s3.send(new DeleteObjectCommand({ Bucket: bucketName, Key: s3Key }));
-        }
-
-        res.status(200).json({ success: true, message: 'Serviço removido com sucesso.' });
-    } catch (error) {
-        console.error('Erro ao remover serviço:', error);
-        res.status(500).json({ success: false, message: 'Erro interno do servidor ao remover serviço.' });
-    }
-});
-
-app.post('/api/posts', authenticateToken, upload.single('image'), async (req, res) => {
+// --- Rota para criar postagem com imagem ---
+app.post('/api/posts', authMiddleware, upload.single('image'), async (req, res) => {
     try {
         const { content } = req.body;
-        const userId = req.user.userId;
+        const userId = req.user.id;
         let imageUrl = null;
 
         if (req.file) {
-            const resizedPostBuffer = await sharp(req.file.buffer)
-                .resize(1200, 800, { fit: 'inside', withoutEnlargement: true })
+            const imageBuffer = await sharp(req.file.buffer)
+                .resize(800, 600, {
+                    fit: sharp.fit.inside,
+                    withoutEnlargement: true,
+                })
+                .toFormat('jpeg')
                 .toBuffer();
 
-            const key = `posts/${Date.now()}-${req.file.originalname}`;
-            const uploadParams = {
+            const key = `posts/${Date.now()}_${req.file.originalname}`;
+            const command = new PutObjectCommand({
                 Bucket: bucketName,
                 Key: key,
-                Body: resizedPostBuffer,
-                ContentType: req.file.mimetype,
-            };
-            await s3.send(new PutObjectCommand(uploadParams));
-            imageUrl = `https://${bucketName}.s3.${region}.amazonaws.com/${key}`;
-        }
-        if (!content && !imageUrl) return res.status(400).json({ success: false, message: 'O conteúdo da publicação não pode estar vazio.' });
+                Body: imageBuffer,
+                ContentType: 'image/jpeg'
+            });
 
-        const newPost = new Post({ userId, content, imageUrl });
+            await s3Client.send(command);
+            imageUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+        }
+
+        const newPost = new Postagem({
+            userId,
+            content,
+            imageUrl
+        });
+
         await newPost.save();
-        res.status(201).json({ success: true, message: 'Publicação criada com sucesso!', post: newPost });
+
+        res.status(201).json({ success: true, message: 'Postagem criada com sucesso!', post: newPost });
     } catch (error) {
-        console.error('Erro ao criar publicação:', error);
-        res.status(500).json({ success: false, message: 'Erro interno do servidor ao criar publicação.' });
+        console.error('Erro ao criar postagem:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor ao criar postagem.' });
     }
 });
 
-
-app.get('/api/posts', authenticateToken, async (req, res) => {
+// --- Rota para deletar postagem ---
+app.delete('/api/posts/:id', authMiddleware, async (req, res) => {
     try {
-        const posts = await Post.find().sort({ createdAt: -1 }).populate('userId', 'nome avatarUrl tipo');
-        res.status(200).json({ success: true, posts: posts });
-    } catch (error) {
-        console.error('Erro ao obter publicações:', error);
-        res.status(500).json({ success: false, message: 'Erro interno do servidor ao obter publicações.' });
-    }
-});
+        const { id } = req.params;
+        const userId = req.user.id;
 
-app.delete('/api/posts/:id', authenticateToken, async (req, res) => {
-    try {
-        const postId = req.params.id;
-        const userId = req.user.userId;
-        const post = await Post.findById(postId);
+        const postagem = await Postagem.findById(id);
 
-        if (!post) return res.status(404).json({ success: false, message: 'Publicação não encontrada.' });
-        if (post.userId.toString() !== userId) return res.status(403).json({ success: false, message: 'Você não tem permissão para excluir esta publicação.' });
-
-        if (post.imageUrl) {
-            const key = new URL(post.imageUrl).pathname.substring(1);
-            await s3.send(new DeleteObjectCommand({ Bucket: bucketName, Key: key }));
+        if (!postagem) {
+            return res.status(404).json({ success: false, message: 'Postagem não encontrada.' });
         }
 
-        await Post.deleteOne({ _id: postId });
-        res.status(200).json({ success: true, message: 'Publicação excluída com sucesso.' });
+        // Verifica se o usuário é o dono da postagem
+        if (postagem.userId.toString() !== userId) {
+            return res.status(403).json({ success: false, message: 'Acesso negado. Você não pode deletar esta postagem.' });
+        }
+
+        // Deleta a imagem do S3 se ela existir
+        if (postagem.imageUrl) {
+            const urlObj = new URL(postagem.imageUrl);
+            const key = urlObj.pathname.substring(1); // Remove a primeira barra
+            const command = new DeleteObjectCommand({
+                Bucket: bucketName,
+                Key: key,
+            });
+            await s3Client.send(command);
+        }
+
+        await postagem.deleteOne();
+
+        res.json({ success: true, message: 'Postagem deletada com sucesso.' });
     } catch (error) {
-        console.error('Erro ao excluir publicação:', error);
-        res.status(500).json({ success: false, message: 'Erro interno do servidor ao excluir publicação.' });
+        console.error('Erro ao deletar postagem:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor ao deletar postagem.' });
     }
 });
 
-
-app.post('/api/user/:id/avaliar', authenticateToken, async (req, res) => {
+// --- Rota para buscar todas as postagens ---
+app.get('/api/posts', async (req, res) => {
     try {
-        const trabalhadorId = req.params.id;
-        const { estrelas, comentario } = req.body;
-        const avaliadorId = req.user.userId;
+        const posts = await Postagem.find().sort({ createdAt: -1 }).populate('userId', 'nome foto');
+        res.json(posts);
+    } catch (error) {
+        console.error('Erro ao buscar postagens:', error);
+        res.status(500).json({ message: 'Erro interno do servidor.' });
+    }
+});
 
-        if (!estrelas || estrelas < 1 || estrelas > 5) return res.status(400).json({ success: false, message: 'A avaliação deve ter entre 1 e 5 estrelas.' });
-        if (trabalhadorId === avaliadorId) return res.status(400).json({ success: false, message: 'Não é possível avaliar seu próprio perfil.' });
+// --- Rota para buscar um usuário por ID ---
+app.get('/api/usuario/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const user = await User.findById(id).select('-senha'); // Exclui a senha da resposta
+        if (!user) {
+            return res.status(404).json({ message: 'Usuário não encontrado.' });
+        }
+        res.json(user);
+    } catch (error) {
+        console.error('Erro ao buscar usuário:', error);
+        res.status(500).json({ message: 'Erro interno do servidor.' });
+    }
+});
 
+// --- Rota para buscar os serviços de um usuário ---
+app.get('/api/servicos/:userId', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const servicos = await Servico.find({ userId: userId });
+        res.json(servicos);
+    } catch (error) {
+        console.error('Erro ao buscar serviços do usuário:', error);
+        res.status(500).json({ message: 'Erro interno do servidor.' });
+    }
+});
+
+// --- Rota para editar informações de perfil ---
+app.put('/api/editar-perfil/:id', authMiddleware, upload.single('avatar'), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { nome, idade, cidade, telefone, atuacao, descricao } = req.body;
+        const avatarFile = req.file;
+
+        // Verifica se o ID do usuário logado corresponde ao ID do perfil
+        if (req.user.id !== id) {
+            return res.status(403).json({ success: false, message: 'Acesso negado. Você só pode editar seu próprio perfil.' });
+        }
+
+        let fotoUrl = null;
+        if (avatarFile) {
+            // Se um novo avatar foi enviado, faça o upload para o S3
+            const imageBuffer = await sharp(avatarFile.buffer)
+                .resize(400, 400, { fit: 'cover' })
+                .toFormat('jpeg')
+                .toBuffer();
+
+            const key = `avatars/${Date.now()}_${avatarFile.originalname}`;
+            const uploadCommand = new PutObjectCommand({
+                Bucket: bucketName,
+                Key: key,
+                Body: imageBuffer,
+                ContentType: 'image/jpeg'
+            });
+            await s3Client.send(uploadCommand);
+            fotoUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+        }
+
+        const updates = { nome, idade, cidade, telefone, atuacao, descricao };
+        if (fotoUrl) {
+            updates.foto = fotoUrl;
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(id, updates, { new: true, runValidators: true }).select('-senha');
+
+        if (!updatedUser) {
+            return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
+        }
+
+        res.json({ success: true, message: 'Perfil atualizado com sucesso!', user: updatedUser });
+
+    } catch (error) {
+        console.error('Erro ao editar perfil:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor ao atualizar o perfil.' });
+    }
+});
+
+// --- Rota para buscar todos os trabalhadores ---
+app.get('/api/trabalhadores', async (req, res) => {
+    try {
+        const { search } = req.query;
+        let query = { tipo: 'trabalhador' };
+
+        if (search) {
+            const searchRegex = new RegExp(search, 'i'); // 'i' para case-insensitive
+            query = {
+                tipo: 'trabalhador',
+                $or: [
+                    { nome: searchRegex },
+                    { atuacao: searchRegex },
+                    { descricao: searchRegex },
+                    { cidade: searchRegex }
+                ]
+            };
+        }
+
+        const trabalhadores = await User.find(query).select('-senha');
+        res.json(trabalhadores);
+    } catch (error) {
+        console.error('Erro ao buscar trabalhadores:', error);
+        res.status(500).json({ message: 'Erro interno do servidor.' });
+    }
+});
+
+// --- Rota para buscar um trabalhador por ID ---
+app.get('/api/trabalhador/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const trabalhador = await User.findById(id).select('-senha');
+
+        if (!trabalhador || trabalhador.tipo !== 'trabalhador') {
+            return res.status(404).json({ message: 'Trabalhador não encontrado.' });
+        }
+        res.json(trabalhador);
+    } catch (error) {
+        console.error('Erro ao buscar trabalhador:', error);
+        res.status(500).json({ message: 'Erro interno do servidor.' });
+    }
+});
+
+// --- Rota para criar um serviço ---
+app.post('/api/servico', authMiddleware, upload.array('images', 5), async (req, res) => {
+    try {
+        const { title, description } = req.body;
+        const userId = req.user.id;
+        const imageFiles = req.files;
+
+        if (req.user.tipo !== 'trabalhador') {
+            return res.status(403).json({ success: false, message: 'Apenas trabalhadores podem criar serviços.' });
+        }
+
+        const imageUrls = [];
+        if (imageFiles && imageFiles.length > 0) {
+            for (const file of imageFiles) {
+                const imageBuffer = await sharp(file.buffer)
+                    .resize(800, 600, { fit: 'inside', withoutEnlargement: true })
+                    .toFormat('jpeg')
+                    .toBuffer();
+
+                const key = `servicos/${Date.now()}_${file.originalname}`;
+                const command = new PutObjectCommand({
+                    Bucket: bucketName,
+                    Key: key,
+                    Body: imageBuffer,
+                    ContentType: 'image/jpeg'
+                });
+                await s3Client.send(command);
+                imageUrls.push(`https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`);
+            }
+        }
+
+        const novoServico = new Servico({
+            userId,
+            title,
+            description,
+            images: imageUrls
+        });
+
+        await novoServico.save();
+
+        res.status(201).json({ success: true, message: 'Serviço criado com sucesso!', servico: novoServico });
+    } catch (error) {
+        console.error('Erro ao criar serviço:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor ao criar serviço.' });
+    }
+});
+
+// --- Rota para avaliar um trabalhador ---
+app.post('/api/avaliar-trabalhador', authMiddleware, async (req, res) => {
+    try {
+        const { trabalhadorId, estrelas, comentario } = req.body;
+        const avaliadorId = req.user.id;
+
+        if (req.user.tipo === 'trabalhador') {
+            return res.status(403).json({ success: false, message: 'Trabalhadores não podem avaliar outros trabalhadores.' });
+        }
+        if (trabalhadorId === avaliadorId) {
+            return res.status(400).json({ success: false, message: 'Você não pode avaliar a si mesmo.' });
+        }
         const trabalhador = await User.findById(trabalhadorId);
         if (!trabalhador || trabalhador.tipo !== 'trabalhador') return res.status(404).json({ success: false, message: 'Trabalhador não encontrado ou tipo de usuário incorreto.' });
 
@@ -439,7 +477,24 @@ app.post('/api/user/:id/avaliar', authenticateToken, async (req, res) => {
     }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Servidor de backend rodando em http://localhost:${PORT}`);
+app.listen(port, () => {
+    console.log(`Servidor de backend rodando em http://localhost:${port}`);
+});
+
+// Rota para buscar detalhes de um serviço específico
+app.get('/api/servico/:servicoId', async (req, res) => {
+    try {
+        const { servicoId } = req.params;
+        const servico = await Servico.findById(servicoId)
+        .populate('avaliacoes')
+        .exec();
+
+        if (!servico) {
+            return res.status(404).json({ message: 'Serviço não encontrado.' });
+        }
+        res.json(servico);
+    } catch (error) {
+        console.error('Erro ao buscar detalhes do serviço:', error);
+        res.status(500).json({ message: 'Erro interno do servidor.' });
+    }
 });
