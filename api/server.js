@@ -365,5 +365,4 @@ app.get('/api/servico/:servicoId', async (req, res) => {
         res.status(500).json({ message: 'Erro interno do servidor.' });
     }
 });
-
-module.exports = app; // LINHA ESSENCIAL PARA A VERCEL
+module.exports = app;
