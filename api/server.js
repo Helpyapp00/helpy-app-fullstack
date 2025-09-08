@@ -72,7 +72,6 @@ const Avaliacao = mongoose.model('Avaliacao', avaliacaoSchema);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use('/api', app);
 
 // Rota de Login
 app.post('/api/login', async (req, res) => {
