@@ -8,7 +8,6 @@ const path = require('path');
 const dotenv = require('dotenv');
 const sharp = require('sharp');
 const { URL } = require('url');
-const fs = require('fs');
 
 dotenv.config();
 
