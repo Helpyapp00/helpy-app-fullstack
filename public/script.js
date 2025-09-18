@@ -1,420 +1,301 @@
-document.addEventListener('DOMContentLoaded', async function() {
-    // --- Elementos do DOM ---
-    const listaCategorias = document.getElementById('lista-categorias');
-    const postsContainer = document.getElementById('posts-container');
-    const newPostForm = document.getElementById('new-post-form');
-    const postContentInput = document.getElementById('post-content-input');
-    const postImageInput = document.getElementById('post-image-input');
-    const imageFilenameDisplay = document.getElementById('image-filename');
-    const imagePreview = document.getElementById('image-preview');
-    const postFormMessage = document.getElementById('post-form-message');
+document.addEventListener('DOMContentLoaded', () => {
+    const userId = localStorage.getItem('userId');
+    const token = localStorage.getItem('jwtToken');
+    const userType = localStorage.getItem('userType');
+    
+    // Elementos do DOM
+    const perfilBox = document.querySelector('.perfil-box');
+    const fotoPerfil = document.getElementById('fotoPerfil');
+    const nomePerfil = document.getElementById('nomePerfil');
+    const idadePerfil = document.getElementById('idadePerfil');
+    const cidadePerfil = document.getElementById('cidadePerfil');
+    const areaPerfil = document.getElementById('areaPerfil');
+    const descricaoPerfil = document.getElementById('descricaoPerfil');
+    const whatsappPerfil = document.getElementById('whatsappPerfil');
+    const emailPerfil = document.getElementById('emailPerfil');
+    const galeriaServicos = document.getElementById('galeriaServicos');
+    const mensagemGaleriaVazia = document.getElementById('mensagemGaleriaVazia');
+    
+    const btnEditarPerfil = document.getElementById('btnEditarPerfil');
+    const btnSalvarPerfil = document.getElementById('btnSalvarPerfil');
+    const btnCancelarEdicao = document.getElementById('btnCancelarEdicao');
+    const labelInputFotoPerfil = document.getElementById('labelInputFotoPerfil');
+    const inputFotoPerfil = document.getElementById('inputFotoPerfil');
+    const inputNome = document.getElementById('inputNome');
+    const inputIdade = document.getElementById('inputIdade');
+    const inputCidade = document.getElementById('inputCidade');
+    const inputArea = document.getElementById('inputArea');
+    const inputDescricao = document.getElementById('inputDescricao');
+    const inputTelefone = document.getElementById('inputTelefone');
+    
+    const imageModal = document.getElementById('image-modal');
+    const modalImage = document.getElementById('modal-image');
+    const closeImageModalBtn = document.getElementById('close-image-modal');
+    
+    const btnVoltarFeed = document.getElementById('btnVoltarFeed');
     const logoutButton = document.getElementById('logout-button');
-    const userAvatarHeader = document.getElementById('user-avatar-header');
-    const userNameHeader = document.getElementById('user-name-header');
-    const profileButton = document.getElementById('profile-button');
-
     const logoutConfirmModal = document.getElementById('logout-confirm-modal');
     const confirmLogoutYesBtn = document.getElementById('confirm-logout-yes');
     const confirmLogoutNoBtn = document.getElementById('confirm-logout-no');
 
-    // --- Backend API URL ---
-    const API_BASE_URL = 'https://helpyapp.net/api';
+    // Funções de feedback
+    function showMessage(message, type) {
+        const messageElement = document.getElementById('perfil-message');
+        if (messageElement) {
+            messageElement.textContent = message;
+            messageElement.className = `form-message ${type}`;
+            messageElement.classList.remove('hidden');
+            setTimeout(() => {
+                messageElement.classList.add('hidden');
+            }, 5000);
+        }
+    }
+    
+    // Funções de carregamento de dados
+    async function fetchPerfil(id, token) {
+        if (!id || !token) {
+            showMessage('Para ver este perfil, você precisa estar logado.', 'info');
+            return;
+        }
 
-    // --- Funções de Feedback ---
-    function showMessage(message, type, element = postFormMessage) {
-        element.textContent = message;
-        element.className = `form-message ${type}`;
-        if (message) {
-            element.classList.remove('hidden');
+        try {
+            const response = await fetch(`/api/user/${id}`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Erro ao buscar dados do perfil.');
+            }
+
+            const userData = await response.json();
+            renderPerfil(userData.user);
+        } catch (error) {
+            console.error('Erro ao buscar perfil:', error);
+            showMessage(`Erro: ${error.message || 'Não foi possível carregar o perfil.'}`, 'error');
+            // Redireciona para o login se o token for inválido
+            if (error.message.includes('Token')) {
+                localStorage.clear();
+                window.location.href = 'login.html';
+            }
+        }
+    }
+
+    async function fetchServicos(id) {
+        try {
+            const response = await fetch(`/api/servicos/${id}`);
+            if (!response.ok) {
+                throw new Error('Falha ao buscar os serviços.');
+            }
+            const servicos = await response.json();
+            renderServicos(servicos.servicos);
+        } catch (error) {
+            console.error('Erro ao buscar serviços:', error);
+            // Mensagem de erro não crítica
+        }
+    }
+
+    // Funções de Renderização
+    function renderPerfil(user) {
+        if (!user) {
+            perfilBox.innerHTML = '<p class="text-center text-gray-500 mt-8">Nenhum perfil encontrado.</p>';
+            return;
+        }
+
+        // Preenche os campos de visualização
+        fotoPerfil.src = user.foto || 'https://via.placeholder.com/150?text=User';
+        nomePerfil.textContent = user.nome;
+        idadePerfil.textContent = `Idade: ${user.idade || 'Não informado'}`;
+        cidadePerfil.textContent = `Cidade: ${user.cidade || 'Não informado'}`;
+        descricaoPerfil.textContent = user.descricao || 'Nenhuma descrição disponível.';
+
+        if (user.tipo === 'trabalhador') {
+            areaPerfil.textContent = `Área de Atuação: ${user.atuacao || 'Não informada'}`;
+            areaPerfil.style.display = 'block';
+            if (btnEditarPerfil) {
+                btnEditarPerfil.style.display = 'block';
+            }
         } else {
-            element.classList.add('hidden');
+            areaPerfil.style.display = 'none';
         }
+
+        whatsappPerfil.textContent = `Telefone: ${user.telefone || 'Não informado'}`;
+        emailPerfil.textContent = `Email: ${user.email || 'Não informado'}`;
     }
 
-    // --- Autenticação e Redirecionamento ---
-    function checkAuthAndRedirect() {
-        const token = localStorage.getItem('jwtToken');
-        if (!token) {
-            window.location.href = 'login.html';
-            return false;
-        }
-        return true;
-    }
-
-    // --- Carregar Informações do Usuário no Cabeçalho (Atualizado) ---
-    async function loadUserInfo() {
-        const token = localStorage.getItem('jwtToken');
-        const userId = localStorage.getItem('userId');
-
-        if (!token || !userId) {
-            console.warn('Token JWT ou User ID não encontrado. Usando placeholders.');
-            userAvatarHeader.src = 'https://via.placeholder.com/50?text=User';
-            userNameHeader.textContent = 'Usuário';
+    function renderServicos(servicos) {
+        galeriaServicos.innerHTML = '';
+        if (servicos.length === 0) {
+            mensagemGaleriaVazia.style.display = 'block';
             return;
+        } else {
+            mensagemGaleriaVazia.style.display = 'none';
         }
 
-        try {
-            const response = await fetch(`${API_BASE_URL}/user/${userId}`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            const data = await response.json();
-
-            if (response.ok && data.success && data.user) {
-                const user = data.user;
-                userNameHeader.textContent = user.nome || 'Usuário';
-                userAvatarHeader.src = user.avatarUrl || 'https://via.placeholder.com/50?text=User';
-
-                // Atualiza localStorage com os dados do backend
-                localStorage.setItem('userName', user.nome || 'Usuário');
-                localStorage.setItem('userPhotoUrl', user.avatarUrl || 'https://via.placeholder.com/50?text=User');
-            } else {
-                console.warn('Não foi possível carregar informações do usuário do backend, usando localStorage ou placeholders.', data.message);
-                // Fallback para localStorage se a API falhar
-                userNameHeader.textContent = localStorage.getItem('userName') || 'Usuário';
-                userAvatarHeader.src = localStorage.getItem('userPhotoUrl') || 'https://via.placeholder.com/50?text=User';
-            }
-        } catch (error) {
-            console.error('Erro ao buscar informações do usuário para o cabeçalho:', error);
-            // Fallback para localStorage em caso de erro de rede
-            userNameHeader.textContent = localStorage.getItem('userName') || 'Usuário';
-            userAvatarHeader.src = localStorage.getItem('userPhotoUrl') || 'https://via.placeholder.com/50?text=User';
-        }
-    }
-
-    // --- Logout ---
-    logoutButton.addEventListener('click', function() {
-        logoutConfirmModal.classList.remove('hidden');
-    });
-
-    confirmLogoutYesBtn.addEventListener('click', function() {
-        localStorage.removeItem('jwtToken');
-        localStorage.removeItem('userName');
-        localStorage.removeItem('userPhotoUrl');
-        localStorage.removeItem('userId');
-        localStorage.removeItem('userType'); // Remover também o tipo de usuário
-        window.location.href = 'login.html';
-    });
-
-    confirmLogoutNoBtn.addEventListener('click', function() {
-        logoutConfirmModal.classList.add('hidden');
-    });
-
-    // --- Redirecionar para Perfil ---
-    profileButton.addEventListener('click', function() {
-        window.location.href = 'perfil.html';
-    });
-
-    // --- Funções de Carregamento de Publicações ---
-    async function fetchPosts(category = 'todos', type = 'todos') {
-        showMessage('Carregando publicações...', 'info');
-        try {
-            const token = localStorage.getItem('jwtToken');
-            let url = `${API_BASE_URL}/posts`;
-            if (category !== 'todos' || type !== 'todos') {
-                url += `?category=${category}&type=${type}`;
-            }
-
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                renderPosts(data.posts);
-                showMessage('', 'success', postFormMessage); // Limpa a mensagem de carregamento
-            } else {
-                showMessage(data.message || 'Erro ao carregar publicações.', 'error');
-                renderPosts([]);
-            }
-        } catch (error) {
-            console.error('Erro ao buscar publicações:', error);
-            showMessage('Erro: Não foi possível carregar as publicações.', 'error');
-            renderPosts([]);
-        }
-    }
-
-    function renderPosts(postsToRender) {
-        postsContainer.innerHTML = '';
-        const loggedInUserId = localStorage.getItem('userId');
-
-        if (postsToRender.length === 0) {
-            postsContainer.innerHTML = '<p style="color:gray">Nenhuma publicação ainda. Seja o primeiro a publicar!</p>';
-            return;
-        }
-
-        postsToRender.forEach(p => {
-            const div = document.createElement('div');
-            div.className = 'post';
-            div.dataset.postId = p._id;
-
-            // Usa p.userPhotoUrl e p.userName que vêm da publicação no backend
-            const userAvatar = p.userId && p.userId.avatarUrl ? `<img src="${p.userId.avatarUrl}" alt="Avatar" class="user-avatar">` : `<i class="fas fa-user-circle user-avatar"></i>`;
-            const postImageHtml = p.imageUrl ? `<img src="${p.imageUrl}" alt="Imagem da publicação" class="post-image">` : '';
-            const postDate = new Date(p.createdAt).toLocaleString('pt-BR', { dateStyle: 'medium', timeStyle: 'short' });
-
-            let deleteButtonHtml = '';
-            if (loggedInUserId && p.userId && p.userId.toString() === loggedInUserId) { // Verifica se p.userId existe
-                deleteButtonHtml = `
-                    <button class="btn-excluir-post" data-post-id="${p._id}">
-                        <i class="fas fa-trash-alt"></i>
-                    </button>
-                    <div class="delete-confirmation-box hidden">
-                        <p>Confirmar exclusão?</p>
-                        <div class="confirmation-buttons">
-                            <button class="btn-confirm-yes-delete" data-post-id="${p._id}">Sim</button>
-                            <button class="btn-confirm-no-delete">Não</button>
-                        </div>
-                    </div>
-                `;
-            }
-
-            div.innerHTML = `
-                <div class="post-header">
-                    ${userAvatar}
-                    <div class="post-meta">
-                        <span class="user-name">${p.userId ? p.userId.nome : 'Usuário Desconhecido'}</span>
-                    </div>p
-                    ${deleteButtonHtml}
-                </div>
-                <p class="post-content">${p.content}</p>
-                ${postImageHtml}
-                <div style="margin-top:10px; display: flex; align-items: center; justify-content: space-between;">
-                    <div>
-                        <button title="Funcionalidade em desenvolvimento">Curtir</button>
-                        <button title="Funcionalidade em desenvolvimento">💬 Comentar</button>
-                    </div>
-                </div>
+        servicos.forEach(servico => {
+            const card = document.createElement('div');
+            card.className = 'servico-card bg-gray-100 p-4 rounded-lg shadow-md';
+            card.innerHTML = `
+                <img src="${servico.imagem || 'https://via.placeholder.com/300?text=Serviço'}" alt="${servico.titulo}" class="w-full h-auto rounded-lg mb-2 object-cover">
+                <h4 class="font-bold text-lg mb-1">${servico.titulo}</h4>
+                <p class="text-sm text-gray-700">${servico.descricao}</p>
             `;
-            postsContainer.appendChild(div);
+            galeriaServicos.appendChild(card);
         });
+    }
 
-        // Lógica de exclusão de posts (mantida como estava)
-        document.querySelectorAll('.btn-excluir-post').forEach(button => {
-            const oldClickListener = button.__deletePostClickListener;
-            if (oldClickListener) {
-                button.removeEventListener('click', oldClickListener);
+    // Lógica para o Modal da Imagem
+    if (fotoPerfil && imageModal && modalImage) {
+        fotoPerfil.style.cursor = 'pointer';
+        fotoPerfil.addEventListener('click', () => {
+            if (fotoPerfil.src && imageModal && modalImage) {
+                modalImage.src = fotoPerfil.src;
+                imageModal.classList.add('visible');
+            }
+        });
+    }
+    
+    if (closeImageModalBtn) {
+        closeImageModalBtn.addEventListener('click', () => {
+            imageModal.classList.remove('visible');
+        });
+    }
+    
+    if (imageModal) {
+        imageModal.addEventListener('click', (e) => {
+            if (e.target.id === 'image-modal') {
+                imageModal.classList.remove('visible');
+            }
+        });
+    }
+
+    // Lógica para o botão Voltar ao Feed
+    if (btnVoltarFeed) {
+        btnVoltarFeed.addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+    }
+
+    // Lógica para o botão de Logout
+    if (logoutButton) {
+        logoutButton.addEventListener('click', () => {
+            logoutConfirmModal.classList.add('visible');
+        });
+    }
+    
+    if (confirmLogoutYesBtn) {
+        confirmLogoutYesBtn.addEventListener('click', () => {
+            localStorage.clear();
+            window.location.href = 'index.html';
+        });
+    }
+    
+    if (confirmLogoutNoBtn) {
+        confirmLogoutNoBtn.addEventListener('click', () => {
+            logoutConfirmModal.classList.remove('visible');
+        });
+    }
+    
+    // Lógica de edição
+    const toggleEditMode = (isEditing) => {
+        const elements = [
+            nomePerfil, idadePerfil, cidadePerfil, areaPerfil, descricaoPerfil,
+            whatsappPerfil, emailPerfil
+        ];
+        elements.forEach(el => el.classList.toggle('hidden', isEditing));
+
+        const inputElements = [
+            inputNome, inputIdade, inputCidade, inputArea, inputDescricao,
+            inputTelefone
+        ];
+        inputElements.forEach(el => el.classList.toggle('hidden', !isEditing));
+        
+        // A foto de perfil também
+        fotoPerfil.classList.toggle('hidden', isEditing);
+        labelInputFotoPerfil.classList.toggle('hidden', !isEditing);
+
+        btnEditarPerfil.classList.toggle('hidden', isEditing);
+        btnSalvarPerfil.classList.toggle('hidden', !isEditing);
+        btnCancelarEdicao.classList.toggle('hidden', !isEditing);
+    };
+
+    if (btnEditarPerfil) {
+        btnEditarPerfil.addEventListener('click', () => {
+            toggleEditMode(true);
+            // Preenche os campos de input com os valores atuais
+            inputNome.value = nomePerfil.textContent.trim();
+            inputIdade.value = idadePerfil.textContent.replace('Idade: ', '').trim();
+            inputCidade.value = cidadePerfil.textContent.replace('Cidade: ', '').trim();
+            inputArea.value = areaPerfil.textContent.replace('Área de Atuação: ', '').trim();
+            inputDescricao.value = descricaoPerfil.textContent.trim();
+            inputTelefone.value = whatsappPerfil.textContent.replace('Telefone: ', '').trim();
+        });
+    }
+
+    if (btnCancelarEdicao) {
+        btnCancelarEdicao.addEventListener('click', () => {
+            toggleEditMode(false);
+        });
+    }
+
+    if (btnSalvarPerfil) {
+        btnSalvarPerfil.addEventListener('click', async () => {
+            const formData = new FormData();
+            formData.append('nome', inputNome.value);
+            formData.append('idade', inputIdade.value);
+            formData.append('cidade', inputCidade.value);
+            formData.append('descricao', inputDescricao.value);
+            formData.append('telefone', inputTelefone.value);
+
+            // Adiciona a área de atuação apenas se for trabalhador
+            if (userType === 'trabalhador') {
+                formData.append('atuacao', inputArea.value);
             }
 
-            const newClickListener = function(event) {
-                event.stopPropagation();
-
-                document.querySelectorAll('.delete-confirmation-box').forEach(box => {
-                    if (box !== this.nextElementSibling) {
-                        box.classList.add('hidden');
-                    }
+            // Adiciona a foto se uma nova for selecionada
+            if (inputFotoPerfil.files && inputFotoPerfil.files[0]) {
+                formData.append('foto', inputFotoPerfil.files[0]);
+            }
+            
+            try {
+                const response = await fetch(`/api/user/${userId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData,
                 });
 
-                const confirmationBox = this.nextElementSibling;
-                if (confirmationBox) {
-                    confirmationBox.classList.toggle('hidden');
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.message || 'Falha ao atualizar o perfil.');
                 }
-            };
-            button.addEventListener('click', newClickListener);
-            button.__deletePostClickListener = newClickListener;
-
-            const confirmationBox = button.nextElementSibling;
-            if (confirmationBox) {
-                const yesButton = confirmationBox.querySelector('.btn-confirm-yes-delete');
-                const noButton = confirmationBox.querySelector('.btn-confirm-no-delete');
-
-                const oldYesListener = yesButton.__yesClickListener;
-                if (oldYesListener) {
-                    yesButton.removeEventListener('click', oldYesListener);
+                
+                const data = await response.json();
+                showMessage('Perfil atualizado com sucesso!', 'success');
+                // Atualiza o localStorage com o novo nome e URL da foto
+                localStorage.setItem('userName', data.user.nome);
+                if (data.user.foto) {
+                    localStorage.setItem('userPhotoUrl', data.user.foto);
                 }
-                const oldNoListener = noButton.__noClickListener;
-                if (oldNoListener) {
-                    noButton.removeEventListener('click', oldNoListener);
-                }
-
-                const newYesListener = async function(event) {
-                    event.stopPropagation();
-                    const postId = this.dataset.postId;
-                    await deletePost(postId);
-                    confirmationBox.classList.add('hidden');
-                };
-                const newNoListener = function(event) {
-                    event.stopPropagation();
-                    confirmationBox.classList.add('hidden');
-                };
-
-                yesButton.addEventListener('click', newYesListener);
-                noButton.addEventListener('click', newNoListener);
-
-                yesButton.__yesClickListener = newYesListener;
-                noButton.__noClickListener = newNoListener;
-            }
-        });
-
-        document.addEventListener('click', e => {
-            if (!e.target.closest('.delete-confirmation-box') && !e.target.closest('.btn-excluir-post')) {
-                document.querySelectorAll('.delete-confirmation-box').forEach(box => {
-                    box.classList.add('hidden');
-                });
+                toggleEditMode(false);
+                fetchPerfil(userId, token); // Recarrega os dados do perfil
+            } catch (error) {
+                console.error('Erro ao salvar o perfil:', error);
+                showMessage(`Erro: ${error.message}`, 'error');
             }
         });
     }
 
-    async function deletePost(postId) {
-        showMessage('Excluindo publicação...', 'info');
-        try {
-            const token = localStorage.getItem('jwtToken');
-            const response = await fetch(`${API_BASE_URL}/posts/${postId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                showMessage(data.message || 'Publicação excluída com sucesso!', 'success');
-                document.querySelector(`.post[data-post-id=\"${postId}\"]`).remove();
-            } else {
-                showMessage(data.message || 'Erro ao excluir publicação.', 'error');
-            }
-        } catch (error) {
-            console.error('Erro ao excluir publicação:', error);
-            showMessage('Erro: Não foi possível excluir a publicação.', 'error');
-        }
-    }
-
-    // --- Filtragem de Feed por Categoria e Tipo ---
-    function filtrarFeed(categoria, tipo) {
-        fetchPosts(categoria, tipo);
-    }
-
-    // --- Criação de Publicação ---
-    newPostForm.addEventListener('submit', async function(event) {
-        event.preventDefault();
-
-        const content = postContentInput.value.trim();
-        const imageFile = postImageInput.files[0];
-
-        if (!content && !imageFile) {
-            showMessage('Por favor, escreva algo ou adicione uma imagem para publicar.', 'error', postFormMessage);
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('content', content);
-        if (imageFile) {
-            formData.append('image', imageFile);
-        }
-
-        // Adiciona userName e userPhotoUrl no FormData
-        // Esses dados virão do localStorage, que foi atualizado por loadUserInfo ou login.js
-        const userName = localStorage.getItem('userName');
-        const userPhotoUrl = localStorage.getItem('userPhotoUrl');
-        if (userName) formData.append('userName', userName);
-        if (userPhotoUrl) formData.append('userPhotoUrl', userPhotoUrl);
-
-
-        try {
-            const token = localStorage.getItem('jwtToken');
-            const response = await fetch(`${API_BASE_URL}/posts`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                    // 'Content-Type': 'multipart/form-data' é automaticamente definido pelo navegador para FormData
-                },
-                body: formData
-            });
-
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                showMessage(data.message || 'Publicação criada com sucesso!', 'success', postFormMessage);
-                newPostForm.reset();
-                imageFilenameDisplay.textContent = 'Nenhuma imagem selecionada';
-                imagePreview.src = '#';
-                imagePreview.classList.add('hidden');
-                fetchPosts(); // Recarrega o feed para mostrar a nova publicação
-            } else {
-                showMessage(data.message || 'Erro ao criar publicação.', 'error', postFormMessage);
-            }
-        } catch (error) {
-            console.error('Erro ao criar publicação:', error);
-            showMessage('Erro: Não foi possível criar a publicação.', 'error', postFormMessage);
-        }
-    });
-
-    // --- Event Listener para Adicionar Imagem ---
-    postImageInput.addEventListener('change', function() {
-        if (this.files && this.files[0]) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                imagePreview.src = e.target.result;
-                imagePreview.classList.remove('hidden');
-            };
-            reader.readAsDataURL(this.files[0]);
-            imageFilenameDisplay.textContent = this.files[0].name;
-        } else {
-            imageFilenameDisplay.textContent = 'Nenhuma imagem selecionada';
-            imagePreview.src = '#';
-            imagePreview.classList.add('hidden');
-        }
-    });
-
-    // --- Gerar Categorias Dinamicamente e Event Listeners ---
-    const categorias = ['Programação', 'Design', 'Marketing', 'Tradução', 'Aulas Particulares', 'Reformas', 'Eventos', 'Consultoria'];
-
-    categorias.forEach(cat => {
-        const li = document.createElement('li');
-        li.className = 'categoria-item';
-
-        li.innerHTML = `
-            <div class="categoria-nome">
-                ${cat} <span class="seta">🢇</span>
-            </div>
-            <div class="opcoes oculto">
-                <button onclick="filtrarFeed('${cat}', 'cliente')">👤 Precisa de um Serviço</button>
-                <button onclick="filtrarFeed('${cat}', 'trabalhador')">🛠️ Sou Trabalhador</button>
-                <button onclick="filtrarFeed('${cat}', 'todos')">👁️ Ver Todos</button>
-            </div>
-        `;
-
-        li.addEventListener('click', (e) => {
-            if (e.target.tagName === 'BUTTON' && e.target.closest('.opcoes')) {
-                return;
-            }
-
-            document.querySelectorAll('.categoria-item').forEach(item => {
-                if (item !== li && item.classList.contains('expandida')) {
-                    item.classList.remove('expandida');
-                    item.querySelector('.opcoes')?.classList.add('oculto');
-                }
-            });
-
-            const opcoes = li.querySelector('.opcoes');
-            opcoes.classList.toggle('oculto');
-            li.classList.toggle('expandida');
-        });
-
-        listaCategorias.appendChild(li);
-    });
-
-    document.addEventListener('click', e => {
-        if (!e.target.closest('.categoria-item') &&
-            !e.target.closest('#logout-confirm-modal') &&
-            !e.target.closest('.delete-confirmation-box') &&
-            !e.target.closest('.btn-excluir-post')) {
-            document.querySelectorAll('.opcoes').forEach(op => op.classList.add('oculto'));
-            document.querySelectorAll('.categoria-item').forEach(item => item.classList.remove('expandida'));
-        }
-    });
-
-    // --- Inicialização ---
-    if (checkAuthAndRedirect()) {
-        loadUserInfo();
-        fetchPosts();
+    // Carregamento inicial
+    if (userId && token) {
+        fetchPerfil(userId, token);
+        fetchServicos(userId);
+    } else {
+        // Redireciona para o login se não houver token
+        window.location.href = 'login.html';
     }
 });
