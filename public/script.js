@@ -3,41 +3,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('jwtToken');
     const userType = localStorage.getItem('userType');
     
-    // Elementos do DOM
-    const perfilBox = document.querySelector('.perfil-box');
-    const fotoPerfil = document.getElementById('fotoPerfil');
-    const nomePerfil = document.getElementById('nomePerfil');
-    const idadePerfil = document.getElementById('idadePerfil');
-    const cidadePerfil = document.getElementById('cidadePerfil');
-    const areaPerfil = document.getElementById('areaPerfil');
-    const descricaoPerfil = document.getElementById('descricaoPerfil');
-    const whatsappPerfil = document.getElementById('whatsappPerfil');
-    const emailPerfil = document.getElementById('emailPerfil');
-    const galeriaServicos = document.getElementById('galeriaServicos');
-    const mensagemGaleriaVazia = document.getElementById('mensagemGaleriaVazia');
-    
-    const btnEditarPerfil = document.getElementById('btnEditarPerfil');
-    const btnSalvarPerfil = document.getElementById('btnSalvarPerfil');
-    const btnCancelarEdicao = document.getElementById('btnCancelarEdicao');
-    const labelInputFotoPerfil = document.getElementById('labelInputFotoPerfil');
-    const inputFotoPerfil = document.getElementById('inputFotoPerfil');
-    const inputNome = document.getElementById('inputNome');
-    const inputIdade = document.getElementById('inputIdade');
-    const inputCidade = document.getElementById('inputCidade');
-    const inputArea = document.getElementById('inputArea');
-    const inputDescricao = document.getElementById('inputDescricao');
-    const inputTelefone = document.getElementById('inputTelefone');
-    
-    const imageModal = document.getElementById('image-modal');
-    const modalImage = document.getElementById('modal-image');
-    const closeImageModalBtn = document.getElementById('close-image-modal');
-    
-    const btnVoltarFeed = document.getElementById('btnVoltarFeed');
-    const logoutButton = document.getElementById('logout-button');
-    const logoutConfirmModal = document.getElementById('logout-confirm-modal');
-    const confirmLogoutYesBtn = document.getElementById('confirm-logout-yes');
-    const confirmLogoutNoBtn = document.getElementById('confirm-logout-no');
-
     // Funções de feedback
     function showMessage(message, type) {
         const messageElement = document.getElementById('perfil-message');
@@ -76,7 +41,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Erro ao buscar perfil:', error);
             showMessage(`Erro: ${error.message || 'Não foi possível carregar o perfil.'}`, 'error');
-            // Redireciona para o login se o token for inválido
             if (error.message.includes('Token')) {
                 localStorage.clear();
                 window.location.href = 'login.html';
@@ -94,7 +58,6 @@ document.addEventListener('DOMContentLoaded', () => {
             renderServicos(servicos.servicos);
         } catch (error) {
             console.error('Erro ao buscar serviços:', error);
-            // Mensagem de erro não crítica
         }
     }
 
@@ -105,7 +68,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Preenche os campos de visualização
         fotoPerfil.src = user.foto || 'https://via.placeholder.com/150?text=User';
         nomePerfil.textContent = user.nome;
         idadePerfil.textContent = `Idade: ${user.idade || 'Não informado'}`;
@@ -213,7 +175,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
         inputElements.forEach(el => el.classList.toggle('hidden', !isEditing));
         
-        // A foto de perfil também
         fotoPerfil.classList.toggle('hidden', isEditing);
         labelInputFotoPerfil.classList.toggle('hidden', !isEditing);
 
@@ -225,7 +186,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnEditarPerfil) {
         btnEditarPerfil.addEventListener('click', () => {
             toggleEditMode(true);
-            // Preenche os campos de input com os valores atuais
             inputNome.value = nomePerfil.textContent.trim();
             inputIdade.value = idadePerfil.textContent.replace('Idade: ', '').trim();
             inputCidade.value = cidadePerfil.textContent.replace('Cidade: ', '').trim();
@@ -250,12 +210,10 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('descricao', inputDescricao.value);
             formData.append('telefone', inputTelefone.value);
 
-            // Adiciona a área de atuação apenas se for trabalhador
             if (userType === 'trabalhador') {
                 formData.append('atuacao', inputArea.value);
             }
 
-            // Adiciona a foto se uma nova for selecionada
             if (inputFotoPerfil.files && inputFotoPerfil.files[0]) {
                 formData.append('foto', inputFotoPerfil.files[0]);
             }
@@ -276,13 +234,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const data = await response.json();
                 showMessage('Perfil atualizado com sucesso!', 'success');
-                // Atualiza o localStorage com o novo nome e URL da foto
                 localStorage.setItem('userName', data.user.nome);
                 if (data.user.foto) {
                     localStorage.setItem('userPhotoUrl', data.user.foto);
                 }
                 toggleEditMode(false);
-                fetchPerfil(userId, token); // Recarrega os dados do perfil
+                fetchPerfil(userId, token);
             } catch (error) {
                 console.error('Erro ao salvar o perfil:', error);
                 showMessage(`Erro: ${error.message}`, 'error');
@@ -295,7 +252,6 @@ document.addEventListener('DOMContentLoaded', () => {
         fetchPerfil(userId, token);
         fetchServicos(userId);
     } else {
-        // Redireciona para o login se não houver token
         window.location.href = 'login.html';
     }
 });
