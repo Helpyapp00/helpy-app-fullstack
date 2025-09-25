@@ -6,7 +6,7 @@
     },
     {
       "source": "/api/(.*)",
-      "destination": "/api/server"
+      "destination": "/api/server" 
     },
     {
       "source": "/(.*)",
@@ -40,5 +40,11 @@
     "api/server.js": {
       "runtime": "node"
     }
-  }
+  },
+  "builds": [
+    {
+      "src": "api/server.js",
+      "use": "@vercel/node"
+    }
+  ]
 }
