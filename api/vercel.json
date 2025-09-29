@@ -40,11 +40,5 @@
     "api/server.js": {
       "runtime": "node"
     }
-  },
-  "builds": [
-    {
-      "src": "api/server.js",
-      "use": "@vercel/node"
-    }
-  ]
+  }
 }
