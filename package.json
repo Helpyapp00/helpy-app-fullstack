@@ -2,9 +2,10 @@
   "name": "helpy-app-fullstack",
   "version": "1.0.0",
   "description": "Aplicativo Fullstack Helpy",
-  "main": "api/server.js",
   "scripts": {
-    "start": "node api/server.js"
+    "start": "node api/server"
+  },
+  "dependencies": {
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.588.0",
