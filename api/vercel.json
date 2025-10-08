@@ -37,10 +37,5 @@
         }
       ]
     }
-],
-  "functions": {
-    "api/server.js": {
-      "runtime": "node"
-    }
-  }
+]
 }
