@@ -14,15 +14,26 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-//const DB_URI = process.env.MONGODB_URI;
-//if (!DB_URI) {
-    //console.error('ERRO: Variável de ambiente MONGODB_URI não está definida!');
-  //  process.exit(1);
-//}
-
-mongoose.connect(DB_URI)
+// 1. INICIALIZAÇÃO DO MONGOOSE: Usando process.env.MONGODB_URI diretamente
+// Se a variável estiver faltando, a conexão falhará, mas o Express ainda pode tentar subir.
+mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('Conectado ao MongoDB Atlas com sucesso!'))
     .catch(err => console.error('Erro ao conectar ao MongoDB Atlas:', err));
+
+// 2. CONFIGURAÇÃO AWS S3: O S3Client é inicializado aqui.
+// Se as chaves estiverem erradas, o erro deve aparecer nos logs do Vercel.
+const s3Client = new S3Client({
+    region: process.env.AWS_REGION,
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    }
+});
+const bucketName = process.env.AWS_BUCKET_NAME;
+
+// ----------------------------------------------------------------------
+// DEFINIÇÃO DOS SCHEMAS (MANTIDOS)
+// ----------------------------------------------------------------------
 
 const avaliacaoSchema = new mongoose.Schema({
     usuarioId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -71,6 +82,10 @@ const Avaliacao = mongoose.model('Avaliacao', avaliacaoSchema);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ----------------------------------------------------------------------
+// MIDDLEWARES E ROTAS (ROTAS ESTÃO SEM O PREFIXO /api/ - CORRETO)
+// ----------------------------------------------------------------------
 
 // Rota de Login
 app.post('/login', async (req, res) => {
@@ -134,16 +149,6 @@ const authMiddleware = (req, res, next) => {
         res.status(401).json({ message: 'Token inválido.' });
     }
 };
-
-const s3Client = new S3Client({
-    region: process.env.AWS_REGION,
-    credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    }
-});
-
-const bucketName = process.env.AWS_BUCKET_NAME;
 
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
@@ -333,6 +338,7 @@ app.post('/avaliar-trabalhador', authMiddleware, async (req, res) => {
             avaliacao => avaliacao.usuarioId.toString() === avaliadorId
         );
         if (avaliacaoExistente) return res.status(409).json({ success: false, message: 'Você já avaliou este trabalhador. Para alterar, edite sua avaliação existente.' });
+        
         trabalhador.avaliacoes.push({
             usuarioId: avaliadorId,
             estrelas,
@@ -343,6 +349,7 @@ app.post('/avaliar-trabalhador', authMiddleware, async (req, res) => {
         trabalhador.mediaAvaliacao = totalEstrelas / trabalhador.avaliacoes.length;
         trabalhador.totalAvaliacoes = trabalhador.avaliacoes.length;
         await trabalhador.save();
+
         res.status(201).json({ success: true, message: 'Avaliação adicionada com sucesso!', mediaAvaliacao: trabalhador.mediaAvaliacao });
     } catch (error) {
         console.error('Erro ao avaliar trabalhador:', error);
@@ -350,7 +357,7 @@ app.post('/avaliar-trabalhador', authMiddleware, async (req, res) => {
     }
 });
 
-    app.get('/servico/:servicoId', async (req, res) => {
+app.get('/servico/:servicoId', async (req, res) => {
     try {
         const { servicoId } = req.params;
         const servico = await Servico.findById(servicoId).populate('avaliacoes').exec();
@@ -363,4 +370,6 @@ app.post('/avaliar-trabalhador', authMiddleware, async (req, res) => {
         res.status(500).json({ message: 'Erro interno do servidor.' });
     }
 });
+
+// 3. EXPORTAÇÃO CORRETA: O Express deve ser exportado, não escutado em uma porta.
 module.exports = app;
