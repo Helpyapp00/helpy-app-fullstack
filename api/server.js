@@ -14,11 +14,11 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-const DB_URI = process.env.MONGODB_URI;
-if (!DB_URI) {
-    console.error('ERRO: Variável de ambiente MONGODB_URI não está definida!');
-    process.exit(1);
-}
+//const DB_URI = process.env.MONGODB_URI;
+//if (!DB_URI) {
+    //console.error('ERRO: Variável de ambiente MONGODB_URI não está definida!');
+  //  process.exit(1);
+//}
 
 mongoose.connect(DB_URI)
     .then(() => console.log('Conectado ao MongoDB Atlas com sucesso!'))
