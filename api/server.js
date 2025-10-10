@@ -9,19 +9,21 @@ const dotenv = require('dotenv');
 const sharp = require('sharp');
 const { URL } = require('url');
 
+// O dotenv.config() só é necessário para rodar localmente, mas é inofensivo aqui.
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// 1. INICIALIZAÇÃO DO MONGOOSE: Usando process.env.MONGODB_URI diretamente
-// Se a variável estiver faltando, a conexão falhará, mas o Express ainda pode tentar subir.
+// 1. CONEXÃO MONGOOSE
+// Usamos process.env.MONGODB_URI diretamente.
+// Se a variável estiver faltando, a conexão vai falhar e registrar um erro, mas não vai travar o servidor.
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('Conectado ao MongoDB Atlas com sucesso!'))
     .catch(err => console.error('Erro ao conectar ao MongoDB Atlas:', err));
 
-// 2. CONFIGURAÇÃO AWS S3: O S3Client é inicializado aqui.
-// Se as chaves estiverem erradas, o erro deve aparecer nos logs do Vercel.
+// 2. CONFIGURAÇÃO AWS S3
+// Inicializamos o cliente S3 para ser usado pelas rotas.
 const s3Client = new S3Client({
     region: process.env.AWS_REGION,
     credentials: {
@@ -32,7 +34,7 @@ const s3Client = new S3Client({
 const bucketName = process.env.AWS_BUCKET_NAME;
 
 // ----------------------------------------------------------------------
-// DEFINIÇÃO DOS SCHEMAS (MANTIDOS)
+// DEFINIÇÃO DOS SCHEMAS (Não alterados, estão corretos)
 // ----------------------------------------------------------------------
 
 const avaliacaoSchema = new mongoose.Schema({
@@ -84,7 +86,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ----------------------------------------------------------------------
-// MIDDLEWARES E ROTAS (ROTAS ESTÃO SEM O PREFIXO /api/ - CORRETO)
+// MIDDLEWARES E ROTAS (Estão corretas, sem prefixo /api/ duplicado)
 // ----------------------------------------------------------------------
 
 // Rota de Login
@@ -98,6 +100,10 @@ app.post('/login', async (req, res) => {
         const isMatch = await bcrypt.compare(senha, user.senha);
         if (!isMatch) {
             return res.status(400).json({ message: 'Credenciais inválidas.' });
+        }
+        // Assegura que o JWT_SECRET está definido antes de usar
+        if (!process.env.JWT_SECRET) {
+            throw new Error("JWT_SECRET não está configurado.");
         }
         const token = jwt.sign({ id: user._id, email: user.email, tipo: user.tipo }, process.env.JWT_SECRET, { expiresIn: '1d' });
         res.json({ success: true, message: 'Login bem-sucedido!', token, user });
@@ -125,6 +131,9 @@ app.post('/cadastro', async (req, res) => {
             senha: senhaHash
         });
         await newUser.save();
+        if (!process.env.JWT_SECRET) {
+            throw new Error("JWT_SECRET não está configurado.");
+        }
         const token = jwt.sign({ id: newUser._id, email: newUser.email, tipo: newUser.tipo }, process.env.JWT_SECRET, { expiresIn: '1d' });
         res.status(201).json({ success: true, message: 'Usuário cadastrado com sucesso!', token, user: newUser });
     } catch (error) {
@@ -142,6 +151,9 @@ const authMiddleware = (req, res, next) => {
         return res.status(401).json({ message: 'Nenhum token fornecido.' });
     }
     try {
+        if (!process.env.JWT_SECRET) {
+            throw new Error("JWT_SECRET não está configurado.");
+        }
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = decoded;
         next();
@@ -158,6 +170,12 @@ app.post('/posts', authMiddleware, upload.single('image'), async (req, res) => {
         const { content } = req.body;
         const userId = req.user.id;
         let imageUrl = null;
+
+        // Verifica se todas as variáveis do S3 estão presentes
+        if (req.file && (!bucketName || !process.env.AWS_REGION)) {
+             throw new Error("Configuração AWS S3 incompleta. Verifique as variáveis de ambiente.");
+        }
+
         if (req.file) {
             const imageBuffer = await sharp(req.file.buffer).resize(800, 600, { fit: sharp.fit.inside, withoutEnlargement: true }).toFormat('jpeg').toBuffer();
             const key = `posts/${Date.now()}_${req.file.originalname}`;
@@ -174,6 +192,7 @@ app.post('/posts', authMiddleware, upload.single('image'), async (req, res) => {
     }
 });
 
+// Outras rotas (mantidas, pois já estavam corretas e completas)
 app.delete('/posts/:id', authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
@@ -239,6 +258,12 @@ app.put('/editar-perfil/:id', authMiddleware, upload.single('avatar'), async (re
         const { id } = req.params;
         const { nome, idade, cidade, telefone, atuacao, descricao } = req.body;
         const avatarFile = req.file;
+
+        // Verifica se as variáveis do S3 estão presentes
+        if (avatarFile && (!bucketName || !process.env.AWS_REGION)) {
+             throw new Error("Configuração AWS S3 incompleta. Verifique as variáveis de ambiente.");
+        }
+
         if (req.user.id !== id) {
             return res.status(403).json({ success: false, message: 'Acesso negado. Você só pode editar seu próprio perfil.' });
         }
@@ -300,6 +325,12 @@ app.post('/servico', authMiddleware, upload.array('images', 5), async (req, res)
         const { title, description } = req.body;
         const userId = req.user.id;
         const imageFiles = req.files;
+
+        // Verifica se as variáveis do S3 estão presentes
+        if (imageFiles && imageFiles.length > 0 && (!bucketName || !process.env.AWS_REGION)) {
+             throw new Error("Configuração AWS S3 incompleta. Verifique as variáveis de ambiente.");
+        }
+
         if (req.user.tipo !== 'trabalhador') {
             return res.status(403).json({ success: false, message: 'Apenas trabalhadores podem criar serviços.' });
         }
@@ -371,5 +402,5 @@ app.get('/servico/:servicoId', async (req, res) => {
     }
 });
 
-// 3. EXPORTAÇÃO CORRETA: O Express deve ser exportado, não escutado em uma porta.
+// A Linha CRÍTICA para o Vercel Serverless
 module.exports = app;
