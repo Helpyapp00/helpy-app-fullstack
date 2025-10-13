@@ -1,5 +1,3 @@
-
-
 {
   "rewrites": [
     {
@@ -7,8 +5,8 @@
       "destination": "/public/index.html"
     },
     {
-      "source": "/api/(.*)", 
-      "destination": "/api"
+      "source": "/api/(.*)",
+      "destination": "/api/server.js" 
     },
     {
       "source": "/(.*)",
@@ -37,5 +35,10 @@
         }
       ]
     }
-]
+  ],
+  "functions": {
+    "api/server.js": { 
+      "runtime": "node"
+    }
+  }
 }
