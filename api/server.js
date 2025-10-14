@@ -5,17 +5,20 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const path = require('path');
-const dotenv = require('dotenv');
+// const dotenv = require('dotenv'); // Não é necessário no Vercel
 const sharp = require('sharp');
 const { URL } = require('url');
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+// 1. CONEXÃO MONGOOSE
+// Usando process.env.MONGODB_URI diretamente.
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('Conectado ao MongoDB Atlas com sucesso!'))
     .catch(err => console.error('Erro ao conectar ao MongoDB Atlas:', err));
 
+// 2. CONFIGURAÇÃO AWS S3
 const s3Client = new S3Client({
     region: process.env.AWS_REGION,
     credentials: {
@@ -25,6 +28,10 @@ const s3Client = new S3Client({
 });
 const bucketName = process.env.AWS_BUCKET_NAME;
 
+
+// ----------------------------------------------------------------------
+// DEFINIÇÃO DOS SCHEMAS (Não alterados)
+// ----------------------------------------------------------------------
 
 const avaliacaoSchema = new mongoose.Schema({
     usuarioId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -74,6 +81,9 @@ const Avaliacao = mongoose.model('Avaliacao', avaliacaoSchema);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// ----------------------------------------------------------------------
+// ROTAS COM CORREÇÕES FINAIS (REMOÇÃO DO THROW DE JWT_SECRET)
+// ----------------------------------------------------------------------
 
 // Rota de Login
 app.post('/api/login', async (req, res) => {
@@ -87,14 +97,17 @@ app.post('/api/login', async (req, res) => {
         if (!isMatch) {
             return res.status(400).json({ message: 'Credenciais inválidas.' });
         }
-        // Assegura que o JWT_SECRET está definido antes de usar
-        if (!process.env.JWT_SECRET) {
-            throw new Error("JWT_SECRET não está configurado.");
-        }
+        
+        // A LINHA QUE CAUSA O ERRO 500 FOI REMOVIDA PARA REVELAR O ERRO REAL
+        // if (!process.env.JWT_SECRET) {
+        //     throw new Error("JWT_SECRET não está configurado.");
+        // }
+        
         const token = jwt.sign({ id: user._id, email: user.email, tipo: user.tipo }, process.env.JWT_SECRET, { expiresIn: '1d' });
         res.json({ success: true, message: 'Login bem-sucedido!', token, user });
     } catch (error) {
-        console.error('Erro no login:', error);
+        // O console.error no Vercel logará o erro exato, se o problema for no jwt.sign()
+        console.error('Erro no login:', error.message || error);
         res.status(500).json({ message: 'Erro interno do servidor.' });
     }
 });
@@ -117,9 +130,12 @@ app.post('/api/cadastro', async (req, res) => {
             senha: senhaHash
         });
         await newUser.save();
-        if (!process.env.JWT_SECRET) {
-            throw new Error("JWT_SECRET não está configurado.");
-        }
+        
+        // REMOVIDA
+        // if (!process.env.JWT_SECRET) {
+        //     throw new Error("JWT_SECRET não está configurado.");
+        // }
+        
         const token = jwt.sign({ id: newUser._id, email: newUser.email, tipo: newUser.tipo }, process.env.JWT_SECRET, { expiresIn: '1d' });
         res.status(201).json({ success: true, message: 'Usuário cadastrado com sucesso!', token, user: newUser });
     } catch (error) {
@@ -137,9 +153,11 @@ const authMiddleware = (req, res, next) => {
         return res.status(401).json({ message: 'Nenhum token fornecido.' });
     }
     try {
-        if (!process.env.JWT_SECRET) {
-            throw new Error("JWT_SECRET não está configurado.");
-        }
+        // REMOVIDA
+        // if (!process.env.JWT_SECRET) {
+        //     throw new Error("JWT_SECRET não está configurado.");
+        // }
+        
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = decoded;
         next();
@@ -178,7 +196,6 @@ app.post('/api/posts', authMiddleware, upload.single('image'), async (req, res) 
     }
 });
 
-// Outras rotas (mantidas, pois já estavam corretas e completas)
 app.delete('/api/posts/:id', authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
