@@ -38,7 +38,7 @@
   ],
   "functions": {
       "api/server.js": { 
-        "runtime": "@vercel/node"
-     }
+        "runtime": "@vercel/node@2.0.0"
+      }
     }
   }
