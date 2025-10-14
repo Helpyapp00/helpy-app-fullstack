@@ -90,7 +90,7 @@ app.use(express.urlencoded({ extended: true }));
 // ----------------------------------------------------------------------
 
 // Rota de Login
-app.post('/login', async (req, res) => {
+app.post('/api/login', async (req, res) => {
     const { email, senha } = req.body;
     try {
         const user = await User.findOne({ email });
@@ -114,7 +114,7 @@ app.post('/login', async (req, res) => {
 });
 
 // Rota de Cadastro
-app.post('/cadastro', async (req, res) => {
+app.post('/api/cadastro', async (req, res) => {
     try {
         const { nome, idade, cidade, tipo, atuacao, telefone, descricao, email, senha } = req.body;
         const salt = await bcrypt.genSalt(10);
@@ -165,7 +165,7 @@ const authMiddleware = (req, res, next) => {
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-app.post('/posts', authMiddleware, upload.single('image'), async (req, res) => {
+app.post('/api/posts', authMiddleware, upload.single('image'), async (req, res) => {
     try {
         const { content } = req.body;
         const userId = req.user.id;
@@ -193,7 +193,7 @@ app.post('/posts', authMiddleware, upload.single('image'), async (req, res) => {
 });
 
 // Outras rotas (mantidas, pois já estavam corretas e completas)
-app.delete('/posts/:id', authMiddleware, async (req, res) => {
+app.delete('/api/posts/:id', authMiddleware, async (req, res) => {
     try {
         const { id } = req.params;
         const userId = req.user.id;
@@ -218,7 +218,7 @@ app.delete('/posts/:id', authMiddleware, async (req, res) => {
     }
 });
 
-app.get('/posts', async (req, res) => {
+app.get('/api/posts', async (req, res) => {
     try {
         const posts = await Postagem.find().sort({ createdAt: -1 }).populate('userId', 'nome foto');
         res.json(posts);
@@ -228,7 +228,7 @@ app.get('/posts', async (req, res) => {
     }
 });
 
-app.get('/usuario/:id', async (req, res) => {
+app.get('/api/usuario/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const user = await User.findById(id).select('-senha');
@@ -242,7 +242,7 @@ app.get('/usuario/:id', async (req, res) => {
     }
 });
 
-app.get('/servicos/:userId', async (req, res) => {
+app.get('/api/servicos/:userId', async (req, res) => {
     try {
         const { userId } = req.params;
         const servicos = await Servico.find({ userId: userId });
@@ -253,7 +253,7 @@ app.get('/servicos/:userId', async (req, res) => {
     }
 });
 
-app.put('/editar-perfil/:id', authMiddleware, upload.single('avatar'), async (req, res) => {
+app.put('/api/editar-perfil/:id', authMiddleware, upload.single('avatar'), async (req, res) => {
     try {
         const { id } = req.params;
         const { nome, idade, cidade, telefone, atuacao, descricao } = req.body;
@@ -290,7 +290,7 @@ app.put('/editar-perfil/:id', authMiddleware, upload.single('avatar'), async (re
     }
 });
 
-app.get('/trabalhadores', async (req, res) => {
+app.get('/api/trabalhadores', async (req, res) => {
     try {
         const { search } = req.query;
         let query = { tipo: 'trabalhador' };
@@ -306,7 +306,7 @@ app.get('/trabalhadores', async (req, res) => {
     }
 });
 
-app.get('/trabalhador/:id', async (req, res) => {
+app.get('/api/trabalhador/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const trabalhador = await User.findById(id).select('-senha');
@@ -320,7 +320,7 @@ app.get('/trabalhador/:id', async (req, res) => {
     }
 });
 
-app.post('/servico', authMiddleware, upload.array('images', 5), async (req, res) => {
+app.post('/api/servico', authMiddleware, upload.array('images', 5), async (req, res) => {
     try {
         const { title, description } = req.body;
         const userId = req.user.id;
@@ -353,7 +353,7 @@ app.post('/servico', authMiddleware, upload.array('images', 5), async (req, res)
     }
 });
 
-app.post('/avaliar-trabalhador', authMiddleware, async (req, res) => {
+app.post('/api/avaliar-trabalhador', authMiddleware, async (req, res) => {
     try {
         const { trabalhadorId, estrelas, comentario } = req.body;
         const avaliadorId = req.user.id;
@@ -388,7 +388,7 @@ app.post('/avaliar-trabalhador', authMiddleware, async (req, res) => {
     }
 });
 
-app.get('/servico/:servicoId', async (req, res) => {
+app.get('/api/servico/:servicoId', async (req, res) => {
     try {
         const { servicoId } = req.params;
         const servico = await Servico.findById(servicoId).populate('avaliacoes').exec();
