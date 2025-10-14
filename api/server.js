@@ -9,21 +9,13 @@ const dotenv = require('dotenv');
 const sharp = require('sharp');
 const { URL } = require('url');
 
-// O dotenv.config() só é necessário para rodar localmente, mas é inofensivo aqui.
-dotenv.config();
-
 const app = express();
 const port = process.env.PORT || 3000;
 
-// 1. CONEXÃO MONGOOSE
-// Usamos process.env.MONGODB_URI diretamente.
-// Se a variável estiver faltando, a conexão vai falhar e registrar um erro, mas não vai travar o servidor.
 mongoose.connect(process.env.MONGODB_URI)
     .then(() => console.log('Conectado ao MongoDB Atlas com sucesso!'))
     .catch(err => console.error('Erro ao conectar ao MongoDB Atlas:', err));
 
-// 2. CONFIGURAÇÃO AWS S3
-// Inicializamos o cliente S3 para ser usado pelas rotas.
 const s3Client = new S3Client({
     region: process.env.AWS_REGION,
     credentials: {
@@ -33,9 +25,6 @@ const s3Client = new S3Client({
 });
 const bucketName = process.env.AWS_BUCKET_NAME;
 
-// ----------------------------------------------------------------------
-// DEFINIÇÃO DOS SCHEMAS (Não alterados, estão corretos)
-// ----------------------------------------------------------------------
 
 const avaliacaoSchema = new mongoose.Schema({
     usuarioId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -85,9 +74,6 @@ const Avaliacao = mongoose.model('Avaliacao', avaliacaoSchema);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ----------------------------------------------------------------------
-// MIDDLEWARES E ROTAS (Estão corretas, sem prefixo /api/ duplicado)
-// ----------------------------------------------------------------------
 
 // Rota de Login
 app.post('/api/login', async (req, res) => {
