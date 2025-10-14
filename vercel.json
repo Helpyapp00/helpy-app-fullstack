@@ -37,9 +37,8 @@
     }
   ],
   "functions": {
-    "api/server.js": { 
-      "runtime": "node"
+      "api/server.js": { 
+        "runtime": "node@20.x"
+      }
     }
   }
-  
-}
