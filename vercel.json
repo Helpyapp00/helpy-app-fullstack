@@ -37,9 +37,9 @@
     }
   ],
   "functions": {
-      "api/server.js": { 
-        "runtime": "node@16.x"
-      }
+    "server/server.js": { 
+      "runtime": "node@16.x" 
+    }
     },
     "build": {
       "env": {
