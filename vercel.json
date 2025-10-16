@@ -5,8 +5,8 @@
       "destination": "/public/index.html"
     },
     {
-      "source": "/api/(.*)",
-      "destination": "/api/server.js" 
+      "source": "/api/(.*)", 
+      "destination": "/api/server.js"
     },
     {
       "source": "/(.*)",
@@ -36,14 +36,9 @@
       ]
     }
   ],
-    "functions": {
+  "functions": { 
     "api/server.js": { 
-    "runtime": "@vercel/node@2.0.0"
-    }
-    },
-    "build": {
-      "env": {
-        "INSTALL_OPTIONAL_DEPS": "true"
-      }
+      "runtime": "@vercel/node@2.0.0" 
     }
   }
+}
