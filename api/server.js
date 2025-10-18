@@ -1,3 +1,5 @@
+// api/server.js (VERSÃO FINAL OTIMIZADA PARA VERCEL SERVERLESS)
+
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
@@ -5,32 +7,63 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const path = require('path');
-// const dotenv = require('dotenv'); // Não é necessário no Vercel
 const sharp = require('sharp');
 const { URL } = require('url');
 
 const app = express();
-const port = process.env.PORT || 3000;
 
-// 1. CONEXÃO MONGOOSE
-// Usando process.env.MONGODB_URI diretamente.
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('Conectado ao MongoDB Atlas com sucesso!'))
-    .catch(err => console.error('Erro ao conectar ao MongoDB Atlas:', err));
+// ----------------------------------------------------------------------
+// Variáveis de Estado e Clientes (Inicialização Adiada)
+// ----------------------------------------------------------------------
 
-// 2. CONFIGURAÇÃO AWS S3
-const s3Client = new S3Client({
-    region: process.env.AWS_REGION,
-    credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+// Variáveis de estado global para conexão e clientes
+let s3Client;
+let bucketName;
+let isDbConnected = false;
+
+/**
+ * Função assíncrona para inicializar serviços críticos (MongoDB e AWS S3).
+ * Só é executada uma vez por instância "quente" da função Serverless.
+ */
+async function initializeServices() {
+    // 1. CONEXÃO MONGOOSE (Lazy Initialization)
+    if (!isDbConnected) {
+        try {
+            await mongoose.connect(process.env.MONGODB_URI);
+            console.log('Conectado ao MongoDB Atlas com sucesso!');
+            isDbConnected = true;
+        } catch (err) {
+            console.error('ERRO CRÍTICO ao conectar ao MongoDB Atlas:', err);
+            // Lança o erro para o middleware responder com 500
+            throw new Error('Falha na conexão com o Banco de Dados.');
+        }
     }
-});
-const bucketName = process.env.AWS_BUCKET_NAME;
+
+    // 2. CONFIGURAÇÃO AWS S3 (Lazy Initialization)
+    if (!s3Client) {
+        if (!process.env.AWS_REGION || !process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+             console.error("ERRO: Variáveis de ambiente AWS S3 ausentes.");
+        }
+        
+        s3Client = new S3Client({
+            region: process.env.AWS_REGION,
+            credentials: {
+                accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+            }
+        });
+        // Usa o nome do bucket configurado
+        bucketName = process.env.AWS_BUCKET_NAME || process.env.S3_BUCKET_NAME; 
+
+        if (!bucketName) {
+            console.error("ERRO: Variável AWS_BUCKET_NAME/S3_BUCKET_NAME ausente.");
+        }
+    }
+}
 
 
 // ----------------------------------------------------------------------
-// DEFINIÇÃO DOS SCHEMAS (Não alterados)
+// DEFINIÇÃO DOS SCHEMAS
 // ----------------------------------------------------------------------
 
 const avaliacaoSchema = new mongoose.Schema({
@@ -78,11 +111,50 @@ const Postagem = mongoose.model('Postagem', postagemSchema);
 const Servico = mongoose.model('Servico', servicoSchema);
 const Avaliacao = mongoose.model('Avaliacao', avaliacaoSchema);
 
+// ----------------------------------------------------------------------
+// MIDDLEWARE DE INICIALIZAÇÃO E PARSERS
+// ----------------------------------------------------------------------
+
+// Middleware que garante que o DB e o S3 Client estejam prontos ANTES de qualquer rota.
+app.use(async (req, res, next) => {
+    try {
+        await initializeServices();
+        next();
+    } catch (error) {
+        console.error('Falha no middleware de inicialização:', error);
+        res.status(500).json({ message: 'Erro interno de inicialização do servidor.' });
+    }
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ----------------------------------------------------------------------
-// ROTAS COM CORREÇÕES FINAIS (REMOÇÃO DO THROW DE JWT_SECRET)
+// MIDDLEWARE DE AUTENTICAÇÃO E CONFIGURAÇÃO MULTER
+// ----------------------------------------------------------------------
+
+const authMiddleware = (req, res, next) => {
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+        return res.status(401).json({ message: 'Nenhum token fornecido.' });
+    }
+    try {
+        if (!process.env.JWT_SECRET) {
+             throw new Error("JWT_SECRET não está configurado.");
+        }
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+        next();
+    } catch (error) {
+        res.status(401).json({ message: 'Token inválido.' });
+    }
+};
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
+
+// ----------------------------------------------------------------------
+// ROTAS
 // ----------------------------------------------------------------------
 
 // Rota de Login
@@ -98,15 +170,14 @@ app.post('/api/login', async (req, res) => {
             return res.status(400).json({ message: 'Credenciais inválidas.' });
         }
         
-        // A LINHA QUE CAUSA O ERRO 500 FOI REMOVIDA PARA REVELAR O ERRO REAL
-        // if (!process.env.JWT_SECRET) {
-        //     throw new Error("JWT_SECRET não está configurado.");
-        // }
+        if (!process.env.JWT_SECRET) {
+            console.error("ERRO: JWT_SECRET não está configurado nas Variáveis de Ambiente.");
+            return res.status(500).json({ message: 'Erro interno do servidor: Chave de segurança ausente.' });
+        }
         
         const token = jwt.sign({ id: user._id, email: user.email, tipo: user.tipo }, process.env.JWT_SECRET, { expiresIn: '1d' });
         res.json({ success: true, message: 'Login bem-sucedido!', token, user });
     } catch (error) {
-        // O console.error no Vercel logará o erro exato, se o problema for no jwt.sign()
         console.error('Erro no login:', error.message || error);
         res.status(500).json({ message: 'Erro interno do servidor.' });
     }
@@ -131,10 +202,10 @@ app.post('/api/cadastro', async (req, res) => {
         });
         await newUser.save();
         
-        // REMOVIDA
-        // if (!process.env.JWT_SECRET) {
-        //     throw new Error("JWT_SECRET não está configurado.");
-        // }
+        if (!process.env.JWT_SECRET) {
+            console.error("ERRO: JWT_SECRET não está configurado nas Variáveis de Ambiente.");
+            return res.status(500).json({ message: 'Erro interno do servidor: Chave de segurança ausente.' });
+        }
         
         const token = jwt.sign({ id: newUser._id, email: newUser.email, tipo: newUser.tipo }, process.env.JWT_SECRET, { expiresIn: '1d' });
         res.status(201).json({ success: true, message: 'Usuário cadastrado com sucesso!', token, user: newUser });
@@ -147,35 +218,12 @@ app.post('/api/cadastro', async (req, res) => {
     }
 });
 
-const authMiddleware = (req, res, next) => {
-    const token = req.headers.authorization?.split(' ')[1];
-    if (!token) {
-        return res.status(401).json({ message: 'Nenhum token fornecido.' });
-    }
-    try {
-        // REMOVIDA
-        // if (!process.env.JWT_SECRET) {
-        //     throw new Error("JWT_SECRET não está configurado.");
-        // }
-        
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        req.user = decoded;
-        next();
-    } catch (error) {
-        res.status(401).json({ message: 'Token inválido.' });
-    }
-};
-
-const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
-
 app.post('/api/posts', authMiddleware, upload.single('image'), async (req, res) => {
     try {
         const { content } = req.body;
         const userId = req.user.id;
         let imageUrl = null;
 
-        // Verifica se todas as variáveis do S3 estão presentes
         if (req.file && (!bucketName || !process.env.AWS_REGION)) {
              throw new Error("Configuração AWS S3 incompleta. Verifique as variáveis de ambiente.");
         }
@@ -262,7 +310,6 @@ app.put('/api/editar-perfil/:id', authMiddleware, upload.single('avatar'), async
         const { nome, idade, cidade, telefone, atuacao, descricao } = req.body;
         const avatarFile = req.file;
 
-        // Verifica se as variáveis do S3 estão presentes
         if (avatarFile && (!bucketName || !process.env.AWS_REGION)) {
              throw new Error("Configuração AWS S3 incompleta. Verifique as variáveis de ambiente.");
         }
@@ -329,7 +376,6 @@ app.post('/api/servico', authMiddleware, upload.array('images', 5), async (req, 
         const userId = req.user.id;
         const imageFiles = req.files;
 
-        // Verifica se as variáveis do S3 estão presentes
         if (imageFiles && imageFiles.length > 0 && (!bucketName || !process.env.AWS_REGION)) {
              throw new Error("Configuração AWS S3 incompleta. Verifique as variáveis de ambiente.");
         }
@@ -405,5 +451,6 @@ app.get('/api/servico/:servicoId', async (req, res) => {
     }
 });
 
-// A Linha CRÍTICA para o Vercel Serverless
+
+// Exporta o app (OBRIGATÓRIO para o Vercel Serverless)
 module.exports = app;
