@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     formLogin.addEventListener('submit', async function(event) {
-        event.preventDefault(); // <-- Linha crucial para evitar que a tela pisque
+        event.preventDefault(); 
 
         const email = emailInput.value;
         const senha = senhaInput.value;
@@ -41,19 +41,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (response.ok && data.success) {
                 showMessage(data.message || 'Login realizado com sucesso!', 'success');
+                
+                // 🛑 CORREÇÃO:
+                // O server.js agora envia os campos na raiz do objeto 'data'.
+                // (antes ele enviava data.user._id, data.user.tipo, etc.)
+                
+                if (!data.userId || !data.userType) {
+                    throw new Error('Resposta do servidor incompleta. IDs não encontrados.');
+                }
+
                 localStorage.setItem('jwtToken', data.token);
                 localStorage.setItem('userId', data.userId);
                 localStorage.setItem('userType', data.userType);
                 localStorage.setItem('userName', data.userName || 'Usuário');
                 localStorage.setItem('userPhotoUrl', data.userPhotoUrl || 'https://via.placeholder.com/50?text=User');
                 
-                window.location.href = 'index.html'; // <-- A linha que faz o redirecionamento
+                window.location.href = 'index.html'; // Redireciona para o feed
             } else {
                 showMessage(data.message || 'Erro ao fazer login. Verifique suas credenciais.', 'error');
             }
         } catch (error) {
             console.error('Erro ao enviar o formulário de login:', error);
-            showMessage('Erro: Não foi possível conectar ao servidor ou processar o login.', 'error');
+            // Este é o erro que você está vendo no navegador
+            showMessage(`Erro: ${error.message || 'Não foi possível conectar ao servidor.'}`, 'error');
         }
     });
 });

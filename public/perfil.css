@@ -1,557 +1,405 @@
-/* Estilos gerais para o corpo da página */
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f0f2f5; /* A cor de fundo para a página */
-    min-height: 100vh;
-    margin: 0;
-    padding: 0;
+/* 🛑 NOVO: Centraliza o conteúdo do perfil e ajusta o espaçamento do header */
+.content-perfil {
+    width: 100%;
+    max-width: 1000px; /* Largura máxima do conteúdo do perfil */
+    padding: 20px;
     box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    margin-top: 90px; /* 70px (header) + 20px (espaço) */
+    margin-left: auto; /* Centraliza */
+    margin-right: auto; /* Centraliza */
 }
 
-/* O contêiner principal */
-.container {
+/* 🛑 NOVO: Estilo para "Nenhuma avaliação" (para não ser amarelo) */
+.media-avaliacao span.no-rating {
+    color: #888;
+    font-size: 14px;
+    font-style: italic;
+}
+
+/* --- O RESTO DO SEU CSS DO PERFIL (INTACTO) --- */
+
+.perfil-card {
     background-color: #ffffff;
     padding: 40px;
     border-radius: 10px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     width: 100%;
-    max-width: 1000px; /* A largura que você quer */
     box-sizing: border-box;
     margin-bottom: 20px;
 }
 
-/* O contêiner de perfil interno, para centralizar o conteúdo */
-.perfil-box {
+.perfil-header {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 20px;
 }
 
-/* Adiciona espaço entre o cabeçalho e o conteúdo principal */
-main {
-    margin-top: 20px;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-}
-
-.foto-perfil {
+.perfil-img {
     width: 130px;
     height: 130px;
     border-radius: 50%;
     object-fit: cover;
-    border: none; /* SEM BORDA */
-    margin-bottom: 20px;
+    border: 4px solid #fff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    margin-bottom: 10px;
+    cursor: pointer;
 }
 
-h2#nomePerfil {
-    color: #333333;
+.label-input-foto {
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: -40px;
     margin-bottom: 10px;
+    z-index: 2;
+}
+.label-input-foto:hover {
+    background-color: rgba(0, 0, 0, 0.7);
+}
+.label-input-foto i {
+    margin-right: 5px;
+}
+#inputFotoPerfil {
+    display: none;
+}
+/* Classe para ocultar elementos */
+.oculto {
+    display: none !important;
+}
+
+#nomePerfil {
+    color: #333333;
+    margin: 10px 0;
     font-size: 30px;
 }
 
-p {
-    color: #666666;
-    margin-bottom: 8px;
+#media-avaliacao-container {
+    display: none;
+    margin-top: 5px;
+}
+.media-avaliacao {
+    font-size: 18px;
+    color: #ffc107;
+}
+.media-avaliacao .fas, .media-avaliacao .fas {
+    margin: 0 1px;
+}
+.total-avaliacoes {
+    font-size: 14px;
+    color: #888;
+    margin-left: 10px;
+}
+
+.perfil-body {
+    padding: 20px 0;
+}
+.perfil-body h3 {
+    font-size: 20px;
+    color: #333;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.perfil-info {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.perfil-info li {
+    font-size: 16px;
+    color: #555;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+}
+.perfil-info li i {
+    width: 25px;
+    text-align: center;
+    color: #007bff;
+    margin-right: 10px;
+}
+.perfil-info li i.fa-whatsapp { color: #25d366; }
+.perfil-info li i.fa-briefcase { color: #6f42c1; }
+
+.perfil-info a {
+    color: #555;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+.perfil-info a:hover {
+    color: #007bff;
+}
+
+.perfil-descricao {
+    margin-top: 20px;
+}
+.perfil-descricao h4 {
+    font-size: 18px;
+    color: #444;
+    margin-bottom: 10px;
+}
+.perfil-descricao p {
+    font-style: italic;
+    color: #666;
     line-height: 1.6;
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+
+.input-edicao {
+    display: block;
+    width: 95%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
     font-size: 16px;
 }
-
-/* Estilos para os botões de ação do perfil (Editar, Salvar, Cancelar) */
-.botoes-acao {
-    margin-top: 25px; /* Espaçamento acima do grupo de botões */
-    display: flex; /* Para alinhar os botões lado a lado */
-    gap: 15px; /* Espaçamento entre os botões */
-    justify-content: center; /* Centraliza os botões */
-    flex-wrap: wrap; /* Permite que os botões quebrem a linha em telas menores */
+textarea.input-edicao {
+    min-height: 100px;
+    resize: vertical;
 }
 
-.btn-perfil {
+.perfil-footer {
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    text-align: center;
+}
+
+.edit-btn, .salvar-btn, .cancelar-btn, .add-btn, .perfil-btn {
     padding: 12px 25px;
     font-size: 16px;
     font-weight: bold;
     border: none;
-    border-radius: 8px; /* Bordas mais arredondadas */
-    cursor: pointer;
-    transition: all 0.3s ease; /* Transição para todas as propriedades no hover */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15); /* Sombra para profundidade */
-}
-
-/* Estilo específico para o botão "Editar Perfil" */
-#btnEditarPerfil {
-    background-color: #007bff; /* Azul primário */
-    color: white;
-}
-
-#btnEditarPerfil:hover {
-    background-color: #0056b3; /* Azul mais escuro no hover */
-    transform: translateY(-2px); /* Leve efeito de levantamento */
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25); /* Sombra mais pronunciada no hover */
-}
-
-/* Estilo específico para o botão "Salvar Alterações" */
-#btnSalvarPerfil {
-    background-color: #28a745; /* Verde para sucesso/salvar */
-    color: white;
-}
-
-#btnSalvarPerfil:hover {
-    background-color: #218838; /* Verde mais escuro no hover */
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
-}
-
-/* Estilo específico para o botão "Cancelar" */
-#btnCancelarEdicao {
-    background-color: #dc3545; /* Vermelho para cancelar/erro */
-    color: white;
-}
-
-#btnCancelarEdicao:hover {
-    background-color: #c82333; /* Vermelho mais escuro no hover */
-    transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.25);
-}
-
-/* Classe para esconder elementos (já deve existir no seu CSS, mas garantindo) */
-.oculto {
-    display: none !important; /* !important garante que sobrescreva outras regras de display */
-}
-
-p#descricaoPerfil {
-    font-style: italic;
-    color: #444444;
-    margin-top: 20px;
-    margin-bottom: 25px;
-    padding: 15px;
-    background-color: #f9f9f9;
-    border-left: 4px solid #007bff;
-    border-radius: 5px;
-    text-align: left;
-    font-size: 15px;
-}
-
-/* Ajuste na descrição para quando não estiver editando (NOVO) */
-p.descricao-perfil {
-    text-align: left; /* Alinha o texto da descrição à esquerda */
-    width: 100%;
-    max-width: 600px; /* Limita a largura para melhor leitura */
-    margin: 15px auto;
-    padding: 10px;
-    background-color: #f9f9f9;
     border-radius: 8px;
-    border: 1px solid #eee;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    margin: 5px;
+}
+.edit-btn { background-color: #007bff; color: white; }
+.edit-btn:hover { background-color: #0056b3; transform: translateY(-2px); }
+
+.salvar-btn { background-color: #28a745; color: white; }
+.salvar-btn:hover { background-color: #218838; transform: translateY(-2px); }
+
+.cancelar-btn { background-color: #dc3545; color: white; }
+.cancelar-btn:hover { background-color: #c82333; transform: translateY(-2px); }
+
+.add-btn { background-color: #17a2b8; color: white; }
+.add-btn:hover { background-color: #138496; transform: translateY(-2px); }
+
+.perfil-acoes {
+    text-align: center;
+    margin-bottom: 20px;
+}
+.perfil-btn {
+    background-color: #f0f2f5;
+    color: #555;
+    box-shadow: none;
+    border: 1px solid #ddd;
+}
+.perfil-btn.ativo {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
 }
 
-/* Estilos para cada item do portfólio de serviço */
-.servico-item {
+.secao-perfil {
+    display: none;
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    margin-bottom: 20px;
+}
+.secao-perfil.ativa {
+    display: block;
+}
+.secao-perfil h3 {
+    font-size: 22px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.servicos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.galeria-servicos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 15px;
+}
+.servico-item-container {
     position: relative;
-    width: 200px;
-    height: 200px;
+}
+.servico-item {
     border: 1px solid #ddd;
     border-radius: 8px;
     overflow: hidden;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
-
 .foto-servico {
     width: 100%;
-    height: 100%;
+    height: 150px;
     object-fit: cover;
     display: block;
     cursor: pointer;
 }
-
+.servico-titulo {
+    padding: 10px;
+    font-size: 16px;
+    font-weight: bold;
+    text-align: center;
+    background-color: #f9f9f9;
+}
 .btn-remover-foto {
     position: absolute;
     top: 5px;
     right: 5px;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(220, 53, 69, 0.8);
     color: white;
     border: none;
     border-radius: 50%;
-    width: 30px;
-    height: 30px;
-    font-size: 16px;
+    width: 25px;
+    height: 25px;
+    font-size: 14px;
     cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
     transition: background-color 0.2s ease;
+    z-index: 2;
 }
-
 .btn-remover-foto:hover {
-    background-color: rgba(0, 0, 0, 0.8);
-}
-
-.contato {
-    margin-top: 25px;
-    padding-top: 20px;
-    border-top: 1px solid #eeeeee;
-    width: 100%;
-}
-
-.contato p {
-    font-size: 16px;
-    color: #333333;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-}
-
-/* Estilos de avaliação */
-.avaliacao {
-    margin-top: 30px;
-    padding-top: 25px;
-    border-top: 1px solid #eeeeee;
-    width: 100%;
-}
-
-.avaliacao h3 {
-    color: #333333;
-    margin-bottom: 15px;
-    font-size: 22px;
-}
-
-.estrelas {
-    cursor: pointer;
-    margin-bottom: 15px;
-    display: flex;
-    justify-content: center;
-}
-
-/* Estilo padrão para o ícone de estrela */
-.estrelas span i {
-    color: #cccccc;
-    font-size: 36px;
-    transition: color 0.2s ease, transform 0.2s ease;
-    margin: 0 3px;
-}
-
-/* Efeito ao passar o mouse (hover) */
-.estrelas span i:hover {
-    color: #ffc107;
-    transform: scale(1.1);
-}
-
-/* Estilo para as estrelas preenchidas (selecionadas) */
-.estrelas span i.fas {
-    color: #ffc107;
-}
-
-p#notaSelecionada {
-    font-size: 18px;
-    font-weight: bold;
-    color: #007bff;
-    min-height: 20px;
-}
-
-/* Estilos para a área de média de avaliação */
-.media-avaliacao {
-    margin-top: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 5px;
-}
-
-.estrelas-media {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 5px;
-}
-
-.estrelas-media i {
-    color: #ffc107;
-    font-size: 24px; /* Tamanho menor para as estrelas da média */
-    margin: 0 2px;
-}
-
-#totalAvaliacoes {
-    font-size: 14px;
-    color: #777;
-    font-style: italic;
-}
-
-
-/* ESTILOS DO PORTFÓLIO DE SERVIÇOS */
-.portfolio-servicos {
-    margin-top: 35px;
-    padding-top: 30px;
-    border-top: 1px solid #eeeeee;
-    width: 100%;
-    text-align: center;
-}
-
-.portfolio-servicos h3 {
-    color: #333333;
-    margin-bottom: 25px;
-    font-size: 24px;
-}
-
-/* Estilo do botão "Anexar Fotos" */
-.btn-anexar-foto {
-    background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    font-size: 16px;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-    margin-bottom: 25px;
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.btn-anexar-foto:hover {
-    background-color: #0056b3;
-    transform: translateY(-2px);
-}
-
-.btn-anexar-foto i {
-    font-size: 18px;
-}
-
-.galeria-servicos {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 15px;
-    margin-top: 20px;
-}
-
-.servico-imagem-wrapper {
-    position: relative;
-    width: 100%;
-    height: 160px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.servico-imagem {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    border-radius: 10px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
-    transition: transform 0.2s ease;
-    cursor: pointer;
-}
-
-.servico-imagem:hover {
-    transform: scale(1.03);
+    background-color: rgba(220, 53, 69, 1);
 }
 
 .mensagem-vazia {
-    color: #999999;
+    color: #888;
     font-style: italic;
-    margin-top: 20px;
-    grid-column: 1 / -1;
+    text-align: center;
+    width: 100%;
+    padding: 20px 0;
 }
 
-
-.servico-imagem-wrapper:hover .btn-remover-foto {
-    opacity: 1;
+/* Postagens (Reutilizando estilo do feed) */
+.minhas-postagens {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
-
-
-/* Responsividade */
-@media (max-width: 880px) {
-    .container {
-        padding: 35px;
-    }
-    .galeria-servicos {
-        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    }
-    .servico-imagem-wrapper {
-        height: 140px;
-    }
+.post {
+    background-color: #fdfdfd;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
 }
-
-@media (max-width: 650px) {
-    .container {
-        padding: 25px;
-        max-width: 90%;
-    }
-    .foto-perfil {
-        width: 100px;
-        height: 100px;
-        margin-bottom: 15px;
-    }
-    h2#nomePerfil {
-        font-size: 26px;
-    }
-    p {
-        font-size: 15px;
-    }
-    p#descricaoPerfil {
-        font-size: 14px;
-        padding: 10px;
-    }
-    .contato p {
-        font-size: 15px;
-    }
-    .avaliacao h3 {
-        font-size: 20px;
-    }
-    .estrelas span i {
-        font-size: 30px;
-        margin: 0 2px;
-    }
-    .portfolio-servicos h3 {
-        font-size: 20px;
-        margin-bottom: 15px;
-    }
-    .galeria-servicos {
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 15px;
-    }
-    .servico-imagem-wrapper {
-        height: 120px;
-    }
-    .btn-anexar-foto {
-        padding: 8px 15px;
-        font-size: 14px;
-    }
-    .btn-anexar-foto i {
-        font-size: 16px;
-    }
-    .estrelas-media i {
-        font-size: 20px;
-    }
-}
-
-@media (max-width: 450px) {
-    .container {
-        padding: 15px;
-    }
-    .galeria-servicos {
-        grid-template-columns: 1fr;
-        gap: 10px;
-    }
-    .servico-imagem-wrapper {
-        height: 180px;
-    }
-    .foto-perfil {
-        width: 80px;
-        height: 80px;
-    }
-    h2#nomePerfil {
-        font-size: 22px;
-    }
-    .estrelas span i {
-        font-size: 26px;
-    }
-    .estrelas-media i {
-        font-size: 18px;
-    }
-}
-
-/* Estilos para o bloco de contato para centralizar */
-.contato p {
-    font-size: 16px;
-    color: #333333;
+.post-header {
     display: flex;
     align-items: center;
-    justify-content: center; /* Garante que o conteúdo (incluindo o link) esteja centralizado */
-    gap: 8px; /* Espaçamento entre o ícone e o texto, se não estiverem no mesmo elemento */
-}
-
-
-/* Efeito de Hover para links de contato (WhatsApp e Email) */
-.contato p a {
-    color: #333333; /* Cor padrão do texto do link */
-    text-decoration: none; /* Remove sublinhado padrão */
-    transition: color 0.3s ease, text-decoration 0.3s ease, transform 0.2s ease; /* Transição suave para cor, sublinhado e escala */
-    display: flex; /* Para alinhar o ícone e o texto dentro do link */
-    align-items: center; /* Alinha verticalmente */
-    gap: 8px; /* Espaçamento entre ícone e texto dentro do link */
-}
-
-.contato p a:hover {
-    color: #007bff; /* Mude para uma cor que indique clicável, como azul */
-    text-decoration: underline; /* Adiciona sublinhado ao passar o mouse */
-    cursor: pointer; /* Muda o cursor para indicar que é clicável */
-    transform: translateY(-2px); /* Efeito de leve levantamento */
-}
-
-/* Estilos para os ícones dentro dos links de contato */
-.contato p a i {
-    font-size: 18px; /* Tamanho do ícone */
-    color: inherit; /* O ícone herda a cor do link pai */
-    transition: color 0.3s ease, transform 0.2s ease;
-}
-
-/* Cor específica para o ícone do WhatsApp quando não há hover */
-.contato p a[href*="wa.me"] i {
-    color: #25d366; /* Cor verde do WhatsApp */
-}
-
-/* Cor específica para o ícone do Email quando não há hover */
-.contato p a[href*="mailto"] i {
-    color: #007bff; /* Cor azul para e-mail */
-}
-
-
-/* Efeito de hover nos ícones dentro dos links */
-.contato p a:hover i {
-    color: #007bff; /* O ícone fica azul no hover, para ambos WhatsApp e Email */
-    transform: scale(1.1); /* Um leve aumento de tamanho no ícone ao passar o mouse sobre o link */
-}
-
-/* Estilos para os inputs de edição que aparecerão (ADICIONADOS) */
-.input-perfil {
-    width: calc(100% - 20px); /* Ajusta a largura, considerando o padding do container */
     padding: 10px 15px;
-    margin-top: 5px; /* Espaçamento acima do input */
-    margin-bottom: 15px; /* Espaçamento abaixo do input */
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    font-size: 1em;
+    gap: 10px;
+    border-bottom: 1px solid #f0f0f0;
+}
+.post-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.post-author-info {
+    flex-grow: 1;
+}
+.post-author-name {
+    font-weight: bold;
     color: #333;
-    box-sizing: border-box; /* Garante que padding e border sejam incluídos na largura */
 }
-
-.input-perfil:focus {
-    border-color: #007bff; /* Borda azul ao focar */
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-    outline: none; /* Remove o outline padrão do navegador */
+.post-date {
+    font-size: 12px;
+    color: #888;
+    display: block;
 }
-
-/* Estilo para o textarea de descrição (ADICIONADO) */
-textarea.input-perfil {
-    resize: vertical; /* Permite redimensionar verticalmente */
-    min-height: 80px; /* Altura mínima para o textarea */
-}
-
-/* Botão/Label para selecionar a foto de perfil (ADICIONADO) */
-.btn-selecionar-foto {
-    display: inline-block; /* Faz com que o label se comporte como um botão */
-    background-color: #6c757d; /* Cor cinza para o botão de alterar foto */
-    color: white;
-    padding: 8px 15px;
-    border-radius: 5px;
+.delete-post-btn {
+    background: none;
+    border: none;
+    color: #999;
+    font-size: 16px;
     cursor: pointer;
+}
+.delete-post-btn:hover {
+    color: #dc3545;
+}
+.post-content {
+    padding: 15px;
+    line-height: 1.6;
+}
+.post-image {
+    width: 100%;
+    max-height: 400px;
+    object-fit: cover;
     margin-top: 10px;
-    transition: background-color 0.3s ease;
-    font-size: 0.9em;
+    border-radius: 5px;
 }
 
-.btn-selecionar-foto:hover {
-    background-color: #5a6268;
+/* Seção de Avaliação */
+#formAvaliacao {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.estrelas {
+    cursor: pointer;
+    margin-bottom: 15px;
+}
+.estrelas span {
+    font-size: 30px;
+    color: #ccc;
+    margin: 0 3px;
+    transition: color 0.2s ease;
+}
+.estrelas span:hover {
+    color: #ffc107;
+}
+.estrelas span .fas {
+    color: #ffc107;
+}
+#notaSelecionada {
+    font-size: 14px;
+    color: #777;
+    min-height: 20px;
+    margin-bottom: 10px;
+}
+#formAvaliacao textarea {
+    width: 100%;
+    max-width: 500px;
+    min-height: 80px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+    margin-bottom: 15px;
 }
 
-/* Estilos para o Modal de Visualização de Imagem */
+
+/* Modal de Imagem */
 .image-modal-overlay {
-    display: none;
+    display: none; 
     position: fixed;
     z-index: 1000;
     left: 0;
@@ -561,40 +409,84 @@ textarea.input-perfil {
     background-color: rgba(0, 0, 0, 0.9);
     justify-content: center;
     align-items: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
-
 .image-modal-overlay.visible {
     display: flex;
+    opacity: 1;
 }
-
 .image-modal-content {
-    position: relative;
-    max-width: 90%;
-    max-height: 90%;
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 5px;
 }
-
-#modal-image {
-    width: auto;
-    max-width: 100%;
-    max-height: 100%;
-    display: block;
-    margin: auto;
-    object-fit: contain;
-}
-
-.close-modal-btn {
+.close-btn-modal {
     position: absolute;
-    top: 10px;
-    right: 25px;
-    color: #f1f1f1;
+    top: 20px;
+    right: 30px;
+    color: #fff;
     font-size: 40px;
     font-weight: bold;
-    transition: 0.3s;
     cursor: pointer;
 }
 
-.close-modal-btn:hover,
-.close-modal-btn:focus {
-    color: #bbb;
-    text-decoration: none;
+/* --- RESPONSIVIDADE DO PERFIL --- */
+
+@media (max-width: 768px) {
+    .content-perfil {
+        margin-top: 20px; /* Reduz a margem em telas menores onde o header quebra */
+        padding: 10px;
+    }
+    .perfil-card {
+        padding: 20px;
+    }
+    .perfil-acoes {
+        display: flex;
+        justify-content: center;
+    }
+    .perfil-btn {
+        padding: 10px 15px;
+        font-size: 14px;
+        flex-grow: 1; /* Faz os botões ocuparem espaço igual */
+        max-width: 200px;
+    }
+    .galeria-servicos {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    }
 }
+
+@media (max-width: 480px) {
+    .perfil-card {
+        padding: 15px;
+    }
+    .perfil-img {
+        width: 100px;
+        height: 100px;
+    }
+    #nomePerfil {
+        font-size: 24px;
+    }
+    .perfil-info li {
+        font-size: 14px;
+    }
+    .perfil-info li i {
+        margin-right: 8px;
+    }
+    .edit-btn, .salvar-btn, .cancelar-btn, .add-btn, .perfil-btn {
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+    }
+    .botoes-edicao {
+        width: 100%;
+    }
+    .galeria-servicos {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 10px;
+    }
+    .foto-servico {
+        height: 120px;
+    }
+}
+

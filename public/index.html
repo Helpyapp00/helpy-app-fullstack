@@ -6,7 +6,7 @@
     <title>Helpy - Feed</title>
     <link rel="icon" href="/public/icons/helpy.ico" type="image/x-icon">
     <link rel="stylesheet" href="/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" xintegrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 <body>
     <header>
@@ -15,7 +15,7 @@
         </div>
         <input type="text" class="search" placeholder="Buscar serviços ou profissionais...">
         <div class="user-info">
-            <img id="user-avatar-header" src="https://via.placeholder.com/50?text=User" alt="Avatar do Usuário" class="user-avatar-header">
+            <img id="user-avatar-header" src="imagens/default-user.png" alt="Avatar do Usuário" class="user-avatar-header">
             <span id="user-name-header"></span>
             <button id="profile-button">Meu Perfil</button>
             <button id="logout-button">Sair</button>
@@ -24,9 +24,27 @@
 
     <div class="conteudo">
         <aside class="categorias">
-            <h2>Categorias</h2>
-            <ul id="lista-categorias" class="lista-categorias">
-                </ul>
+            <h2>Filtros</h2>
+            <p>Ver postagens de:</p>
+            <!-- 🛑 NOVO: Botões de Filtro -->
+            <div class="filtro-botoes">
+                <button id="filter-todos" class="filtro-btn ativo">
+                    <i class="fas fa-globe-americas"></i> Todos
+                </button>
+                <button id="filter-trabalhadores" class="filtro-btn">
+                    <i class="fas fa-briefcase"></i> Profissionais
+                </button>
+                <button id="filter-clientes" class="filtro-btn">
+                    <i class="fas fa-users"></i> Clientes
+                </button>
+            </div>
+            
+            <!-- 🛑 A IMPLEMENTAR: Filtro de Localização (Próximo Passo) -->
+            <div class="filtro-localizacao">
+                <h4>Localização</h4>
+                <input type="text" id="filtro-cidade" placeholder="Digite a cidade...">
+                <button id="filtro-cidade-btn">Buscar</button>
+            </div>
         </aside>
 
         <main>
@@ -36,10 +54,14 @@
                     <textarea id="post-content-input" placeholder="No que você está pensando?"></textarea>
                     <div class="botoes-postar">
                         <div class="upload-area">
-                            <label for="post-image-input" class="upload-button">Adicionar Imagem</label>
+                            <label for="post-image-input" class="upload-button">
+                                <i class="fas fa-camera"></i> Adicionar Imagem
+                            </label>
                             <input type="file" id="post-image-input" accept="image/*">
-                            <span id="image-filename" class="filename-display">Nenhuma imagem selecionada</span>
-                            <img id="image-preview" class="image-preview hidden" src="#" alt="Pré-visualização da Imagem">
+                            
+                            <!-- 🛑 NOVO: Pré-visualização da Imagem -->
+                            <img id="image-preview" class="image-preview oculto" src="#" alt="Pré-visualização da Imagem">
+                            <span id="image-filename" class="filename-display"></span>
                         </div>
                         <button type="submit" class="btn-enviar">Publicar</button>
                     </div>
@@ -48,7 +70,8 @@
             </section>
 
             <section id="posts-container">
-                </section>
+                <!-- Postagens serão carregadas aqui -->
+            </section>
         </main>
 
         <aside class="anuncio">
@@ -56,9 +79,10 @@
             <div class="caixa-anuncio">
                 Espaço para Anúncios
             </div>
-            </aside>
+        </aside>
     </div>
 
+    <!-- Modais (Popup e Logout) -->
     <div id="popup-escolha" class="popup-escolha oculto">
         <div class="popup-conteudo">
             <h3>Você é um Cliente ou um Trabalhador?</h3>

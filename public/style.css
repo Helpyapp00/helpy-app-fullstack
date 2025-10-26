@@ -8,6 +8,10 @@
 body {
     font-family: sans-serif;
     background: #f0f2f5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
 }
 
 /* Cabeçalho */
@@ -15,11 +19,16 @@ header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #7394b8; /* Cor do cabeçalho */
+    background: #7394b8; 
     padding: 10px 20px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
     color: white;
     width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    height: 70px; 
 }
 
 .logo-box {
@@ -29,11 +38,11 @@ header {
 }
 
 .logo-box img {
-    width: 50px; /* Tamanho fixo para o logo */
+    width: 50px; 
     height: 50px;
-    border-radius: 50%; /* Mantém o formato redondo se a imagem for quadrada */
-    object-fit: cover; /* ALTERADO: Garante que a imagem inteira seja visível dentro do círculo */
-    border: none; /* SEM BORDA */
+    border-radius: 50%; 
+    object-fit: cover; 
+    border: none; 
 }
 
 .logo-box h1 {
@@ -91,6 +100,23 @@ header {
     background-color: #4cae4c;
 }
 
+#feed-button {
+    background-color: #5cb85c;
+    color: white;
+    border: none;
+    padding: 8px 12px; 
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px; 
+    transition: background-color 0.2s;
+    line-height: 1; 
+}
+
+#feed-button:hover {
+    background-color: #4cae4c;
+}
+
+
 /* Layout Principal */
 .conteudo {
     display: flex;
@@ -98,7 +124,8 @@ header {
     gap: 25px;
     padding: 25px 20px;
     max-width: 1200px;
-    margin: 0 auto;
+    margin: 90px auto 0 auto; 
+    width: 100%;
 }
 
 /* Coluna Lateral de Categorias */
@@ -109,103 +136,97 @@ header {
     border-radius: 8px;
     padding: 20px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    height: fit-content; /* Para não ocupar a altura total */
+    height: fit-content; 
     position: sticky;
-    top: 20px; /* Fica fixo ao rolar */
+    top: 90px; 
 }
 
 .categorias h2 {
     font-size: 1.5em;
     color: #333;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
+    text-align: center;
+}
+.categorias p {
+    font-size: 14px;
+    color: #555;
+    margin-bottom: 15px;
     text-align: center;
 }
 
-.lista-categorias {
-    list-style: none;
-    padding: 0;
-}
-
-.categoria-item {
-    margin-bottom: 10px;
-    cursor: pointer; /* Indica que toda a área é clicável */
-    border-radius: 5px;
-    overflow: hidden; /* Garante que as opções fiquem dentro */
-    transition: background-color 0.2s ease;
-}
-
-.categoria-item:hover {
-    background-color: #f0f0f0;
-}
-
-.categoria-nome {
+/* Estilos dos Botões de Filtro */
+.filtro-botoes {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 15px;
-    font-weight: bold;
-    color: #555;
-    background-color: #f9f9f9; /* Levemente diferente do fundo do item */
-    border-bottom: 1px solid #eee;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
 }
-
-.categoria-item.expandida .categoria-nome {
-    border-bottom: none;
-    border-radius: 5px 5px 0 0;
-}
-
-.categoria-item .seta {
-    transition: transform 0.3s ease;
-}
-
-.categoria-item.expandida .seta {
-    transform: rotate(90deg);
-}
-
-.opcoes {
-    list-style: none;
-    padding: 0;
-    background-color: #fcfcfc;
-    border-top: 1px solid #eee;
-    border-radius: 0 0 5px 5px;
-    transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
-    max-height: 200px; /* Altura máxima para animação */
-    opacity: 1;
-    overflow: hidden;
-}
-
-.opcoes.oculto {
-    max-height: 0;
-    opacity: 0;
-    border-top: none;
-}
-
-.opcoes button {
-    display: block;
+.filtro-btn {
     width: 100%;
-    padding: 10px 15px;
-    text-align: left;
-    background: none;
-    border: none;
-    border-bottom: 1px solid #eee;
+    padding: 10px;
+    font-size: 14px;
+    font-weight: bold;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+    color: #555;
     cursor: pointer;
-    font-size: 0.95em;
-    color: #666;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
+    text-align: left;
+}
+.filtro-btn i {
+    margin-right: 10px;
+    width: 20px;
+    text-align: center;
+}
+.filtro-btn:hover {
+    background-color: #f0f0f0;
+    border-color: #ccc;
+}
+.filtro-btn.ativo {
+    background-color: #7394b8;
+    color: white;
+    border-color: #7394b8;
 }
 
-.opcoes button:last-child {
-    border-bottom: none;
+/* Filtro de Localização */
+.filtro-localizacao {
+    border-top: 1px solid #eee;
+    padding-top: 15px;
+}
+.filtro-localizacao h4 {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 10px;
+}
+#filtro-cidade {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin-bottom: 10px;
 }
 
-.opcoes button:hover {
-    background-color: #e9e9e9;
+/* 🛑 ATUALIZADO: Botão de filtro de cidade agora está ativo */
+#filtro-cidade-btn {
+    width: 100%;
+    padding: 8px;
+    background-color: #5cb85c;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer; /* Alterado de not-allowed */
+    transition: background-color 0.2s;
 }
+#filtro-cidade-btn:hover {
+    background-color: #4cae4c;
+}
+
 
 /* Área Central do Feed */
 main {
     flex-grow: 1;
-    max-width: 700px; /* Largura máxima para o conteúdo principal */
+    max-width: 700px; 
 }
 
 /* Área de Publicação */
@@ -238,62 +259,57 @@ textarea#post-content-input {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap; /* Permite que os itens quebrem linha */
+    flex-wrap: wrap; 
     gap: 10px;
 }
 
 .upload-area {
-    display: flex; /* Garante que os elementos se alinhem */
-    align-items: center; /* Alinha verticalmente */
-    gap: 10px; /* Espaço entre o botão e o nome do arquivo */
-    flex-wrap: wrap; /* Permite que os itens quebrem a linha em telas pequenas */
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+    flex-wrap: wrap; 
 }
 
 .upload-button {
-    background-color: #5cb85c; /* Cor para o botão de adicionar imagem */
+    background-color: #5cb85c; 
     color: white;
     padding: 8px 15px;
     border-radius: 5px;
     cursor: pointer;
     font-size: 14px;
     transition: background-color 0.2s;
-    white-space: nowrap; /* Impede que o texto do botão quebre linha */
-    flex-shrink: 0; /* Impede que o botão encolha */
+    white-space: nowrap; 
+    flex-shrink: 0; 
+}
+.upload-button i {
+    margin-right: 5px;
 }
 
 .upload-button:hover {
     background-color: #4cae4c;
 }
 
-/* Garante que o input file esteja completamente invisível */
 #post-image-input {
-    display: none !important; /* !important para garantir que não será sobrescrito */
-    visibility: hidden !important;
-    width: 0 !important;
-    height: 0 !important;
-    overflow: hidden !important;
-    position: absolute !important;
+    display: none !important; 
 }
 
 .filename-display {
     font-size: 14px;
     color: #666;
-    flex-grow: 1; /* Permite que ocupe o espaço restante */
-    min-width: 0; /* Essencial para permitir o encolhimento do texto */
-    white-space: nowrap; /* Mantém o texto em uma linha */
-    overflow: hidden; /* Oculta o excesso de texto */
-    text-overflow: ellipsis; /* Adiciona "..." ao final do texto cortado */
+    flex-grow: 1; 
+    min-width: 0; 
+    white-space: nowrap; 
+    overflow: hidden; 
+    text-overflow: ellipsis; 
 }
 
-/* Novo estilo para a pré-visualização da imagem */
 .image-preview {
-    max-width: 80px; /* Tamanho máximo da pré-visualização */
-    max-height: 80px;
+    max-height: 80px; 
+    max-width: 100px;
     border: 1px solid #ddd;
     border-radius: 5px;
-    object-fit: cover; /* Corta a imagem para preencher a área mantendo a proporção */
-    margin-left: 10px; /* Espaçamento da label */
-    display: none; /* Começa oculto por padrão */
+    object-fit: cover; 
+    margin-top: 5px;
 }
 
 
@@ -319,32 +335,14 @@ textarea#post-content-input {
     font-size: 0.9em;
     text-align: center;
 }
+.form-message.success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+.form-message.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+.form-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
 
-.form-message.success {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
-}
-
-.form-message.error {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
-}
-
-.form-message.info {
-    background-color: #d1ecf1;
-    color: #0c5460;
-    border: 1px solid #bee5eb;
-}
-
-.form-message.hidden {
-    display: none;
-}
 
 /* Estilos para as publicações no feed */
 #posts-container {
-    padding-top: 5px; /* Pequeno espaçamento do formulário de postagem */
+    padding-top: 5px; 
 }
 
 .post {
@@ -353,118 +351,97 @@ textarea#post-content-input {
     padding: 15px;
     margin-bottom: 20px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    word-wrap: break-word; /* Garante que o texto longo não vaza */
-    position: relative; /* Necessário para posicionar o popup de exclusão */
+    word-wrap: break-word; 
+    position: relative; 
+    transition: opacity 0.3s ease, transform 0.3s ease, height 0.3s ease;
 }
 
+.post.hidden {
+    opacity: 0;
+    transform: scale(0.95);
+    height: 0;
+    padding: 0;
+    margin: 0;
+    overflow: hidden;
+    border: none;
+}
+
+
 .post-header {
-    display: flex; /* Torna o cabeçalho um flex container */
-    align-items: center; /* Alinha os itens verticalmente */
-    gap: 10px; /* Espaçamento entre avatar, meta e botão */
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
     margin-bottom: 10px;
 }
 
-.post-header .user-avatar {
-    width: 48px; /* Ajuste o tamanho do avatar */
+.post-header .post-avatar {
+    width: 48px; 
     height: 48px;
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
+    cursor: pointer;
 }
 
 .post-header .post-meta {
     display: flex;
     flex-direction: column;
-    flex-grow: 1; /* Permite que o nome do usuário e data ocupem o máximo de espaço */
+    flex-grow: 1; 
 }
 
 .post-header .user-name {
     font-weight: bold;
     color: #333;
     font-size: 1.1em;
+    cursor: pointer;
+}
+.post-header .user-name:hover {
+    text-decoration: underline;
 }
 
 .post-header .post-date-display {
     font-size: 0.8em;
     color: #888;
+    /* 🛑 NOVO: Permite que a cidade fique ao lado */
+    display: inline;
 }
 
-/* Estilos para o botão de exclusão */
-.btn-excluir-post {
-    background-color: #dc3545; /* Cor vermelha para exclusão */
+/* 🛑 NOVO: Estilo para a cidade do autor */
+.post-author-city {
+    font-size: 0.8em;
+    color: #888;
+    display: inline;
+}
+
+.btn-excluir-post, .delete-post-btn {
+    background-color: #dc3545; 
     color: white;
     border: none;
-    padding: 6px 10px; /* Um pouco menor para caber melhor */
+    padding: 6px 10px; 
     border-radius: 5px;
     cursor: pointer;
-    font-size: 12px; /* Tamanho da fonte menor */
+    font-size: 12px; 
     transition: background-color 0.3s ease;
-    margin-left: auto; /* Empurra o botão para a direita */
-    display: flex; /* Para alinhar o ícone e o texto se houver */
+    margin-left: auto; 
+    display: flex; 
     align-items: center;
     gap: 5px;
 }
+.delete-post-btn {
+    background-color: transparent;
+    color: #888;
+    padding: 5px;
+}
 
-.btn-excluir-post:hover {
+.btn-excluir-post:hover, .delete-post-btn:hover {
     background-color: #c82333;
-}
-
-/* Novo estilo para a caixa de confirmação de exclusão */
-.delete-confirmation-box {
-    position: absolute; /* Posiciona absolutamente em relação ao .post */
-    top: 50px; /* Ajuste para aparecer abaixo do botão de exclusão */
-    right: 15px; /* Alinha com a direita do post */
-    background-color: #fff;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    z-index: 10; /* Garante que fique acima de outros elementos */
-    width: 180px; /* Largura da caixa */
-    text-align: center;
-    font-size: 0.9em;
-}
-
-.delete-confirmation-box p {
-    margin: 0;
-    color: #333;
-}
-
-.delete-confirmation-box .confirmation-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
-    margin-top: 5px;
-}
-
-.delete-confirmation-box .confirmation-buttons button {
-    padding: 6px 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.85em;
-    border: none;
-}
-
-.delete-confirmation-box .confirmation-buttons .btn-confirm-yes-delete {
-    background-color: #dc3545; /* Vermelho para "Sim" */
     color: white;
 }
-
-.delete-confirmation-box .confirmation-buttons .btn-confirm-yes-delete:hover {
-    background-color: #c82333;
+.delete-post-btn:hover {
+    background-color: #f0f0f0;
+    color: #dc3545;
 }
 
-.delete-confirmation-box .confirmation-buttons .btn-confirm-no-delete {
-    background-color: #6c757d; /* Cinza para "Não" */
-    color: white;
-}
-
-.delete-confirmation-box .confirmation-buttons .btn-confirm-no-delete:hover {
-    background-color: #5a6268;
-}
 
 .post-content {
     margin-bottom: 10px;
@@ -480,22 +457,121 @@ textarea#post-content-input {
     display: block;
 }
 
-.post button {
-    background-color: #eee;
-    color: #555;
+/* 🛑 NOVO: Estilos para Ações de Post (Like/Comment) */
+.post-actions {
+    display: flex;
+    gap: 10px;
+    padding: 10px 0;
+    border-top: 1px solid #eee;
+    margin-top: 10px;
+}
+.action-btn {
+    background-color: #f0f2f5;
     border: none;
-    padding: 8px 12px;
     border-radius: 5px;
+    padding: 8px 12px;
     cursor: pointer;
-    font-size: 0.9em;
+    color: #65676b;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 5px;
     transition: background-color 0.2s;
-    margin-right: 5px;
+    font-size: 14px;
+}
+.action-btn:hover {
+    background-color: #e4e6eb;
+}
+.action-btn i {
+    font-size: 16px;
+}
+.btn-like.liked {
+    color: #007bff; /* Cor azul quando curtido */
+}
+.btn-like.liked i {
+    color: #007bff;
 }
 
-.post button:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
+/* 🛑 NOVO: Estilos para Seção de Comentários */
+.post-comments {
+    padding: 10px 0 0 0;
+    border-top: 1px solid #eee;
+    margin-top: 10px;
+    /* Comentários ficam escondidos por padrão */
+    display: none; 
 }
+.post-comments.visible {
+    display: block; /* Mostra quando o JS adiciona a classe */
+}
+
+.comment-list {
+    margin-top: 10px;
+    max-height: 200px; /* Limita a altura e adiciona scroll */
+    overflow-y: auto;
+    padding-right: 5px;
+}
+.comment {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+.comment-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+.comment-body {
+    background-color: #f0f2f5;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 14px;
+    width: 100%;
+    word-wrap: break-word;
+}
+.comment-body strong {
+    display: block;
+    font-size: 13px;
+    color: #050505;
+}
+.comment-body p {
+    margin: 0;
+    color: #333;
+    line-height: 1.4;
+}
+
+.comment-form {
+    display: flex;
+    gap: 5px;
+    margin-top: 10px;
+}
+.comment-input {
+    flex-grow: 1;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    padding: 8px 12px;
+    font-size: 14px;
+}
+.comment-input:focus {
+    outline: none;
+    border-color: #7394b8;
+}
+.btn-send-comment {
+    border: none;
+    background: #007bff;
+    color: white;
+    border-radius: 20px;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+.btn-send-comment:hover {
+    background: #0056b3;
+}
+
 
 /* Coluna Lateral de Anúncios */
 .anuncio {
@@ -505,18 +581,16 @@ textarea#post-content-input {
     border-radius: 8px;
     padding: 20px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-    height: fit-content; /* Para não ocupar a altura total */
+    height: fit-content; 
     position: sticky;
-    top: 20px; /* Fica fixo ao rolar */
+    top: 90px; 
 }
-
 .anuncio h3 {
     font-size: 1.3em;
     color: #333;
     margin-bottom: 20px;
     text-align: center;
 }
-
 .caixa-anuncio {
     background: #e9ecef;
     border: 1px dashed #ced4da;
@@ -529,253 +603,100 @@ textarea#post-content-input {
 
 /* Popup de Escolha (Cliente ou Trabalhador) */
 .popup-escolha {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); display: flex;
+    justify-content: center; align-items: center; z-index: 1000;
 }
-
 .popup-conteudo {
-    background-color: white;
-    padding: 30px;
-    border-radius: 10px;
-    text-align: center;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    max-width: 400px;
-    width: 90%;
+    background-color: white; padding: 30px; border-radius: 10px;
+    text-align: center; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    max-width: 400px; width: 90%;
 }
-
-.popup-conteudo h3 {
-    margin-bottom: 20px;
-    color: #333;
-}
-
+.popup-conteudo h3 { margin-bottom: 20px; color: #333; }
 .popup-conteudo button {
-    background-color: #007bff;
-    color: white;
-    border: none;
-    padding: 12px 25px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1.1em;
-    margin: 5px;
-    transition: background-color 0.2s;
+    background-color: #007bff; color: white; border: none;
+    padding: 12px 25px; border-radius: 5px; cursor: pointer;
+    font-size: 1.1em; margin: 5px; transition: background-color 0.2s;
 }
-
-.popup-conteudo button:hover {
-    background-color: #0056b3;
-}
-
-.oculto {
-    display: none !important; /* Usar !important para garantir que sobrescreve outros estilos */
-}
+.popup-conteudo button:hover { background-color: #0056b3; }
+.oculto { display: none !important; }
 
 
 /* Modal de Confirmação de Logout */
 .modal-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.6);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.6); display: flex;
+    justify-content: center; align-items: center; z-index: 1000;
 }
-
 .modal-content {
-    background-color: white;
-    padding: 30px;
-    border-radius: 10px;
-    text-align: center;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    max-width: 400px;
-    width: 90%;
+    background-color: white; padding: 30px; border-radius: 10px;
+    text-align: center; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    max-width: 400px; width: 90%;
 }
-
-.modal-content h3 {
-    margin-bottom: 25px;
-    color: #333;
-}
-
-.modal-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-}
-
+.modal-content h3 { margin-bottom: 25px; color: #333; }
+.modal-buttons { display: flex; justify-content: center; gap: 15px; }
 .modal-buttons button {
-    padding: 10px 25px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 1em;
-    transition: background-color 0.2s;
+    padding: 10px 25px; border: none; border-radius: 5px;
+    cursor: pointer; font-size: 1em; transition: background-color 0.2s;
 }
-
-.btn-confirm-yes {
-    background-color: #dc3545; /* Vermelho para "Sim" (excluir/confirmar algo negativo) */
-    color: white;
-}
-
-.btn-confirm-yes:hover {
-    background-color: #c82333;
-}
-
-.btn-confirm-no {
-    background-color: #6c757d; /* Cinza para "Não" (cancelar) */
-    color: white;
-}
-
-.btn-confirm-no:hover {
-    background-color: #5a6268;
-}
-
-.hidden {
-    display: none !important;
-}
+.btn-confirm-yes { background-color: #dc3545; color: white; }
+.btn-confirm-yes:hover { background-color: #c82333; }
+.btn-confirm-no { background-color: #6c757d; color: white; }
+.btn-confirm-no:hover { background-color: #5a6268; }
+.hidden { display: none !important; }
 
 /* Responsividade */
 @media (max-width: 992px) {
-    .conteudo {
-        flex-direction: column;
-        align-items: center;
-    }
-    .categorias, .anuncio {
-        width: 100%;
-        max-width: 700px;
-        margin-bottom: 25px;
-        position: static; /* Remove o sticky em telas menores */
-        top: auto;
-    }
-    main {
-        width: 100%;
-    }
+    .conteudo { flex-direction: column; align-items: center; margin-top: 80px; }
+    .categorias, .anuncio { width: 100%; max-width: 700px; margin-bottom: 25px; position: static; top: auto; }
+    main { width: 100%; }
 }
 
 @media (max-width: 768px) {
-    header {
-        flex-wrap: wrap;
-        padding: 10px;
-    }
-    .search {
-        order: 3; /* Move a busca para a próxima linha em telas menores */
-        width: 100%;
-        margin-top: 10px;
-        max-width: none;
-    }
-    .user-info {
-        gap: 10px;
-    }
-    .logo-box {
-        margin-right: auto; /* Empurra logo para a esquerda */
-    }
-    .publicar, .post {
-        padding: 15px;
-    }
-    .botoes-postar {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    .upload-area {
-        width: 100%;
-        justify-content: center; /* Centraliza o botão e o texto */
-    }
-    .upload-button, .btn-enviar {
-        width: 100%; /* Botões ocupam a largura total */
-        text-align: center;
-    }
-    .filename-display, .image-preview { /* Adicionado .image-preview */
-        text-align: center;
-        margin-top: 5px;
-        width: 100%; /* Ocupa a largura total abaixo do botão */
-    }
-    .categoria-nome, .opcoes button {
-        padding: 10px 15px;
-        font-size: 16px;
-    }
-    .post-header .user-avatar {
-        width: 40px;
-        height: 40px;
-    }
-    .post-header .user-name {
-        font-size: 1em;
-    }
-    .post-content {
-        font-size: 0.95em;
-    }
-    .modal-content {
-        padding: 20px;
-    }
-    .modal-content h3 {
-        font-size: 18px;
-    }
-    .modal-buttons button {
-        padding: 8px 20px;
-        font-size: 14px;
-    }
+    header { flex-wrap: wrap; padding: 10px; height: auto; }
+    .search { order: 3; width: 100%; margin: 10px 0 0 0; max-width: none; }
+    .user-info { gap: 10px; }
+    .logo-box { margin-right: auto; }
+    .categorias, .anuncio { top: 20px; position: static; }
+    .conteudo { margin-top: 20px; }
+    #user-name-header { display: none; }
+    .publicar, .post { padding: 15px; }
+    .botoes-postar { flex-direction: column; align-items: stretch; }
+    .upload-area { width: 100%; justify-content: center; }
+    .upload-button, .btn-enviar { width: 100%; text-align: center; }
+    .filename-display, .image-preview { text-align: center; margin-top: 5px; width: 100%; }
+    .image-preview { max-height: 120px; width: auto; }
+    .filtro-botoes { flex-direction: row; flex-wrap: wrap; justify-content: center; }
+    .filtro-btn { flex-basis: 150px; }
+    .post-header .post-avatar { width: 40px; height: 40px; }
+    .post-header .user-name { font-size: 1em; }
+    .post-content { font-size: 0.95em; }
+    .modal-content { padding: 20px; }
+    .modal-content h3 { font-size: 18px; }
+    .modal-buttons button { padding: 8px 20px; font-size: 14px; }
+    .action-btn { padding: 6px 10px; font-size: 12px; }
+    .action-btn i { font-size: 14px; }
 }
 
 @media (max-width: 480px) {
-    header {
-        padding: 10px;
-    }
-    .logo-box img {
-        width: 40px;
-        height: 40px;
-    }
-    .logo-box h1 {
-        font-size: 20px;
-    }
-    .user-avatar-header {
-        width: 30px;
-        height: 30px;
-    }
-    .user-info span {
-        font-size: 0.9em;
-    }
-    #logout-button, #profile-button, #back-to-feed-button {
-        padding: 6px 10px;
-        font-size: 0.8em;
-    }
-    .search {
-        padding: 6px 10px;
-        font-size: 0.9em;
-    }
-    .publicar h2 {
-        font-size: 1.2em;
-    }
-    textarea#post-content-input {
-        min-height: 60px;
-        font-size: 0.9em;
-    }
-    .upload-button, .btn-enviar {
-        padding: 8px 12px;
-        font-size: 0.9em;
-    }
-    .form-message {
-        font-size: 0.8em;
-    }
-    .categoria-nome, .opcoes button {
-        padding: 8px 12px;
-        font-size: 14px;
-    }
-    .post-header .user-name {
-        font-size: 0.9em;
-    }
-    .post-content {
-        font-size: 0.9em;
-    }
-    .post button {
-        padding: 6px 10px;
-        font-size: 12px;
-    }
+    header { padding: 10px; }
+    .logo-box img { width: 40px; height: 40px; }
+    .logo-box h1 { font-size: 20px; }
+    .user-avatar-header { width: 30px; height: 30px; }
+    .user-info span { font-size: 0.9em; }
+    #logout-button, #profile-button, #back-to-feed-button, #feed-button { padding: 6px 10px; font-size: 0.8em; }
+    #feed-button { font-size: 14px; padding: 6px 10px; }
+    .search { padding: 6px 10px; font-size: 0.9em; }
+    .publicar h2 { font-size: 1.2em; }
+    textarea#post-content-input { min-height: 60px; font-size: 0.9em; }
+    .upload-button, .btn-enviar { padding: 8px 12px; font-size: 0.9em; }
+    .form-message { font-size: 0.8em; }
+    .filtro-btn { flex-basis: 100%; }
+    .post-header .user-name { font-size: 0.9em; }
+    .post-content { font-size: 0.9em; }
+    .comment-avatar { width: 28px; height: 28px; }
+    .comment-body { padding: 6px 10px; font-size: 13px; }
+    .comment-input { padding: 6px 10px; font-size: 13px; }
+    .btn-send-comment { padding: 6px 10px; font-size: 13px; }
 }
+
