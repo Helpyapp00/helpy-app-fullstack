@@ -4,7 +4,7 @@
   "description": "Aplicativo Fullstack Helpy",
   
   "engines": {
-    "node": "20.x"
+    "node": "18.x"
   },
   "scripts": {
     "start": "node api/server",
