@@ -55,6 +55,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 localStorage.setItem('userType', data.userType);
                 localStorage.setItem('userName', data.userName || 'Usuário');
                 localStorage.setItem('userPhotoUrl', data.userPhotoUrl || 'https://via.placeholder.com/50?text=User');
+                // Salva o tema do usuário no localStorage
+                if (data.userTheme) {
+                    localStorage.setItem('theme', data.userTheme);
+                    document.documentElement.classList.toggle('dark-mode', data.userTheme === 'dark');
+                }
                 
                 window.location.href = 'index.html'; // Redireciona para o feed
             } else {

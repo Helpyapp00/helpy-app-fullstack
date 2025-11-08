@@ -6,15 +6,16 @@
     <title>Cadastro - Helpy</title>
     <link rel="icon" href="icons/helpy.ico" type="image/x-icon">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+    <link rel="stylesheet" href="/style.css"> <!-- Usando style.css base -->
     <link rel="stylesheet" href="/cadastro.css">
 </head>
 <body>
-  <div class="container">
+  <div class="container-cadastro">
     <div class="header-content">
       <img src="imagens/helpy-cadastro.png" alt="Logo Helpy Cadastro" class="header-logo">
       <h1>Crie seu perfil no Helpy</h1>
     </div>
-    <div id="form-message" class="hidden"></div>
+    <div id="form-message" class="form-message hidden"></div>
 
     <form id="form-cadastro">
       <div class="form-row">
@@ -28,7 +29,7 @@
         <div class="form-group photo-upload-group full-width"> <label for="foto">Foto de perfil</label>
           <input type="file" id="foto" name="fotoPerfil" accept="image/*">
           <div class="foto-preview-container">
-            <img id="foto-preview" src="" alt="Pré-visualização da foto de perfil">
+            <img id="foto-preview" src="imagens/default-user.png" alt="Pré-visualização da foto de perfil">
             <div class="foto-mask"></div>
           </div>
         </div>
@@ -39,13 +40,19 @@
           <label for="idade">Idade</label>
           <input type="number" id="idade" name="idade" min="18" required>
         </div>
+        <!-- 🛑 ATUALIZAÇÃO: Campos de localização separados -->
         <div class="form-group">
-          <label for="cidade">Cidade/UF</label>
-          <input type="text" id="cidade" name="cidade" required>
+          <label for="cidade">Cidade</label>
+          <input type="text" id="cidade" name="cidade" required placeholder="Ex: Juiz de Fora">
         </div>
       </div>
-
       <div class="form-row">
+         <div class="form-group">
+          <label for="estado">Estado (Sigla)</label>
+          <input type="text" id="estado" name="estado" required placeholder="Ex: MG" maxlength="2">
+        </div>
+        <!-- Fim da Atualização -->
+
         <div class="form-group">
           <label for="tipo">Você é:</label>
           <select id="tipo" name="tipo">
@@ -53,9 +60,12 @@
             <option value="cliente">Cliente</option>
           </select>
         </div>
+      </div>
+      
+      <div class="form-row">
         <div id="atuacao-group" class="form-group">
           <label for="atuacao">Área de atuação</label>
-          <input type="text" id="atuacao" name="atuacao" placeholder="Ex: Eletricista" required>
+          <input type="text" id="atuacao" name="atuacao" placeholder="Ex: Eletricista">
         </div>
       </div>
 
@@ -82,15 +92,29 @@
       </div>
 
       <div class="form-row">
-        <div class="form-group full-width">
-          <label for="descricao">Descrição</label>
-          <textarea id="descricao" name="descricao" placeholder="Fale um pouco sobre você..." required></textarea>
+        <div class="form-group">
+          <label for="tema">Tema Preferido</label>
+          <select id="tema" name="tema" required>
+            <option value="light">Claro</option>
+            <option value="dark">Escuro</option>
+          </select>
         </div>
       </div>
 
-      <button type="submit">Cadastrar</button>
+      <div class="form-row">
+        <div class="form-group full-width">
+          <label for="descricao">Descrição</label>
+          <textarea id="descricao" name="descricao" placeholder="Fale um pouco sobre você..."></textarea>
+        </div>
+      </div>
+
+      <button type="submit" class="btn-submit-cadastro">Cadastrar</button>
     </form>
+      <div class="link-login">
+          Já tem uma conta? <a href="login.html">Faça login aqui</a>
+      </div>
   </div>
   <script src="/cadastro.js"></script>
 </body>
 </html>
+

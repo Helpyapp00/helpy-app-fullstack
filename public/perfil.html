@@ -3,45 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfil - Helpy</title>
+    <title>Perfil</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Link para o CSS principal (do Feed) -->
-    <link rel="stylesheet" href="/style.css"> 
-    
-    <!-- Link para o CSS específico do Perfil -->
+    <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/perfil.css">
 </head>
 <body>
+    
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark-mode');
+            }
+        })();
+    </script>
 
-    <!-- Header unificado (vem do style.css) -->
     <header>
         <div class="logo-box">
-            <!-- Usando a logo correta para a página de perfil -->
-            <img src="imagens/helpy-perfil.png" alt="Logo Helpy"> 
-            <h1>Helpy</h1>
+            <img src="imagens/helpy-feed.png" alt="Logo Helpy"> <h1>Helpy</h1>
         </div>
         
         <div class="user-info">
-            <img id="user-avatar-header" src="imagens/default-user.png" alt="Avatar do Usuário" class="user-avatar-header">
+            <img id="user-avatar-header" src="imagens/default-user.png" alt="Avatar" class="user-avatar-header">
             <span id="user-name-header">Carregando...</span>
             
-            <!-- 🛑 CORREÇÃO: Botão "Feed" com ícone e ID -->
-            <button id="feed-button" title="Ir para o Feed">
+            <button id="profile-button" title="Meu Perfil">
+                <i class="fas fa-user"></i>
+            </button>
+            <button id="feed-button" title="Voltar ao Feed">
                 <i class="fas fa-home"></i>
             </button>
-            
-            <!-- 🛑 CORREÇÃO: Botão "Sair" com ID -->
             <button id="logout-button">Sair</button>
         </div>
     </header>
 
-    <!-- Conteúdo do Perfil (o .perfil-css vai centralizar isso) -->
     <div class="content-perfil">
         <div class="perfil-card">
-            <!-- Header do Card -->
             <div class="perfil-header">
-                <img id="fotoPerfil" class="perfil-img" src="imagens/default-user.png" alt="Foto do Perfil">
+                <img id="fotoPerfil" class="perfil-img" src="imagens/default-user.png" alt="User Profile Image">
                 
                 <label id="labelInputFotoPerfil" class="label-input-foto oculto">
                     <i class="fas fa-camera"></i> Alterar Foto
@@ -55,112 +55,230 @@
                     <span id="mediaEstrelas" class="media-avaliacao"></span>
                     <span id="totalAvaliacoes" class="total-avaliacoes"></span>
                 </div>
+                <!-- 🆕 NOVO: Gamificação - Nível (visível para todos) -->
+                <div id="nivel-container" class="nivel-container" style="display: none;">
+                    <div class="nivel-badge">
+                        <span class="selo-nivel">🛡️</span> Nível <span id="nivelUsuario">1</span>
+                    </div>
+                </div>
+                <!-- 🆕 NOVO: XP (só para dono do perfil) -->
+                <div id="gamificacao-container" class="gamificacao-container" style="display: none;">
+                    <div class="xp-bar-container">
+                        <div class="xp-info">
+                            <span>XP: <span id="xpAtual">0</span> / <span id="xpProximo">100</span></span>
+                        </div>
+                        <div class="xp-bar">
+                            <div id="xp-bar-fill" class="xp-bar-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
             
-            <!-- Corpo do Card -->
             <div class="perfil-body">
                 <h3>Informações Pessoais</h3>
                 <ul class="perfil-info">
-                    <li>
-                        <i class="fas fa-envelope"></i>
-                        <a id="emailPerfil" href="#">Carregando...</a>
+                    <li id="email-item">
+                        <i class="fas fa-envelope"></i> <a id="emailPerfil" href="#">...</a>
                         <input type="email" id="inputEmail" class="input-edicao oculto" placeholder="Email (não pode ser alterado)" disabled>
                     </li>
-                    <li>
-                        <i class="fas fa-calendar-alt"></i>
-                        <span id="idadePerfil">Carregando...</span>
+                    <li id="idade-item">
+                        <i class="fas fa-calendar-alt"></i> <span id="idadePerfil">...</span>
                         <input type="number" id="inputIdade" class="input-edicao oculto" placeholder="Idade (anos)">
                     </li>
-                    <li>
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span id="cidadePerfil">Carregando...</span>
-                        <input type="text" id="inputCidade" class="input-edicao oculto" placeholder="Cidade">
+                    <li id="telefone-item">
+                        <i class="fas fa-phone"></i> <a id="telefonePerfil" href="#">...</a>
+                        <input type="tel" id="inputWhatsapp" class="input-edicao oculto" placeholder="(XX) XXXXX-XXXX">
                     </li>
-                    <li>
-                        <i class="fas fa-phone"></i>
-                        <a id="telefonePerfil" href="#">Carregando...</a>
-                        <input type="tel" id="inputWhatsapp" class="input-edicao oculto" placeholder="Telefone / WhatsApp">
-                    </li>
-                    <li id="atuacao-item">
-                        <i class="fas fa-briefcase"></i>
-                        <span id="atuacaoPerfil">Carregando...</span>
+                    <li id="atuacao-item" style="display: none;">
+                        <i class="fas fa-briefcase"></i> <span id="atuacaoPerfil">...</span>
                         <input type="text" id="inputAtuacao" class="input-edicao oculto" placeholder="Área de Atuação">
                     </li>
+                    
+                    <!-- 🛑 ATUALIZAÇÃO: Cidade e Estado visíveis -->
+                    <li id="cidade-item">
+                        <i class="fas fa-city"></i> <span id="cidadePerfil">...</span>
+                        <input type="text" id="inputCidade" class="input-edicao oculto" placeholder="Sua Cidade">
+                    </li>
+                    <li id="estado-item">
+                        <i class="fas fa-map-location-dot"></i> <span id="estadoPerfil">...</span>
+                        <input type="text" id="inputEstado" class="input-edicao oculto" placeholder="Estado (Ex: SP)" maxlength="2">
+                    </li>
+                    
                 </ul>
-                
                 <div class="perfil-descricao">
                     <h4>Descrição:</h4>
-                    <p id="descricaoPerfil">Carregando...</p>
+                    <p id="descricaoPerfil">...</p>
                     <textarea id="inputDescricao" class="input-edicao oculto" placeholder="Sua descrição..."></textarea>
                 </div>
             </div>
 
-            <!-- Footer do Card (Botões) -->
+            <!-- 🆕 NOVO: Botão de Disponibilidade (apenas para profissionais) -->
+            <div id="disponibilidade-container" class="disponibilidade-container" style="display: none;">
+                <label class="switch disponibilidade-switch">
+                    <input type="checkbox" id="toggle-disponibilidade">
+                    <span class="slider round"></span>
+                </label>
+                <span id="disponibilidade-texto">Disponível agora</span>
+            </div>
+            
+            <!-- 🆕 NOVO: Agendador Helpy -->
+            <div id="agendador-container" class="agendador-container" style="display: none;">
+                <button id="btn-ver-agenda" class="btn-ver-agenda">
+                    <i class="fas fa-calendar-alt"></i> Ver Agenda
+                </button>
+                <button id="btn-configurar-horarios" class="btn-configurar-horarios">
+                    <i class="fas fa-clock"></i> Configurar Horários
+                </button>
+            </div>
+
             <div class="perfil-footer">
-                <button id="editarPerfilBtn" class="edit-btn">Editar Perfil</button>
+                <button id="editarPerfilBtn" class="edit-btn" style="display: none;">Editar Perfil</button>
                 <div class="botoes-edicao oculto">
-                    <button id="btnSalvarPerfil" class="salvar-btn">Salvar</button>
+                    <!-- 🛑 ATUALIZAÇÃO: Botão Salvar com Spinner -->
+                    <button id="btnSalvarPerfil" class="salvar-btn">
+                        <span class="btn-text">Salvar</span>
+                        <span class="btn-spinner oculto"></span>
+                    </button>
                     <button id="btnCancelarEdicao" class="cancelar-btn">Cancelar</button>
                 </div>
             </div>
         </div>
         
-        <!-- Abas de Navegação (Serviços/Postagens) -->
+        <!-- ... (Restante do HTML de perfil.html sem alteração) ... -->
         <div class="perfil-acoes">
-            <button id="mostrarServicosBtn" class="perfil-btn ativo">Serviços</button>
+            <button id="mostrarServicosBtn" class="perfil-btn ativo" style="display: none;">Projetos</button>
             <button id="mostrarPostagensBtn" class="perfil-btn">Postagens</button>
         </div>
-
-        <!-- Seção de Serviços -->
-        <div id="secao-servicos" class="secao-perfil ativa">
+        <div id="secao-servicos" class="secao-perfil ativa" style="display: none;">
             <div class="servicos-header">
-                <h3>Minha Galeria de Serviços</h3>
-                <button id="addServicoBtn" class="add-btn"><i class="fas fa-plus"></i> Adicionar Serviço</button>
-                <input type="file" id="inputFotoServico" multiple accept="image/*" style="display: none;">
+                <h3>Projetos</h3>
+                <button id="addServicoBtn" class="add-btn" style="display: none;">Adicionar Projeto</button>
+                <input type="file" id="inputFotoServico" accept="image/*,video/*" multiple style="display: none;">
             </div>
-            <div id="galeriaServicos" class="galeria-servicos">
-                <!-- Serviços serão renderizados aqui pelo JS -->
-            </div>
+            <div id="galeriaServicos" class="galeria-servicos"></div>
         </div>
         
-        <!-- Seção de Postagens -->
+        <!-- 🆕 NOVO: Modal de Agenda -->
+        <div id="modal-agenda" class="modal-overlay hidden">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h3><i class="fas fa-calendar-alt"></i> Minha Agenda</h3>
+                    <button class="btn-close-modal" data-modal="modal-agenda">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="agendamentos-lista"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🆕 NOVO: Modal de Configurar Horários -->
+        <div id="modal-configurar-horarios" class="modal-overlay hidden">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h3><i class="fas fa-clock"></i> Configurar Horários Disponíveis</h3>
+                    <button class="btn-close-modal" data-modal="modal-configurar-horarios">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-horarios">
+                        <div id="horarios-container"></div>
+                        <button type="button" class="btn-secondary" id="btn-adicionar-horario">+ Adicionar Horário</button>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">Salvar Horários</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🆕 NOVO: Modal para validar projeto -->
+        <div id="modal-validar-projeto" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3><i class="fas fa-shield-alt"></i> Validar Projeto</h3>
+                    <button class="btn-close-modal" data-modal="modal-validar-projeto">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-validar-projeto">
+                        <div class="form-group">
+                            <label>Comentário sobre a validação (opcional)</label>
+                            <textarea id="comentario-validacao" placeholder="Deixe um comentário sobre por que você está validando este projeto..." rows="4"></textarea>
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">🛡️ Validar Projeto</button>
+                            <button type="button" class="btn-secondary btn-close-modal" data-modal="modal-validar-projeto">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🆕 NOVO: Modal para adicionar projeto ao portfólio -->
+        <div id="modal-adicionar-projeto" class="modal-overlay hidden">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h3><i class="fas fa-folder-plus"></i> Adicionar Projeto ao Portfólio</h3>
+                    <button class="btn-close-modal" data-modal="modal-adicionar-projeto">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-adicionar-projeto">
+                        <div class="form-group">
+                            <label>Título do Projeto</label>
+                            <input type="text" id="projeto-titulo" required placeholder="Ex: Site da Padaria X">
+                        </div>
+                        <div class="form-group">
+                            <label>Descrição</label>
+                            <textarea id="projeto-descricao" required placeholder="Descreva o projeto..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Desafio Enfrentado</label>
+                            <textarea id="projeto-desafio" placeholder="Qual foi o desafio principal deste projeto?"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Tecnologias/Habilidades Usadas</label>
+                            <input type="text" id="projeto-tecnologias" placeholder="Ex: JavaScript, React, Node.js (separadas por vírgula)">
+                        </div>
+                        <div class="form-group">
+                            <label>Fotos/Vídeos do Projeto</label>
+                            <input type="file" id="projeto-imagens" accept="image/*,video/*" multiple>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="projeto-desafio-helpy"> 
+                                Este projeto é parte de um Desafio Helpy
+                            </label>
+                        </div>
+                        <div class="form-group" id="tag-desafio-group" style="display: none;">
+                            <label>Tag do Desafio</label>
+                            <input type="text" id="projeto-tag-desafio" placeholder="Ex: #DesafioHelpy">
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">Adicionar Projeto</button>
+                            <button type="button" class="btn-secondary btn-close-modal" data-modal="modal-adicionar-projeto">Cancelar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
         <div id="secao-postagens" class="secao-perfil">
             <h3>Minhas Postagens</h3>
-            <div id="minhasPostagens" class="minhas-postagens">
-                <!-- Postagens serão renderizadas aqui pelo JS -->
-            </div>
+            <div id="minhasPostagens" class="minhas-postagens"></div>
         </div>
-        
-        <!-- Seção de Avaliação -->
         <div id="secao-avaliacao" class="secao-perfil" style="display: none;">
-             <h3>Deixe sua Avaliação</h3>
-             <form id="formAvaliacao">
-                <div class="estrelas" data-value="0">
+            <h3>Deixe sua Avaliação</h3>
+            <form id="formAvaliacao">
+                <div id="estrelas-avaliacao-input" class="estrelas">
                     <span data-value="1"><i class="far fa-star"></i></span>
                     <span data-value="2"><i class="far fa-star"></i></span>
                     <span data-value="3"><i class="far fa-star"></i></span>
                     <span data-value="4"><i class="far fa-star"></i></span>
                     <span data-value="5"><i class="far fa-star"></i></span>
                 </div>
-                <span id="notaSelecionada"></span>
-                <textarea id="comentarioAvaliacaoInput" placeholder="Escreva um comentário (opcional)..."></textarea>
-                <button type="submit" id="btnEnviarAvaliacao" class="salvar-btn">Enviar Avaliação</button>
-             </form>
+                <p id="notaSelecionada"></p>
+                <textarea id="comentarioAvaliacaoInput" placeholder="Escreva um comentário sobre o serviço..."></textarea>
+                <button id="btnEnviarAvaliacao" class="salvar-btn" type="submit">Enviar Avaliação</button>
+            </form>
         </div>
     </div>
-    
-    <!-- Modal para Visualização de Imagem -->
-    <div id="image-modal" class="image-modal-overlay">
-        <span class="close-btn-modal" id="close-image-modal">&times;</span>
-        <img class="image-modal-content" id="modal-image">
-         <div id="modal-info-area" style="display: none;">
-            <h3 id="servico-titulo-modal"></h3>
-            <p id="servico-descricao-modal"></p>
-            <div id="avaliacoes-lista-modal"></div>
-        </div>
-    </div>
-
-    <!-- Modal de Confirmação de Logout (vem do style.css) -->
     <div id="logout-confirm-modal" class="modal-overlay hidden">
         <div class="modal-content">
             <h3>Tem certeza que deseja sair?</h3>
@@ -170,7 +288,10 @@
             </div>
         </div>
     </div>
-    
+    <div id="image-modal" class="image-modal-overlay">
+        <span id="close-image-modal" class="close-btn-modal">&times;</span>
+        <img id="modal-image" class="image-modal-content" src="" alt="Imagem Ampliada">
+    </div>
     <script src="/perfil.js"></script>
 </body>
 </html>

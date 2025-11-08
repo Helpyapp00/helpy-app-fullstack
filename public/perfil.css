@@ -1,28 +1,27 @@
-/* 🛑 NOVO: Centraliza o conteúdo do perfil e ajusta o espaçamento do header */
+/* 🛑 ATUALIZAÇÃO: Refatorado para usar Variáveis CSS */
+/* (Peguei a base do seu arquivo enviado) */
+
 .content-perfil {
     width: 100%;
-    max-width: 1000px; /* Largura máxima do conteúdo do perfil */
+    max-width: 1000px;
     padding: 20px;
     box-sizing: border-box;
-    margin-top: 90px; /* 70px (header) + 20px (espaço) */
-    margin-left: auto; /* Centraliza */
-    margin-right: auto; /* Centraliza */
+    margin-top: 90px;
+    margin-left: auto;
+    margin-right: auto;
 }
 
-/* 🛑 NOVO: Estilo para "Nenhuma avaliação" (para não ser amarelo) */
 .media-avaliacao span.no-rating {
-    color: #888;
+    color: var(--text-secondary); /* Aplicado */
     font-size: 14px;
     font-style: italic;
 }
 
-/* --- O RESTO DO SEU CSS DO PERFIL (INTACTO) --- */
-
 .perfil-card {
-    background-color: #ffffff;
+    background-color: var(--bg-secondary); /* Aplicado */
     padding: 40px;
     border-radius: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 15px var(--shadow-color); /* Aplicado */
     width: 100%;
     box-sizing: border-box;
     margin-bottom: 20px;
@@ -33,7 +32,7 @@
     flex-direction: column;
     align-items: center;
     width: 100%;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-color); /* Aplicado */
     padding-bottom: 20px;
 }
 
@@ -42,26 +41,28 @@
     height: 130px;
     border-radius: 50%;
     object-fit: cover;
-    border: 4px solid #fff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    border: 4px solid var(--bg-secondary); /* Aplicado */
+    box-shadow: 0 2px 8px var(--shadow-color); /* Aplicado */
     margin-bottom: 10px;
     cursor: pointer;
 }
 
 .label-input-foto {
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: var(--btn-secondary-bg); /* Azul */
     color: white;
-    padding: 8px 12px;
+    padding: 6px 12px;
     border-radius: 20px;
-    font-size: 14px;
+    font-size: 13px;
     cursor: pointer;
     transition: all 0.3s ease;
-    margin-top: -40px;
+    margin-top: 5px; /* Ajustado */
     margin-bottom: 10px;
     z-index: 2;
+    border: none;
+    box-shadow: 0 2px 5px var(--shadow-color);
 }
 .label-input-foto:hover {
-    background-color: rgba(0, 0, 0, 0.7);
+    background-color: var(--btn-secondary-hover); /* Azul mais escuro */
 }
 .label-input-foto i {
     margin-right: 5px;
@@ -69,53 +70,34 @@
 #inputFotoPerfil {
     display: none;
 }
-/* Classe para ocultar elementos */
 .oculto {
     display: none !important;
 }
 
 #nomePerfil {
-    color: #333333;
+    color: var(--text-primary); 
     margin: 10px 0;
     font-size: 30px;
 }
 
-#media-avaliacao-container {
-    display: none;
-    margin-top: 5px;
-}
-.media-avaliacao {
-    font-size: 18px;
-    color: #ffc107;
-}
-.media-avaliacao .fas, .media-avaliacao .fas {
-    margin: 0 1px;
-}
-.total-avaliacoes {
-    font-size: 14px;
-    color: #888;
-    margin-left: 10px;
-}
+#media-avaliacao-container { display: block; margin-top: 5px; } /* Alterado de 'none' para 'block' para aparecer */
+.media-avaliacao { font-size: 18px; color: #ffc107; }
+.media-avaliacao .fas, .media-avaliacao .fas { margin: 0 1px; }
+.total-avaliacoes { font-size: 14px; color: var(--text-secondary); margin-left: 10px; } /* Aplicado */
 
-.perfil-body {
-    padding: 20px 0;
-}
+.perfil-body { padding: 20px 0; }
 .perfil-body h3 {
     font-size: 20px;
-    color: #333;
-    border-bottom: 1px solid #eee;
+    color: var(--text-primary); /* Aplicado */
+    border-bottom: 1px solid var(--border-color); /* Aplicado */
     padding-bottom: 10px;
     margin-bottom: 15px;
 }
 
-.perfil-info {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
+.perfil-info { list-style: none; padding: 0; margin: 0; }
 .perfil-info li {
     font-size: 16px;
-    color: #555;
+    color: var(--text-secondary); /* Aplicado */
     margin-bottom: 12px;
     display: flex;
     align-items: center;
@@ -123,37 +105,29 @@
 .perfil-info li i {
     width: 25px;
     text-align: center;
-    color: #007bff;
+    color: var(--text-link); /* Aplicado */
     margin-right: 10px;
 }
 .perfil-info li i.fa-whatsapp { color: #25d366; }
 .perfil-info li i.fa-briefcase { color: #6f42c1; }
+/* 🛑 NOVO: Ícones para Cidade e Estado */
+.perfil-info li i.fa-city { color: #17a2b8; }
+.perfil-info li i.fa-map-location-dot { color: #fd7e14; }
 
-.perfil-info a {
-    color: #555;
-    text-decoration: none;
-    transition: color 0.3s ease;
-}
-.perfil-info a:hover {
-    color: #007bff;
-}
 
-.perfil-descricao {
-    margin-top: 20px;
-}
-.perfil-descricao h4 {
-    font-size: 18px;
-    color: #444;
-    margin-bottom: 10px;
-}
+.perfil-info a { color: var(--text-secondary); text-decoration: none; transition: color 0.3s ease; } /* Aplicado */
+.perfil-info a:hover { color: var(--text-link); } /* Aplicado */
+
+.perfil-descricao { margin-top: 20px; }
+.perfil-descricao h4 { font-size: 18px; color: var(--text-primary); margin-bottom: 10px; } /* Aplicado */
 .perfil-descricao p {
     font-style: italic;
-    color: #666;
+    color: var(--text-secondary); /* Aplicado */
     line-height: 1.6;
-    background-color: #f9f9f9;
+    background-color: var(--bg-primary); /* Aplicado */
     padding: 15px;
     border-radius: 8px;
-    border-left: 4px solid #007bff;
+    border-left: 4px solid var(--text-link); /* Aplicado */
 }
 
 .input-edicao {
@@ -161,20 +135,15 @@
     width: 95%;
     padding: 10px;
     margin-bottom: 10px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color); /* Aplicado */
+    background-color: var(--bg-input); /* Aplicado */
+    color: var(--text-primary); /* Aplicado */
     border-radius: 5px;
     font-size: 16px;
 }
-textarea.input-edicao {
-    min-height: 100px;
-    resize: vertical;
-}
+textarea.input-edicao { min-height: 100px; resize: vertical; }
 
-.perfil-footer {
-    padding-top: 20px;
-    border-top: 1px solid #eee;
-    text-align: center;
-}
+.perfil-footer { padding-top: 20px; border-top: 1px solid var(--border-color); text-align: center; } /* Aplicado */
 
 .edit-btn, .salvar-btn, .cancelar-btn, .add-btn, .perfil-btn {
     padding: 12px 25px;
@@ -184,11 +153,11 @@ textarea.input-edicao {
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 10px var(--shadow-color); /* Aplicado */
     margin: 5px;
 }
-.edit-btn { background-color: #007bff; color: white; }
-.edit-btn:hover { background-color: #0056b3; transform: translateY(-2px); }
+.edit-btn { background-color: var(--btn-secondary-bg); color: white; } /* Aplicado */
+.edit-btn:hover { background-color: var(--btn-secondary-hover); transform: translateY(-2px); } /* Aplicado */
 
 .salvar-btn { background-color: #28a745; color: white; }
 .salvar-btn:hover { background-color: #218838; transform: translateY(-2px); }
@@ -196,297 +165,535 @@ textarea.input-edicao {
 .cancelar-btn { background-color: #dc3545; color: white; }
 .cancelar-btn:hover { background-color: #c82333; transform: translateY(-2px); }
 
+/* 🛑 NOVO: Estilos para as abas de serviços e postagens */
+.perfil-acoes {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 10px;
+}
+
+.perfil-btn {
+    background: none;
+    border: none;
+    padding: 8px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    border-radius: 20px;
+    transition: all 0.3s ease;
+}
+
+.perfil-btn.ativo {
+    background-color: var(--btn-primary-bg);
+    color: white;
+}
+
+.perfil-btn:hover {
+    background-color: var(--btn-secondary-bg);
+    color: white;
+}
+
+.secao-perfil {
+    margin-bottom: 30px;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 10px var(--shadow-color);
+}
+
+/* 🛑 NOVO: Estilos do Spinner (Adicionado ao seu CSS) */
+.salvar-btn {
+    position: relative;
+    transition: all 0.3s ease;
+}
+.salvar-btn .btn-text {
+    transition: all 0.2s ease;
+}
+.salvar-btn .btn-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+    -webkit-animation: spin 1s ease-in-out infinite;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    margin-top: -10px;
+    margin-left: -10px;
+    visibility: hidden;
+    opacity: 0;
+    transition: all 0.2s ease;
+}
+.salvar-btn.saving .btn-text {
+    visibility: hidden;
+    opacity: 0;
+}
+.salvar-btn.saving .btn-spinner {
+    visibility: visible;
+    opacity: 1;
+}
+@keyframes spin {
+    to { -webkit-transform: rotate(360deg); }
+}
+@-webkit-keyframes spin {
+    to { -webkit-transform: rotate(360deg); }
+}
+/* Fim dos estilos do Spinner */
+
+
 .add-btn { background-color: #17a2b8; color: white; }
 .add-btn:hover { background-color: #138496; transform: translateY(-2px); }
 
-.perfil-acoes {
-    text-align: center;
-    margin-bottom: 20px;
-}
+.perfil-acoes { text-align: center; margin-bottom: 20px; }
 .perfil-btn {
-    background-color: #f0f2f5;
-    color: #555;
+    background-color: var(--bg-action); /* Aplicado */
+    color: var(--text-secondary); /* Aplicado */
     box-shadow: none;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color); /* Aplicado */
 }
 .perfil-btn.ativo {
-    background-color: #007bff;
+    background-color: var(--btn-secondary-bg); /* Aplicado */
     color: white;
-    border-color: #007bff;
+    border-color: var(--btn-secondary-bg); /* Aplicado */
 }
 
 .secao-perfil {
     display: none;
-    background-color: #fff;
+    background-color: var(--bg-secondary); /* Aplicado */
     padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 2px 8px var(--shadow-color); /* Aplicado */
     margin-bottom: 20px;
 }
-.secao-perfil.ativa {
-    display: block;
-}
-.secao-perfil h3 {
-    font-size: 22px;
-    margin-bottom: 20px;
-    border-bottom: 1px solid #eee;
-    padding-bottom: 10px;
-}
+.secao-perfil.ativa { display: block; }
+.secao-perfil h3 { font-size: 22px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; } /* Aplicado */
 
-.servicos-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.galeria-servicos {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 15px;
-}
-.servico-item-container {
-    position: relative;
-}
+.servicos-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.galeria-servicos { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; }
+.servico-item-container { position: relative; }
 .servico-item {
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color); /* Aplicado */
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 5px var(--shadow-color); /* Aplicado */
+    background-color: var(--bg-secondary); /* Aplicado */
 }
-.foto-servico {
-    width: 100%;
-    height: 150px;
-    object-fit: cover;
-    display: block;
-    cursor: pointer;
-}
-.servico-titulo {
+.foto-servico { width: 100%; height: 150px; object-fit: cover; display: block; cursor: pointer; }
+.servico-info {
     padding: 10px;
+}
+
+.servico-titulo {
     font-size: 16px;
     font-weight: bold;
-    text-align: center;
-    background-color: #f9f9f9;
+    margin: 0 0 8px 0;
+    color: var(--text-primary);
 }
-.btn-remover-foto {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background-color: rgba(220, 53, 69, 0.8);
+
+.validacoes-badge {
+    display: inline-block;
+    background: #ffc107;
+    color: #333;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: bold;
+    margin-left: 5px;
+}
+
+.badge-desafio {
+    display: inline-block;
+    background: var(--btn-secondary-bg);
+    color: white;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: bold;
+    margin-left: 5px;
+}
+
+.tecnologias-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    margin-top: 8px;
+}
+
+.tag-tecnologia {
+    background: var(--bg-action);
+    color: var(--text-primary);
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 0.8em;
+    border: 1px solid var(--border-color);
+}
+
+.btn-validar-projeto {
+    margin-top: 8px;
+    padding: 6px 12px;
+    background: var(--btn-primary-bg);
     color: white;
     border: none;
-    border-radius: 50%;
-    width: 25px;
-    height: 25px;
-    font-size: 14px;
-    cursor: pointer;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    transition: background-color 0.2s ease;
-    z-index: 2;
-}
-.btn-remover-foto:hover {
-    background-color: rgba(220, 53, 69, 1);
-}
-
-.mensagem-vazia {
-    color: #888;
-    font-style: italic;
-    text-align: center;
-    width: 100%;
-    padding: 20px 0;
-}
-
-/* Postagens (Reutilizando estilo do feed) */
-.minhas-postagens {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-}
-.post {
-    background-color: #fdfdfd;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-    overflow: hidden;
-}
-.post-header {
-    display: flex;
-    align-items: center;
-    padding: 10px 15px;
-    gap: 10px;
-    border-bottom: 1px solid #f0f0f0;
-}
-.post-avatar {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-}
-.post-author-info {
-    flex-grow: 1;
-}
-.post-author-name {
-    font-weight: bold;
-    color: #333;
-}
-.post-date {
-    font-size: 12px;
-    color: #888;
-    display: block;
-}
-.delete-post-btn {
-    background: none;
-    border: none;
-    color: #999;
-    font-size: 16px;
-    cursor: pointer;
-}
-.delete-post-btn:hover {
-    color: #dc3545;
-}
-.post-content {
-    padding: 15px;
-    line-height: 1.6;
-}
-.post-image {
-    width: 100%;
-    max-height: 400px;
-    object-fit: cover;
-    margin-top: 10px;
     border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: background 0.2s;
 }
+
+.btn-validar-projeto:hover {
+    background: var(--btn-primary-hover);
+}
+.btn-remover-foto { position: absolute; top: 5px; right: 5px; background-color: rgba(220, 53, 69, 0.8); color: white; border: none; border-radius: 50%; width: 25px; height: 25px; font-size: 14px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: background-color 0.2s ease; z-index: 2; }
+.btn-remover-foto:hover { background-color: rgba(220, 53, 69, 1); }
+
+.mensagem-vazia { color: var(--text-secondary); font-style: italic; text-align: center; width: 100%; padding: 20px 0; } /* Aplicado */
+
+/* Postagens (Reutilizando estilo do feed, já usam variáveis) */
+.minhas-postagens { display: flex; flex-direction: column; gap: 15px; }
 
 /* Seção de Avaliação */
-#formAvaliacao {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-.estrelas {
-    cursor: pointer;
-    margin-bottom: 15px;
-}
-.estrelas span {
-    font-size: 30px;
-    color: #ccc;
-    margin: 0 3px;
-    transition: color 0.2s ease;
-}
-.estrelas span:hover {
-    color: #ffc107;
-}
-.estrelas span .fas {
-    color: #ffc107;
-}
-#notaSelecionada {
-    font-size: 14px;
-    color: #777;
-    min-height: 20px;
-    margin-bottom: 10px;
-}
+#formAvaliacao { display: flex; flex-direction: column; align-items: center; }
+.estrelas { cursor: pointer; margin-bottom: 15px; }
+.estrelas span { font-size: 30px; color: var(--bg-slider); margin: 0 3px; transition: color 0.2s ease; } /* Aplicado */
+.estrelas span:hover { color: #ffc107; }
+.estrelas span .fas { color: #ffc107; }
+#notaSelecionada { font-size: 14px; color: var(--text-secondary); min-height: 20px; margin-bottom: 10px; } /* Aplicado */
 #formAvaliacao textarea {
     width: 100%;
     max-width: 500px;
     min-height: 80px;
     padding: 10px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color); /* Aplicado */
+    background-color: var(--bg-input); /* Aplicado */
+    color: var(--text-primary); /* Aplicado */
     border-radius: 5px;
     font-size: 16px;
     margin-bottom: 15px;
 }
-
+#formAvaliacao textarea::placeholder { color: var(--text-placeholder); } /* Aplicado */
 
 /* Modal de Imagem */
-.image-modal-overlay {
-    display: none; 
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.9);
-    justify-content: center;
-    align-items: center;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+.image-modal-overlay { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.9); justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
+.image-modal-overlay.visible { display: flex; opacity: 1; }
+.image-modal-content { max-width: 90vw; max-height: 90vh; border-radius: 5px; background-color: var(--bg-secondary); } /* Aplicado */
+.close-btn-modal { position: absolute; top: 20px; right: 30px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; }
+
+/* 🛑 NOVO: Estilos para as páginas de Configuração (do seu CSS) */
+.config-form {
+    border: 1px solid var(--border-color); /* Aplicado */
+    border-radius: 8px;
+    padding: 20px;
+    background-color: var(--bg-primary); /* Aplicado */
 }
-.image-modal-overlay.visible {
-    display: flex;
-    opacity: 1;
-}
-.image-modal-content {
-    max-width: 90vw;
-    max-height: 90vh;
-    border-radius: 5px;
-}
-.close-btn-modal {
-    position: absolute;
-    top: 20px;
-    right: 30px;
-    color: #fff;
-    font-size: 40px;
+.config-form label {
     font-weight: bold;
+    font-size: 14px;
+    color: var(--text-secondary); /* Aplicado */
+    margin-bottom: 5px;
+    display: block;
+}
+.config-divider {
+    border: 0;
+    height: 1px;
+    background-color: var(--border-color); /* Aplicado */
+    margin: 25px 0;
+}
+.config-descricao {
+    font-size: 14px;
+    color: var(--text-secondary); /* Aplicado */
+    margin-bottom: 15px;
+}
+.config-item-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 0;
+    border-bottom: 1px solid var(--border-color); /* Aplicado */
+}
+.config-item-toggle:last-of-type {
+    border-bottom: none;
+}
+.config-item-texto strong {
+    font-size: 16px;
+    color: var(--text-primary); /* Aplicado */
+}
+.config-item-texto p {
+    font-size: 13px;
+    color: var(--text-secondary); /* Aplicado */
+    margin-top: 3px;
+}
+
+
+/* 🆕 NOVO: Estilos para Disponibilidade */
+.disponibilidade-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 15px;
+    padding: 10px;
+    background: var(--bg-primary);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+}
+
+.disponibilidade-switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 24px;
+}
+
+.disponibilidade-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.disponibilidade-switch .slider {
+    position: absolute;
     cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+    border-radius: 24px;
+}
+
+.disponibilidade-switch .slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+    border-radius: 50%;
+}
+
+.disponibilidade-switch input:checked + .slider {
+    background-color: #28a745;
+}
+
+.disponibilidade-switch input:checked + .slider:before {
+    transform: translateX(26px);
+}
+
+#disponibilidade-texto {
+    font-weight: bold;
+    color: var(--text-primary);
+}
+
+/* 🆕 NOVO: Estilos para Agendador */
+.agendador-container {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+.btn-ver-agenda,
+.btn-configurar-horarios {
+    padding: 10px 20px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background 0.3s;
+}
+
+.btn-ver-agenda:hover,
+.btn-configurar-horarios:hover {
+    background: var(--primary-hover);
+}
+
+.horario-item {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 10px;
+    padding: 10px;
+    background: var(--bg-primary);
+    border-radius: 8px;
+}
+
+.horario-item select,
+.horario-item input[type="time"] {
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.btn-remover-horario {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    font-size: 1.2em;
+}
+
+.agendamento-card {
+    padding: 15px;
+    background: var(--bg-primary);
+    border-radius: 10px;
+    margin-bottom: 15px;
+    border: 1px solid var(--border-color);
+}
+
+.agendamento-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.agendamento-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.agendamento-info p {
+    margin: 5px 0;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+.status-agendamento {
+    font-weight: bold;
+    margin-top: 10px !important;
+}
+
+.status-pendente .status-agendamento {
+    color: #ffc107;
+}
+
+.status-confirmado .status-agendamento {
+    color: #28a745;
+}
+
+.status-cancelado .status-agendamento {
+    color: #dc3545;
+}
+
+.status-concluido .status-agendamento {
+    color: #6c757d;
+}
+
+.agendamento-acoes {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.btn-confirmar,
+.btn-cancelar {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+}
+
+.btn-confirmar {
+    background: #28a745;
+    color: white;
+}
+
+.btn-cancelar {
+    background: #dc3545;
+    color: white;
+}
+
+.selo-nivel {
+    font-size: 1.2em;
+    margin-right: 5px;
+}
+
+.horario-disponivel-card {
+    padding: 10px;
+    background: var(--bg-primary);
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border-color);
+}
+
+/* 🆕 NOVO: Estilos para Gamificação */
+.gamificacao-container {
+    margin-top: 10px;
+    padding: 15px;
+    background: var(--bg-primary);
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
+    width: 100%;
+    max-width: 400px;
+}
+
+.nivel-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #ffc107;
+    margin-bottom: 15px;
+}
+
+.nivel-badge i {
+    font-size: 1.3em;
+    color: #ffc107;
+}
+
+.xp-bar-container {
+    width: 100%;
+}
+
+.xp-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    font-size: 0.9em;
+    color: var(--text-secondary);
+}
+
+.xp-bar {
+    width: 100%;
+    height: 20px;
+    background: var(--bg-input);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+}
+
+.xp-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745, #20c997);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+    box-shadow: 0 2px 5px rgba(40, 167, 69, 0.3);
 }
 
 /* --- RESPONSIVIDADE DO PERFIL --- */
-
-@media (max-width: 768px) {
-    .content-perfil {
-        margin-top: 20px; /* Reduz a margem em telas menores onde o header quebra */
-        padding: 10px;
-    }
-    .perfil-card {
-        padding: 20px;
-    }
-    .perfil-acoes {
-        display: flex;
-        justify-content: center;
-    }
-    .perfil-btn {
-        padding: 10px 15px;
-        font-size: 14px;
-        flex-grow: 1; /* Faz os botões ocuparem espaço igual */
-        max-width: 200px;
-    }
-    .galeria-servicos {
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-    }
-}
-
-@media (max-width: 480px) {
-    .perfil-card {
-        padding: 15px;
-    }
-    .perfil-img {
-        width: 100px;
-        height: 100px;
-    }
-    #nomePerfil {
-        font-size: 24px;
-    }
-    .perfil-info li {
-        font-size: 14px;
-    }
-    .perfil-info li i {
-        margin-right: 8px;
-    }
-    .edit-btn, .salvar-btn, .cancelar-btn, .add-btn, .perfil-btn {
-        width: 100%;
-        margin-left: 0;
-        margin-right: 0;
-    }
-    .botoes-edicao {
-        width: 100%;
-    }
-    .galeria-servicos {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-        gap: 10px;
-    }
-    .foto-servico {
-        height: 120px;
-    }
-}
+@media (max-width: 768px) { .content-perfil { margin-top: 20px; padding: 10px; } .perfil-card { padding: 20px; } .perfil-acoes { display: flex; justify-content: center; } .perfil-btn { padding: 10px 15px; font-size: 14px; flex-grow: 1; max-width: 200px; } .galeria-servicos { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } .gamificacao-container { max-width: 100%; } }
+@media (max-width: 480px) { .perfil-card { padding: 15px; } .perfil-img { width: 100px; height: 100px; } #nomePerfil { font-size: 24px; } .perfil-info li { font-size: 14px; } .perfil-info li i { margin-right: 8px; } .edit-btn, .salvar-btn, .cancelar-btn, .add-btn, .perfil-btn { width: 100%; margin-left: 0; margin-right: 0; } .botoes-edicao { width: 100%; } .galeria-servicos { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; } .foto-servico { height: 120px; } .gamificacao-container { padding: 10px; } .nivel-badge { font-size: 1em; } }
 

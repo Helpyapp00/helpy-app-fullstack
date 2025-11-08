@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações da Conta - Helpy</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="/perfil.css">
+</head>
+<body>
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark') {
+                document.documentElement.classList.add('dark-mode');
+            }
+        })();
+    </script>
+    <header>
+        <div class="logo-box">
+            <img src="imagens/helpy-feed.png" alt="Logo Helpy"> <h1>Helpy</h1>
+        </div>
+        <div class="user-info">
+            <img id="user-avatar-header" src="imagens/default-user.png" alt="Avatar" class="user-avatar-header">
+            <span id="user-name-header">Carregando...</span>
+            <button id="profile-button" title="Meu Perfil">
+                <i class="fas fa-user"></i>
+            </button>
+            <button id="feed-button" title="Voltar ao Feed">
+                <i class="fas fa-home"></i>
+            </button>
+            <button id="logout-button">Sair</button>
+        </div>
+    </header>
+    <div class="content-perfil">
+        <div class="perfil-card">
+            <div class="perfil-header">
+                <h2 id="nomePerfil">Configurações da Conta</h2>
+            </div>
+            
+            <div class="perfil-body">
+                <!-- 🛑 NOVO: Botão Voltar -->
+                <button id="btn-voltar" class="edit-btn" style="background-color: #6c757d; margin-bottom: 20px;">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </button>
+
+                <h3>Gerenciamento da Conta</h3>
+                
+                <form class="config-form">
+                    <label for="senha-atual">Senha Atual</label>
+                    <input type="password" id="senha-atual" class="input-edicao" placeholder="Sua senha atual">
+                    
+                    <label for="nova-senha">Nova Senha</label>
+                    <input type="password" id="nova-senha" class="input-edicao" placeholder="Mínimo 8 caracteres">
+                    
+                    <label for="confirma-nova-senha">Confirmar Nova Senha</label>
+                    <input type="password" id="confirma-nova-senha" class="input-edicao" placeholder="Repita a nova senha">
+                    
+                    <button type="submit" class="salvar-btn" style="margin-top: 10px;">Salvar Nova Senha</button>
+                </form>
+                <hr class="config-divider">
+                <h3>Área de Perigo</h3>
+                <p class="config-descricao">Ações permanentes. Tenha cuidado.</p>
+                <button class="cancelar-btn">Desativar minha conta</button>
+            </div>
+        </div>
+    </div>
+    <div id="logout-confirm-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h3>Tem certeza que deseja sair?</h3>
+            <div class="modal-buttons">
+                <button id="confirm-logout-yes" class="btn-confirm-yes">Sim</button>
+                <button id="confirm-logout-no" class="btn-confirm-no">Não</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/configuracoes.js"></script>
+</body>
+</html>
+

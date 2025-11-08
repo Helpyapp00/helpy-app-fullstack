@@ -1,17 +1,18 @@
 {
-  "rewrites": [
+  "version": 2,
+  "builds": [
     {
-      "source": "/",
-      "destination": "/public/index.html"
+      "src": "api/server.js",
+      "use": "@vercel/node"
     },
     {
-      "source": "/api/(.*)", 
-      "destination": "/api/server.js"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/public/$1"
+      "src": "public/**",
+      "use": "@vercel/static"
     }
+  ],
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/server.js" },
+    { "src": "/(.*)", "dest": "/public/$1" }
   ],
   "headers": [
     {
@@ -36,9 +37,9 @@
       ]
     }
   ],
-"functions": { 
+  "functions": { 
     "api/server.js": { 
       "runtime": "@vercel/node@2.0.0" 
     }
   }
- }    
+}
