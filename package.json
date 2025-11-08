@@ -4,13 +4,12 @@
   "description": "Aplicativo Fullstack Helpy",
   
   "engines": {
-    "node": ">=18.0.0"
+    "node": "20.x"
   },
   "scripts": {
     "start": "node api/server",
     "dev": "nodemon api/server",
-    "build": "cd public && npm install && npm run build",
-    "vercel-build": "npm run build"
+    "build": "echo 'Build step completo'"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.588.0",
