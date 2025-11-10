@@ -562,32 +562,21 @@ app.delete('/api/posts/:postId', authMiddleware, async (req, res) => {
     }
 });
 
-// Buscar Postagens (Feed) - 🆕 ATUALIZADO: Filtro por cidade por padrão
+// Buscar Postagens (Feed) - Exibe todas as postagens ou filtra por cidade quando especificado
 app.get('/api/posts', authMiddleware, async (req, res) => {
     try {
         const { cidade } = req.query;
-        const userId = req.user.id;
-        
-        // Busca a cidade do usuário logado se não foi especificada
-        let cidadeFiltro = cidade;
-        if (!cidadeFiltro) {
-            const user = await User.findById(userId).select('cidade');
-            if (user && user.cidade) {
-                cidadeFiltro = user.cidade;
-            }
-        }
-        
         let query = Postagem.find();
         
-        // 🆕 ATUALIZADO: Busca de cidade com variações (sem acento, case-insensitive)
-        if (cidadeFiltro) {
+        // Aplica filtro de cidade apenas se o parâmetro 'cidade' for fornecido
+        if (cidade) {
             // Remove acentos e converte para minúsculas para busca flexível
             const normalizeString = (str) => {
                 return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
             };
-            const cidadeNormalizada = normalizeString(cidadeFiltro);
+            const cidadeNormalizada = normalizeString(cidade);
             
-            // Busca todas as cidades e filtra no código (mais flexível)
+            // Busca todos os usuários e filtra por cidade
             const todosUsuarios = await User.find({}).select('_id cidade');
             const usuariosCidade = todosUsuarios.filter(u => {
                 if (!u.cidade) return false;
