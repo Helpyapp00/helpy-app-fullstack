@@ -5,9 +5,13 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const fs = require('fs');
 const express = require('express');
 const mongoose = require('mongoose');
+const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
+const path = require('path');
+const nodemailer = require('nodemailer');
+require('dotenv').config();
 const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const sharp = require('sharp');
 const { URL } = require('url');
@@ -208,7 +212,20 @@ const userSchema = new mongoose.Schema({
     atuacao: { type: String, default: null },
     telefone: { type: String, default: null },
     descricao: { type: String, default: null },
-    email: { type: String, required: true, unique: true },
+    email: { 
+        type: String, 
+        required: true, 
+        unique: true,
+        validate: {
+            validator: function(v) {
+                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+            },
+            message: props => `${props.value} não é um e-mail válido!`
+        }
+    },
+    emailVerificado: { type: Boolean, default: false },
+    codigoVerificacao: { type: String },
+    codigoExpiracao: { type: Date },
     senha: { type: String, required: true },
     foto: { type: String, default: 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png' },
     avatarUrl: { type: String, default: 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png' },
@@ -271,9 +288,21 @@ app.post('/api/login', async (req, res) => {
         if (!user) {
             return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
         }
+        
+        // Verifica se a senha está correta
         const isMatch = await bcrypt.compare(senha, user.senha);
         if (!isMatch) {
             return res.status(401).json({ success: false, message: 'Senha incorreta.' });
+        }
+        
+        // Verifica se o e-mail foi verificado
+        if (!user.emailVerificado) {
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Por favor, verifique seu e-mail para fazer login. Verifique sua caixa de entrada ou spam.',
+                needsVerification: true,
+                email: user.email
+            });
         }
         if (!process.env.JWT_SECRET) {
             console.error("JWT_SECRET não definido!");
@@ -299,14 +328,148 @@ app.post('/api/login', async (req, res) => {
 });
 
 // Rota de Cadastro
+// Rota para verificar e-mail
+app.post('/api/verificar-email', async (req, res) => {
+    try {
+        const { email, codigo } = req.body;
+
+        if (!email || !codigo) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'E-mail e código são obrigatórios.' 
+            });
+        }
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Usuário não encontrado.' 
+            });
+        }
+
+        // Verifica se o e-mail já está verificado
+        if (user.emailVerificado) {
+            return res.json({ 
+                success: true, 
+                message: 'E-mail já verificado anteriormente.' 
+            });
+        }
+
+        // Verifica se o código está correto e não expirou
+        const agora = new Date();
+        if (user.codigoVerificacao !== codigo || user.codigoExpiracao < agora) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Código inválido ou expirado. Por favor, solicite um novo código.' 
+            });
+        }
+
+        // Atualiza o usuário como verificado
+        user.emailVerificado = true;
+        user.codigoVerificacao = undefined;
+        user.codigoExpiracao = undefined;
+        await user.save();
+
+        // Gera token de autenticação
+        const token = jwt.sign(
+            { 
+                id: user._id, 
+                email: user.email, 
+                tipo: user.tipo 
+            }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: '1d' }
+        );
+
+        res.json({
+            success: true,
+            message: 'E-mail verificado com sucesso!',
+            token,
+            userId: user._id,
+            emailVerificado: true,
+            userType: user.tipo,
+            userName: user.nome,
+            userPhotoUrl: user.avatarUrl,
+            userTheme: user.tema || 'light'
+        });
+    } catch (error) {
+        console.error('Erro ao verificar e-mail:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Erro ao verificar e-mail.' 
+        });
+    }
+});
+
+// Rota para reenviar código de verificação
+app.post('/api/reenviar-codigo', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'E-mail é obrigatório.' 
+            });
+        }
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Usuário não encontrado.' 
+            });
+        }
+
+        // Gera novo código de verificação
+        const novoCodigo = gerarCodigoVerificacao();
+        const dataExpiracao = new Date();
+        dataExpiracao.setHours(dataExpiracao.getHours() + 24); // Expira em 24 horas
+
+        // Atualiza os dados do usuário
+        user.codigoVerificacao = novoCodigo;
+        user.codigoExpiracao = dataExpiracao;
+        await user.save();
+
+        // Envia o novo código por e-mail
+        const emailEnviado = await enviarEmailVerificacao(email, novoCodigo);
+        if (!emailEnviado) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Falha ao enviar e-mail de verificação.' 
+            });
+        }
+
+        res.json({ 
+            success: true, 
+            message: 'Novo código de verificação enviado para seu e-mail.' 
+        });
+    } catch (error) {
+        console.error('Erro ao reenviar código:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Erro ao processar sua solicitação.' 
+        });
+    }
+});
+
 app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
     try {
-        // 🛑 ATUALIZADO: Recebe 'tema'
         const { nome, idade, cidade, estado, tipo, atuacao, telefone, descricao, email, senha, tema } = req.body;
         const avatarFile = req.file;
 
         if (!nome || !email || !senha || !tipo) {
-            return res.status(400).json({ message: 'Campos obrigatórios (Nome, Email, Senha, Tipo) não preenchidos.' });
+            return res.status(400).json({ success: false, message: 'Campos obrigatórios (Nome, Email, Senha, Tipo) não preenchidos.' });
+        }
+
+        // Verifica se o e-mail já está em uso
+        const usuarioExistente = await User.findOne({ email });
+        if (usuarioExistente) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Este e-mail já está cadastrado. Por favor, use outro e-mail ou faça login.'
+            });
         }
         
         // --- Lógica de Upload S3 ---
@@ -328,6 +491,11 @@ app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
         const senhaHash = await bcrypt.hash(senha, salt);
 
         // 🛑 ATUALIZADO: Salva o 'tema'
+        // Gera código de verificação
+        const codigoVerificacao = gerarCodigoVerificacao();
+        const dataExpiracao = new Date();
+        dataExpiracao.setHours(dataExpiracao.getHours() + 24); // Expira em 24 horas
+
         const newUser = new User({
             nome,
             idade,
@@ -341,13 +509,27 @@ app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
             senha: senhaHash,
             foto: fotoUrl,
             avatarUrl: fotoUrl,
-            tema: tema || 'light' // <-- SALVA O TEMA
+            tema: tema || 'light',
+            emailVerificado: false,
+            codigoVerificacao,
+            codigoExpiracao: dataExpiracao
         });
+
+        // Salva o usuário
         await newUser.save();
-        
+
+        // Envia e-mail de verificação
+        const emailEnviado = await enviarEmailVerificacao(email, codigoVerificacao);
+        if (!emailEnviado) {
+            console.error('Falha ao enviar e-mail de verificação');
+            // Não retornamos erro, apenas registramos, pois o usuário já foi criado
+        }
         if (!process.env.JWT_SECRET) {
             console.error("JWT_SECRET não definido!");
-            return res.status(500).json({ message: "Erro de configuração do servidor." });
+            return res.status(500).json({ 
+                success: false,
+                message: "Erro de configuração do servidor." 
+            });
         }
         
         const token = jwt.sign({ id: newUser._id, email: newUser.email, tipo: newUser.tipo }, process.env.JWT_SECRET, { expiresIn: '1d' });
@@ -355,13 +537,13 @@ app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
         // 🛑 ATUALIZADO: Envia o tema salvo
         res.status(201).json({ 
             success: true, 
-            message: 'Usuário cadastrado com sucesso!', 
-            token, 
+            message: 'Usuário cadastrado com sucesso! Por favor, verifique seu e-mail para ativar sua conta.',
             userId: newUser._id,
+            emailVerificado: false,
             userType: newUser.tipo,
             userName: newUser.nome,
-            userPhotoUrl: newUser.foto,
-            userTheme: newUser.tema // <-- ENVIA O TEMA
+            userPhotoUrl: newUser.avatarUrl,
+            userTheme: newUser.tema || 'light'
         });
     } catch (error) {
         console.error('Erro ao cadastrar usuário:', error);
