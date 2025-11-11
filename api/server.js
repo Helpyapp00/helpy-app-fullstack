@@ -264,10 +264,41 @@ const Servico = mongoose.model('Servico', servicoSchema);
 
 // MIDDLEWARES (App.use, Auth, Multer)
 // ----------------------------------------------------------------------
+// Configuração do CORS
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+}));
+
+// Middleware para garantir que todas as respostas sejam JSON
+app.use((req, res, next) => {
+    res.header('Content-Type', 'application/json; charset=utf-8');
+    next();
+});
+
+// Servir arquivos estáticos
 app.use(express.static(path.join(__dirname, '../public')));
-app.use(async (req, res, next) => { try { await initializeServices(); next(); } catch (error) { console.error("Falha na inicialização dos serviços:", error); res.status(500).send("Erro interno do servidor. Não foi possível inicializar os serviços."); } });
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+// Inicialização dos serviços
+app.use(async (req, res, next) => { 
+    try { 
+        await initializeServices(); 
+        next(); 
+    } catch (error) { 
+        console.error("Falha na inicialização dos serviços:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Erro interno do servidor. Não foi possível inicializar os serviços."
+        });
+    } 
+});
+
+// Body parsers
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
 const authMiddleware = (req, res, next) => { const authHeader = req.headers.authorization; if (!authHeader || !authHeader.startsWith('Bearer ')) { return res.status(401).json({ message: 'Token não fornecido ou inválido.' }); } const token = authHeader.split(' ')[1]; if (!process.env.JWT_SECRET) { console.error("JWT_SECRET não definido!"); return res.status(500).json({ message: "Erro de configuração do servidor." }); } try { const decoded = jwt.verify(token, process.env.JWT_SECRET); req.user = decoded; next(); } catch (error) { return res.status(401).json({ message: 'Token inválido.' }); } };
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage, limits: { fileSize: 10 * 1024 * 1024 }, fileFilter: (req, file, cb) => { const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/quicktime', 'video/webm']; if (allowedTypes.includes(file.mimetype)) { cb(null, true); } else { cb(new Error('Tipo de arquivo não suportado.'), false); } } });
@@ -279,24 +310,37 @@ const upload = multer({ storage: storage, limits: { fileSize: 10 * 1024 * 1024 }
 
 // Rota de Login
 app.post('/api/login', async (req, res) => {
+    console.log('Requisição de login recebida:', { email: req.body.email });
+    
     try {
         const { email, senha } = req.body;
+        
         if (!email || !senha) {
+            console.log('Email ou senha não fornecidos');
             return res.status(400).json({ success: false, message: 'Email e senha são obrigatórios.' });
         }
+        
+        console.log('Buscando usuário no banco de dados...');
         const user = await User.findOne({ email });
+        
         if (!user) {
+            console.log('Usuário não encontrado para o email:', email);
             return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
         }
         
+        console.log('Usuário encontrado, verificando senha...');
         // Verifica se a senha está correta
         const isMatch = await bcrypt.compare(senha, user.senha);
+        
         if (!isMatch) {
+            console.log('Senha incorreta para o usuário:', email);
             return res.status(401).json({ success: false, message: 'Senha incorreta.' });
         }
         
+        console.log('Senha correta, verificando e-mail...');
         // Verifica se o e-mail foi verificado
         if (!user.emailVerificado) {
+            console.log('E-mail não verificado para o usuário:', email);
             return res.status(403).json({ 
                 success: false, 
                 message: 'Por favor, verifique seu e-mail para fazer login. Verifique sua caixa de entrada ou spam.',
@@ -308,10 +352,20 @@ app.post('/api/login', async (req, res) => {
             console.error("JWT_SECRET não definido!");
             return res.status(500).json({ success: false, message: "Erro de configuração do servidor." });
         }
-        const token = jwt.sign({ id: user._id, email: user.email, tipo: user.tipo }, process.env.JWT_SECRET, { expiresIn: '1d' });
+
+        console.log('Gerando token JWT...');
+        const token = jwt.sign(
+            { 
+                id: user._id, 
+                email: user.email, 
+                tipo: user.tipo 
+            }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: '1d' }
+        );
         
-        // 🛑 ATUALIZADO: Envia o tema salvo
-        res.json({
+        console.log('Token gerado com sucesso, enviando resposta...');
+        const responseData = {
             success: true,
             message: 'Login bem-sucedido!',
             token,
@@ -319,11 +373,26 @@ app.post('/api/login', async (req, res) => {
             userType: user.tipo,
             userName: user.nome,
             userPhotoUrl: user.avatarUrl || user.foto,
-            userTheme: user.tema || 'light' // <-- ENVIA O TEMA
-        });
+            userTheme: user.tema || 'light'
+        };
+        
+        console.log('Dados da resposta:', JSON.stringify(responseData, null, 2));
+        res.json(responseData);
     } catch (error) {
         console.error('Erro no login:', error);
-        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+        console.error('Stack trace:', error.stack);
+        
+        // Verifica se a resposta já foi enviada
+        if (res.headersSent) {
+            console.error('A resposta já foi enviada, não é possível enviar outra resposta.');
+            return;
+        }
+        
+        res.status(500).json({ 
+            success: false, 
+            message: 'Erro interno do servidor.',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 });
 
@@ -2170,6 +2239,52 @@ app.get('/api/qg-profissional/clientes', authMiddleware, async (req, res) => {
         console.error('Erro ao buscar clientes:', error);
         res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
     }
+});
+
+// Rota não encontrada (404)
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'Rota não encontrada',
+        path: req.path
+    });
+});
+
+// Middleware de tratamento de erros global (deve vir após todas as rotas)
+app.use((err, req, res, next) => {
+    console.error('Erro não tratado:', err);
+    
+    // Se for um erro de validação do Mongoose
+    if (err.name === 'ValidationError') {
+        return res.status(400).json({
+            success: false,
+            message: 'Erro de validação',
+            errors: Object.values(err.errors).map(e => e.message)
+        });
+    }
+    
+    // Se for um erro de autenticação
+    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+        return res.status(401).json({
+            success: false,
+            message: 'Token inválido ou expirado'
+        });
+    }
+    
+    // Se for um erro do multer (upload de arquivo)
+    if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({
+            success: false,
+            message: 'Arquivo muito grande. O tamanho máximo permitido é 10MB.'
+        });
+    }
+    
+    // Erro padrão
+    res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
 });
 
 // Exporta o app
