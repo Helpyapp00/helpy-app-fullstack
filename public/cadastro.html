@@ -56,9 +56,13 @@
     <!-- 🆕 NOVO: Etapa 3 - Dados do Cadastro -->
     <form id="form-cadastro" style="display: none;">
       <div class="form-row">
-        <div class="form-group full-width">
-          <label for="nome">Nome completo</label>
-          <input type="text" id="nome" name="nome" required>
+        <div class="form-group">
+          <label for="nome">Nome</label>
+          <input type="text" id="nome" name="nome" required placeholder="Seu primeiro nome">
+        </div>
+        <div class="form-group">
+          <label for="sobrenome">Sobrenome</label>
+          <input type="text" id="sobrenome" name="sobrenome" required placeholder="Seu sobrenome">
         </div>
       </div>
 
@@ -147,8 +151,19 @@
 
       <button type="submit" class="btn-submit-cadastro">Finalizar Cadastro</button>
     </form>
-      <div class="link-login">
-          Já tem uma conta? <a href="login.html">Faça login aqui</a>
+      <div class="link-login-container">
+          <div class="link-login-divider">
+            <span class="divider-line"></span>
+            <span class="divider-text">ou</span>
+            <span class="divider-line"></span>
+          </div>
+          <div class="link-login">
+            <span class="login-text">Já tem uma conta?</span>
+            <a href="login.html" class="login-link">
+              <i class="fas fa-sign-in-alt"></i>
+              Faça login aqui
+            </a>
+          </div>
       </div>
   </div>
   <script src="/cadastro.js"></script>

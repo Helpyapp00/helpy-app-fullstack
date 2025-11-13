@@ -281,3 +281,128 @@ form button:hover {
         margin-bottom: 0;
     }
 }
+
+/* Estilos para a seção "Já tem uma conta?" */
+.link-login-container {
+    margin-top: 30px;
+    padding-top: 20px;
+}
+
+.link-login-divider {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    gap: 15px;
+}
+
+.divider-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #ddd, transparent);
+}
+
+.divider-text {
+    color: #999;
+    font-size: 14px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.link-login {
+    text-align: center;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.link-login:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+}
+
+.login-text {
+    display: block;
+    color: #666;
+    font-size: 15px;
+    margin-bottom: 12px;
+    font-weight: 500;
+}
+
+.login-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #007bff;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 600;
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3);
+}
+
+.login-link:hover {
+    background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.4);
+    transform: translateY(-2px);
+}
+
+.login-link i {
+    font-size: 14px;
+}
+
+/* Melhorias gerais no formulário */
+.container-cadastro {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    padding: 40px;
+    max-width: 900px;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 auto;
+}
+
+form input:focus,
+form select:focus,
+form textarea:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.btn-submit-cadastro {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.btn-submit-cadastro:hover {
+    background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
+    box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
+    transform: translateY(-2px);
+}
+
+/* Responsividade para a seção de login */
+@media (max-width: 650px) {
+    .link-login {
+        padding: 15px;
+    }
+    
+    .login-link {
+        font-size: 14px;
+        padding: 10px 20px;
+    }
+    
+    .divider-text {
+        font-size: 12px;
+    }
+}

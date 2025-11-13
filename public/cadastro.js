@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Elementos do formulário de cadastro
     const nomeInput = document.getElementById('nome');
+    const sobrenomeInput = document.getElementById('sobrenome');
     const fotoInput = document.getElementById('foto');
     const fotoPreview = document.getElementById('foto-preview');
     const fotoPreviewContainer = document.querySelector('.foto-preview-container');
@@ -245,6 +246,9 @@ document.addEventListener('DOMContentLoaded', function() {
         showMessage('Enviando dados...', 'info'); 
 
         const formData = new FormData(formCadastro);
+        // Combina nome e sobrenome em um único campo "nome"
+        const nomeCompleto = `${nomeInput.value.trim()} ${sobrenomeInput.value.trim()}`.trim();
+        formData.set('nome', nomeCompleto); // Substitui o campo nome pelo nome completo
         formData.append('email', emailVerificado); // Garante que o email correto seja enviado
 
         try {
