@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Aplicativo Fullstack Helpy",
   "engines": {
-    "node": "22.x"
+    "node": ">=20.0.0"
   },
   "scripts": {
     "start": "node api/server",
@@ -22,7 +22,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.4.1",
     "multer": "^2.0.2",
-    "nodemailer": "^6.9.8",
+    "nodemailer": "^7.0.10",
     "sharp": "^0.33.4"
   },
   "devDependencies": {

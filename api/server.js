@@ -5,13 +5,14 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const fs = require('fs');
 const express = require('express');
 const mongoose = require('mongoose');
+const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
+const nodemailer = require('nodemailer');
 const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const sharp = require('sharp');
 const { URL } = require('url');
-const nodemailer = require('nodemailer');
 
 const app = express();
 
@@ -209,7 +210,20 @@ const userSchema = new mongoose.Schema({
     atuacao: { type: String, default: null },
     telefone: { type: String, default: null },
     descricao: { type: String, default: null },
-    email: { type: String, required: true, unique: true },
+    email: { 
+        type: String, 
+        required: true, 
+        unique: true,
+        validate: {
+            validator: function(v) {
+                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
+            },
+            message: props => `${props.value} não é um e-mail válido!`
+        }
+    },
+    emailVerificado: { type: Boolean, default: false },
+    codigoVerificacao: { type: String },
+    codigoExpiracao: { type: Date },
     senha: { type: String, required: true },
     foto: { type: String, default: 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png' },
     avatarUrl: { type: String, default: 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png' },
@@ -251,10 +265,41 @@ const Servico = mongoose.model('Servico', servicoSchema);
 
 // MIDDLEWARES (App.use, Auth, Multer)
 // ----------------------------------------------------------------------
+// Configuração do CORS
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true
+}));
+
+// Middleware para garantir que todas as respostas sejam JSON
+app.use((req, res, next) => {
+    res.header('Content-Type', 'application/json; charset=utf-8');
+    next();
+});
+
+// Servir arquivos estáticos
 app.use(express.static(path.join(__dirname, '../public')));
-app.use(async (req, res, next) => { try { await initializeServices(); next(); } catch (error) { console.error("Falha na inicialização dos serviços:", error); res.status(500).send("Erro interno do servidor. Não foi possível inicializar os serviços."); } });
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+
+// Inicialização dos serviços
+app.use(async (req, res, next) => { 
+    try { 
+        await initializeServices(); 
+        next(); 
+    } catch (error) { 
+        console.error("Falha na inicialização dos serviços:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Erro interno do servidor. Não foi possível inicializar os serviços."
+        });
+    } 
+});
+
+// Body parsers
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
 const authMiddleware = (req, res, next) => { const authHeader = req.headers.authorization; if (!authHeader || !authHeader.startsWith('Bearer ')) { return res.status(401).json({ message: 'Token não fornecido ou inválido.' }); } const token = authHeader.split(' ')[1]; if (!process.env.JWT_SECRET) { console.error("JWT_SECRET não definido!"); return res.status(500).json({ message: "Erro de configuração do servidor." }); } try { const decoded = jwt.verify(token, process.env.JWT_SECRET); req.user = decoded; next(); } catch (error) { return res.status(401).json({ message: 'Token inválido.' }); } };
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage, limits: { fileSize: 10 * 1024 * 1024 }, fileFilter: (req, file, cb) => { const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/quicktime', 'video/webm']; if (allowedTypes.includes(file.mimetype)) { cb(null, true); } else { cb(new Error('Tipo de arquivo não suportado.'), false); } } });
@@ -478,27 +523,62 @@ app.post('/api/verificar-email/validar', async (req, res) => {
 
 // Rota de Login
 app.post('/api/login', async (req, res) => {
+    console.log('Requisição de login recebida:', { email: req.body.email });
+    
     try {
         const { email, senha } = req.body;
+        
         if (!email || !senha) {
+            console.log('Email ou senha não fornecidos');
             return res.status(400).json({ success: false, message: 'Email e senha são obrigatórios.' });
         }
+        
+        console.log('Buscando usuário no banco de dados...');
         const user = await User.findOne({ email });
+        
         if (!user) {
+            console.log('Usuário não encontrado para o email:', email);
             return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
         }
+        
+        console.log('Usuário encontrado, verificando senha...');
+        // Verifica se a senha está correta
         const isMatch = await bcrypt.compare(senha, user.senha);
+        
         if (!isMatch) {
+            console.log('Senha incorreta para o usuário:', email);
             return res.status(401).json({ success: false, message: 'Senha incorreta.' });
+        }
+        
+        console.log('Senha correta, verificando e-mail...');
+        // Verifica se o e-mail foi verificado
+        if (!user.emailVerificado) {
+            console.log('E-mail não verificado para o usuário:', email);
+            return res.status(403).json({ 
+                success: false, 
+                message: 'Por favor, verifique seu e-mail para fazer login. Verifique sua caixa de entrada ou spam.',
+                needsVerification: true,
+                email: user.email
+            });
         }
         if (!process.env.JWT_SECRET) {
             console.error("JWT_SECRET não definido!");
             return res.status(500).json({ success: false, message: "Erro de configuração do servidor." });
         }
-        const token = jwt.sign({ id: user._id, email: user.email, tipo: user.tipo }, process.env.JWT_SECRET, { expiresIn: '1d' });
+
+        console.log('Gerando token JWT...');
+        const token = jwt.sign(
+            { 
+                id: user._id, 
+                email: user.email, 
+                tipo: user.tipo 
+            }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: '1d' }
+        );
         
-        // 🛑 ATUALIZADO: Envia o tema salvo
-        res.json({
+        console.log('Token gerado com sucesso, enviando resposta...');
+        const responseData = {
             success: true,
             message: 'Login bem-sucedido!',
             token,
@@ -506,58 +586,176 @@ app.post('/api/login', async (req, res) => {
             userType: user.tipo,
             userName: user.nome,
             userPhotoUrl: user.avatarUrl || user.foto,
-            userTheme: user.tema || 'light' // <-- ENVIA O TEMA
-        });
+            userTheme: user.tema || 'light'
+        };
+        
+        console.log('Dados da resposta:', JSON.stringify(responseData, null, 2));
+        res.json(responseData);
     } catch (error) {
         console.error('Erro no login:', error);
-        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+        console.error('Stack trace:', error.stack);
+        
+        // Verifica se a resposta já foi enviada
+        if (res.headersSent) {
+            console.error('A resposta já foi enviada, não é possível enviar outra resposta.');
+            return;
+        }
+        
+        res.status(500).json({ 
+            success: false, 
+            message: 'Erro interno do servidor.',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
     }
 });
 
-// 🆕 ATUALIZADO: Rota de Cadastro com verificação de email
+// Rota de Cadastro
+// Rota para verificar e-mail
+app.post('/api/verificar-email', async (req, res) => {
+    try {
+        const { email, codigo } = req.body;
+
+        if (!email || !codigo) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'E-mail e código são obrigatórios.' 
+            });
+        }
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Usuário não encontrado.' 
+            });
+        }
+
+        // Verifica se o e-mail já está verificado
+        if (user.emailVerificado) {
+            return res.json({ 
+                success: true, 
+                message: 'E-mail já verificado anteriormente.' 
+            });
+        }
+
+        // Verifica se o código está correto e não expirou
+        const agora = new Date();
+        if (user.codigoVerificacao !== codigo || user.codigoExpiracao < agora) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Código inválido ou expirado. Por favor, solicite um novo código.' 
+            });
+        }
+
+        // Atualiza o usuário como verificado
+        user.emailVerificado = true;
+        user.codigoVerificacao = undefined;
+        user.codigoExpiracao = undefined;
+        await user.save();
+
+        // Gera token de autenticação
+        const token = jwt.sign(
+            { 
+                id: user._id, 
+                email: user.email, 
+                tipo: user.tipo 
+            }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: '1d' }
+        );
+
+        res.json({
+            success: true,
+            message: 'E-mail verificado com sucesso!',
+            token,
+            userId: user._id,
+            emailVerificado: true,
+            userType: user.tipo,
+            userName: user.nome,
+            userPhotoUrl: user.avatarUrl,
+            userTheme: user.tema || 'light'
+        });
+    } catch (error) {
+        console.error('Erro ao verificar e-mail:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Erro ao verificar e-mail.' 
+        });
+    }
+});
+
+// Rota para reenviar código de verificação
+app.post('/api/reenviar-codigo', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        if (!email) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'E-mail é obrigatório.' 
+            });
+        }
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(404).json({ 
+                success: false, 
+                message: 'Usuário não encontrado.' 
+            });
+        }
+
+        // Gera novo código de verificação
+        const novoCodigo = gerarCodigoVerificacao();
+        const dataExpiracao = new Date();
+        dataExpiracao.setHours(dataExpiracao.getHours() + 24); // Expira em 24 horas
+
+        // Atualiza os dados do usuário
+        user.codigoVerificacao = novoCodigo;
+        user.codigoExpiracao = dataExpiracao;
+        await user.save();
+
+        // Envia o novo código por e-mail
+        const emailEnviado = await enviarEmailVerificacao(email, novoCodigo);
+        if (!emailEnviado) {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Falha ao enviar e-mail de verificação.' 
+            });
+        }
+
+        res.json({ 
+            success: true, 
+            message: 'Novo código de verificação enviado para seu e-mail.' 
+        });
+    } catch (error) {
+        console.error('Erro ao reenviar código:', error);
+        res.status(500).json({ 
+            success: false, 
+            message: 'Erro ao processar sua solicitação.' 
+        });
+    }
+});
+
 app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
     try {
-        // 🛑 ATUALIZADO: Recebe 'tema'
         const { nome, idade, cidade, estado, tipo, atuacao, telefone, descricao, email, senha, tema } = req.body;
         const avatarFile = req.file;
 
         if (!nome || !email || !senha || !tipo) {
-            return res.status(400).json({ message: 'Campos obrigatórios (Nome, Email, Senha, Tipo) não preenchidos.' });
+            return res.status(400).json({ success: false, message: 'Campos obrigatórios (Nome, Email, Senha, Tipo) não preenchidos.' });
+        }
+
+        // Verifica se o e-mail já está em uso
+        const usuarioExistente = await User.findOne({ email });
+        if (usuarioExistente) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Este e-mail já está cadastrado. Por favor, use outro e-mail ou faça login.'
+            });
         }
 
         const emailNormalizado = email.toLowerCase().trim();
 
-        // 🆕 NOVO: Verifica se o email já está verificado em outra conta
-        const emailJaVerificado = await User.findOne({ 
-            email: emailNormalizado,
-            emailVerificado: true 
-        });
-
-        if (emailJaVerificado) {
-            return res.status(409).json({ 
-                success: false,
-                message: 'Este email já está vinculado a outra conta verificada. Por favor, use outro email ou faça login na conta existente.' 
-            });
-        }
-
-        // 🆕 NOVO: Verifica se existe um usuário com este email que foi verificado
-        let usuarioExistente = await User.findOne({ 
-            email: emailNormalizado,
-            emailVerificado: true 
-        });
-
-        // Se não existe usuário ou o email não foi verificado, retorna erro
-        if (!usuarioExistente) {
-            return res.status(400).json({ 
-                success: false,
-                message: 'Email não verificado. Por favor, verifique seu email antes de completar o cadastro.' 
-            });
-        }
-
-        // Se chegou aqui, o email foi verificado. Atualiza o usuário com os dados completos
-        const salt = await bcrypt.genSalt(10);
-        const senhaHash = await bcrypt.hash(senha, salt);
-        
         // --- Lógica de Upload S3 ---
         let fotoUrl = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
         if (avatarFile && s3Client) {
@@ -573,41 +771,62 @@ app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
         }
         // --- Fim da Lógica S3 ---
 
-        // Atualiza o usuário existente com os dados completos
-        usuarioExistente.nome = nome;
-        usuarioExistente.idade = idade;
-        usuarioExistente.cidade = cidade;
-        usuarioExistente.estado = estado;
-        usuarioExistente.tipo = tipo;
-        usuarioExistente.atuacao = tipo === 'trabalhador' ? atuacao : null;
-        usuarioExistente.telefone = telefone;
-        usuarioExistente.descricao = descricao;
-        usuarioExistente.senha = senhaHash;
-        usuarioExistente.foto = fotoUrl;
-        usuarioExistente.avatarUrl = fotoUrl;
-        usuarioExistente.tema = tema || 'light';
-        usuarioExistente.codigoVerificacao = null;
-        usuarioExistente.codigoVerificacaoExpira = null;
-        
-        await usuarioExistente.save();
-        
+        const salt = await bcrypt.genSalt(10);
+        const senhaHash = await bcrypt.hash(senha, salt);
+
+        // 🛑 ATUALIZADO: Salva o 'tema'
+        // Gera código de verificação
+        const codigoVerificacao = gerarCodigoVerificacao();
+        const dataExpiracao = new Date();
+        dataExpiracao.setHours(dataExpiracao.getHours() + 24); // Expira em 24 horas
+
+        const newUser = new User({
+            nome,
+            idade,
+            cidade,
+            estado, 
+            tipo,
+            atuacao: tipo === 'trabalhador' ? atuacao : null,
+            telefone,
+            descricao,
+            email: emailNormalizado,
+            senha: senhaHash,
+            foto: fotoUrl,
+            avatarUrl: fotoUrl,
+            tema: tema || 'light',
+            emailVerificado: false,
+            codigoVerificacao,
+            codigoExpiracao: dataExpiracao
+        });
+
+        // Salva o usuário
+        await newUser.save();
+
+        // Envia e-mail de verificação
+        const emailEnviado = await enviarEmailVerificacao(emailNormalizado, codigoVerificacao);
+        if (!emailEnviado) {
+            console.error('Falha ao enviar e-mail de verificação');
+            // Não retornamos erro, apenas registramos, pois o usuário já foi criado
+        }
+
         if (!process.env.JWT_SECRET) {
             console.error("JWT_SECRET não definido!");
-            return res.status(500).json({ message: "Erro de configuração do servidor." });
+            return res.status(500).json({ 
+                success: false,
+                message: "Erro de configuração do servidor." 
+            });
         }
-        
-        const token = jwt.sign({ id: usuarioExistente._id, email: usuarioExistente.email, tipo: usuarioExistente.tipo }, process.env.JWT_SECRET, { expiresIn: '1d' });
         
         // 🛑 ATUALIZADO: Envia o tema salvo
         res.status(201).json({ 
             success: true, 
-            message: 'Usuário cadastrado com sucesso!', 
-            token, 
-            userId: usuarioExistente._id,
-            userType: usuarioExistente.tipo,
-            userName: usuarioExistente.nome,
-            userPhotoUrl: usuarioExistente.foto,
-            userTheme: usuarioExistente.tema // <-- ENVIA O TEMA
+            message: 'Usuário cadastrado com sucesso! Por favor, verifique seu e-mail para ativar sua conta.',
+            userId: newUser._id,
+            emailVerificado: false,
+            userType: newUser.tipo,
+            userName: newUser.nome,
+            userPhotoUrl: newUser.avatarUrl,
+            userTheme: newUser.tema || 'light'
         });
     } catch (error) {
         console.error('Erro ao cadastrar usuário:', error);
@@ -808,32 +1027,21 @@ app.delete('/api/posts/:postId', authMiddleware, async (req, res) => {
     }
 });
 
-// Buscar Postagens (Feed) - 🆕 ATUALIZADO: Filtro por cidade por padrão
+// Buscar Postagens (Feed) - Exibe todas as postagens ou filtra por cidade quando especificado
 app.get('/api/posts', authMiddleware, async (req, res) => {
     try {
         const { cidade } = req.query;
-        const userId = req.user.id;
-        
-        // Busca a cidade do usuário logado se não foi especificada
-        let cidadeFiltro = cidade;
-        if (!cidadeFiltro) {
-            const user = await User.findById(userId).select('cidade');
-            if (user && user.cidade) {
-                cidadeFiltro = user.cidade;
-            }
-        }
-        
         let query = Postagem.find();
         
-        // 🆕 ATUALIZADO: Busca de cidade com variações (sem acento, case-insensitive)
-        if (cidadeFiltro) {
+        // Aplica filtro de cidade apenas se o parâmetro 'cidade' for fornecido
+        if (cidade) {
             // Remove acentos e converte para minúsculas para busca flexível
             const normalizeString = (str) => {
                 return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
             };
-            const cidadeNormalizada = normalizeString(cidadeFiltro);
+            const cidadeNormalizada = normalizeString(cidade);
             
-            // Busca todas as cidades e filtra no código (mais flexível)
+            // Busca todos os usuários e filtra por cidade
             const todosUsuarios = await User.find({}).select('_id cidade');
             const usuariosCidade = todosUsuarios.filter(u => {
                 if (!u.cidade) return false;
@@ -2245,6 +2453,52 @@ app.get('/api/qg-profissional/clientes', authMiddleware, async (req, res) => {
         console.error('Erro ao buscar clientes:', error);
         res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
     }
+});
+
+// Rota não encontrada (404)
+app.use((req, res) => {
+    res.status(404).json({
+        success: false,
+        message: 'Rota não encontrada',
+        path: req.path
+    });
+});
+
+// Middleware de tratamento de erros global (deve vir após todas as rotas)
+app.use((err, req, res, next) => {
+    console.error('Erro não tratado:', err);
+    
+    // Se for um erro de validação do Mongoose
+    if (err.name === 'ValidationError') {
+        return res.status(400).json({
+            success: false,
+            message: 'Erro de validação',
+            errors: Object.values(err.errors).map(e => e.message)
+        });
+    }
+    
+    // Se for um erro de autenticação
+    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+        return res.status(401).json({
+            success: false,
+            message: 'Token inválido ou expirado'
+        });
+    }
+    
+    // Se for um erro do multer (upload de arquivo)
+    if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({
+            success: false,
+            message: 'Arquivo muito grande. O tamanho máximo permitido é 10MB.'
+        });
+    }
+    
+    // Erro padrão
+    res.status(500).json({
+        success: false,
+        message: 'Erro interno do servidor',
+        error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
 });
 
 // Exporta o app
