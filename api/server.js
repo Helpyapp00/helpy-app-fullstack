@@ -22,13 +22,19 @@ let isDbConnected = false;
 
 async function initializeServices() {
     // 1. CONEXÃO MONGOOSE
-if (!isDbConnected) {
-        if (!process.env.MONGODB_URI) { console.error("ERRO CRÍTICO: MONGODB_URI não encontrado no .env."); throw new Error('Falha na conexão com o Banco de Dados.'); }
+    if (!isDbConnected) {
+        if (!process.env.MONGODB_URI) { 
+            console.error("ERRO CRÍTICO: MONGODB_URI não encontrado no .env."); 
+            throw new Error('Falha na conexão com o Banco de Dados.'); 
+        }
         try {
             await mongoose.connect(process.env.MONGODB_URI);
             console.log('Conectado ao MongoDB Atlas com sucesso!');
             isDbConnected = true;
-        } catch (err) { console.error('ERRO CRÍTICO ao conectar ao MongoDB Atlas:', err); throw new Error('Falha na conexão com o Banco de Dados.'); }
+        } catch (err) { 
+            console.error('ERRO CRÍTICO ao conectar ao MongoDB Atlas:', err); 
+            throw new Error('Falha na conexão com o Banco de Dados.'); 
+        }
     }
     if (!s3Client) {
         if (!process.env.AWS_REGION || !process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY || !process.env.S3_BUCKET_NAME) {
@@ -289,10 +295,13 @@ app.use(async (req, res, next) => {
         next(); 
     } catch (error) { 
         console.error("Falha na inicialização dos serviços:", error);
-        res.status(500).json({ 
-            success: false, 
-            message: "Erro interno do servidor. Não foi possível inicializar os serviços."
-        });
+        if (!res.headersSent) {
+            res.status(500).json({ 
+                success: false, 
+                message: "Erro interno do servidor. Não foi possível inicializar os serviços.",
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            });
+        }
     } 
 });
 
@@ -388,15 +397,20 @@ async function enviarCodigoVerificacao(email, codigo) {
 // 🆕 NOVO: Rota para solicitar código de verificação de email
 app.post('/api/verificar-email/solicitar', async (req, res) => {
     try {
+        // Garante que os serviços estão inicializados
+        await initializeServices();
+        
         const { email } = req.body;
         
         if (!email) {
             return res.status(400).json({ success: false, message: 'Email é obrigatório.' });
         }
 
+        const emailNormalizado = email.toLowerCase().trim();
+
         // Verifica se o email já está verificado em outra conta
         const emailJaVerificado = await User.findOne({ 
-            email: email.toLowerCase().trim(),
+            email: emailNormalizado,
             emailVerificado: true 
         });
 
@@ -414,7 +428,7 @@ app.post('/api/verificar-email/solicitar', async (req, res) => {
 
         // Verifica se já existe um usuário temporário com este email (não verificado)
         let usuarioTemp = await User.findOne({ 
-            email: email.toLowerCase().trim(),
+            email: emailNormalizado,
             emailVerificado: false 
         });
 
@@ -426,7 +440,7 @@ app.post('/api/verificar-email/solicitar', async (req, res) => {
         } else {
             // Cria usuário temporário apenas para armazenar o código
             usuarioTemp = new User({
-                email: email.toLowerCase().trim(),
+                email: emailNormalizado,
                 senha: 'temp_' + Date.now(), // Senha temporária
                 nome: 'TEMP',
                 tipo: 'cliente',
@@ -438,7 +452,7 @@ app.post('/api/verificar-email/solicitar', async (req, res) => {
         }
 
         // Envia código por email
-        const emailEnviado = await enviarCodigoVerificacao(email, codigo);
+        const emailEnviado = await enviarCodigoVerificacao(emailNormalizado, codigo);
 
         if (!emailEnviado && process.env.NODE_ENV === 'production') {
             return res.status(500).json({ 
@@ -450,17 +464,26 @@ app.post('/api/verificar-email/solicitar', async (req, res) => {
         res.json({ 
             success: true, 
             message: 'Código de verificação enviado para seu email!',
-            email: email.toLowerCase().trim()
+            email: emailNormalizado
         });
     } catch (error) {
         console.error('Erro ao solicitar verificação de email:', error);
-        if (error.code === 11000) {
-            return res.status(409).json({ 
+        console.error('Stack trace:', error.stack);
+        
+        // Garante que sempre retorna JSON
+        if (!res.headersSent) {
+            if (error.code === 11000) {
+                return res.status(409).json({ 
+                    success: false, 
+                    message: 'Este email já está cadastrado.' 
+                });
+            }
+            res.status(500).json({ 
                 success: false, 
-                message: 'Este email já está cadastrado.' 
+                message: 'Erro interno do servidor.',
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined
             });
         }
-        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
     }
 });
 
@@ -2495,38 +2518,42 @@ app.use((req, res) => {
 // Middleware de tratamento de erros global (deve vir após todas as rotas)
 app.use((err, req, res, next) => {
     console.error('Erro não tratado:', err);
+    console.error('Stack trace:', err.stack);
     
-    // Se for um erro de validação do Mongoose
-    if (err.name === 'ValidationError') {
-        return res.status(400).json({
+    // Garante que sempre retorna JSON
+    if (!res.headersSent) {
+        // Se for um erro de validação do Mongoose
+        if (err.name === 'ValidationError') {
+            return res.status(400).json({
+                success: false,
+                message: 'Erro de validação',
+                errors: Object.values(err.errors).map(e => e.message)
+            });
+        }
+        
+        // Se for um erro de autenticação
+        if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
+            return res.status(401).json({
+                success: false,
+                message: 'Token inválido ou expirado'
+            });
+        }
+        
+        // Se for um erro do multer (upload de arquivo)
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({
+                success: false,
+                message: 'Arquivo muito grande. O tamanho máximo permitido é 10MB.'
+            });
+        }
+        
+        // Erro padrão
+        res.status(500).json({
             success: false,
-            message: 'Erro de validação',
-            errors: Object.values(err.errors).map(e => e.message)
+            message: 'Erro interno do servidor',
+            error: process.env.NODE_ENV === 'development' ? err.message : undefined
         });
     }
-    
-    // Se for um erro de autenticação
-    if (err.name === 'JsonWebTokenError' || err.name === 'TokenExpiredError') {
-        return res.status(401).json({
-            success: false,
-            message: 'Token inválido ou expirado'
-        });
-    }
-    
-    // Se for um erro do multer (upload de arquivo)
-    if (err.code === 'LIMIT_FILE_SIZE') {
-        return res.status(400).json({
-            success: false,
-            message: 'Arquivo muito grande. O tamanho máximo permitido é 10MB.'
-        });
-    }
-    
-    // Erro padrão
-    res.status(500).json({
-        success: false,
-        message: 'Erro interno do servidor',
-        error: process.env.NODE_ENV === 'development' ? err.message : undefined
-    });
 });
 
 // Exporta o app
