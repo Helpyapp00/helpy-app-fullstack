@@ -309,6 +309,12 @@ app.use(async (req, res, next) => {
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Middleware para garantir Content-Type JSON em todas as rotas da API
+app.use('/api', (req, res, next) => {
+    res.setHeader('Content-Type', 'application/json');
+    next();
+});
+
 const authMiddleware = (req, res, next) => { const authHeader = req.headers.authorization; if (!authHeader || !authHeader.startsWith('Bearer ')) { return res.status(401).json({ message: 'Token não fornecido ou inválido.' }); } const token = authHeader.split(' ')[1]; if (!process.env.JWT_SECRET) { console.error("JWT_SECRET não definido!"); return res.status(500).json({ message: "Erro de configuração do servidor." }); } try { const decoded = jwt.verify(token, process.env.JWT_SECRET); req.user = decoded; next(); } catch (error) { return res.status(401).json({ message: 'Token inválido.' }); } };
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage, limits: { fileSize: 10 * 1024 * 1024 }, fileFilter: (req, file, cb) => { const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/quicktime', 'video/webm']; if (allowedTypes.includes(file.mimetype)) { cb(null, true); } else { cb(new Error('Tipo de arquivo não suportado.'), false); } } });
@@ -320,28 +326,27 @@ const upload = multer({ storage: storage, limits: { fileSize: 10 * 1024 * 1024 }
 
 // Função para criar transporter de email
 function criarTransporterEmail() {
-    // Se tiver configurações de SMTP no .env, usa elas. Caso contrário, usa modo de teste
-    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-        return nodemailer.createTransport({
-            host: process.env.SMTP_HOST,
-            port: parseInt(process.env.SMTP_PORT) || 587,
-            secure: process.env.SMTP_SECURE === 'true',
-            requireTLS: process.env.SMTP_SECURE !== 'true', // Requer TLS para porta 587
-            auth: {
-                user: process.env.SMTP_USER,
-                pass: process.env.SMTP_PASS
-            }
-        });
-    } else {
-        // Modo de teste (apenas loga no console)
-        return nodemailer.createTransport({
-            host: 'smtp.ethereal.email',
-            port: 587,
-            auth: {
-                user: 'test@ethereal.email',
-                pass: 'test'
-            }
-        });
+    try {
+        // Se tiver configurações de SMTP no .env, usa elas. Caso contrário, retorna null
+        if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+            return nodemailer.createTransport({
+                host: process.env.SMTP_HOST,
+                port: parseInt(process.env.SMTP_PORT) || 587,
+                secure: process.env.SMTP_SECURE === 'true',
+                requireTLS: process.env.SMTP_SECURE !== 'true', // Requer TLS para porta 587
+                auth: {
+                    user: process.env.SMTP_USER,
+                    pass: process.env.SMTP_PASS
+                }
+            });
+        } else {
+            // Sem configurações SMTP, retorna null (será tratado na função de envio)
+            console.warn('AVISO: Configurações SMTP não encontradas. Email não será enviado.');
+            return null;
+        }
+    } catch (error) {
+        console.error('Erro ao criar transporter de email:', error);
+        return null;
     }
 }
 
@@ -354,6 +359,16 @@ function gerarCodigoVerificacao() {
 async function enviarCodigoVerificacao(email, codigo) {
     try {
         const transporter = criarTransporterEmail();
+        
+        // Se não houver transporter configurado, apenas loga o código
+        if (!transporter) {
+            console.log('═══════════════════════════════════════');
+            console.log('CÓDIGO DE VERIFICAÇÃO (DEV MODE):', codigo);
+            console.log('Email:', email);
+            console.log('═══════════════════════════════════════');
+            // Em desenvolvimento, retorna true para não bloquear
+            return process.env.NODE_ENV !== 'production';
+        }
         
         const mailOptions = {
             from: process.env.SMTP_FROM || 'Helpy <noreply@helpy.com>',
@@ -451,17 +466,28 @@ app.post('/api/verificar-email/solicitar', async (req, res) => {
             await usuarioTemp.save();
         }
 
-        // Envia código por email
-        const emailEnviado = await enviarCodigoVerificacao(emailNormalizado, codigo);
-
-        if (!emailEnviado && process.env.NODE_ENV === 'production') {
-            return res.status(500).json({ 
-                success: false, 
-                message: 'Erro ao enviar email de verificação. Tente novamente mais tarde.' 
-            });
+        // Envia código por email (não bloqueia se falhar em desenvolvimento)
+        try {
+            const emailEnviado = await enviarCodigoVerificacao(emailNormalizado, codigo);
+            if (!emailEnviado && process.env.NODE_ENV === 'production') {
+                return res.status(500).json({ 
+                    success: false, 
+                    message: 'Erro ao enviar email de verificação. Tente novamente mais tarde.' 
+                });
+            }
+        } catch (emailError) {
+            console.error('Erro ao tentar enviar email:', emailError);
+            // Em desenvolvimento, continua mesmo se o email falhar
+            if (process.env.NODE_ENV === 'production') {
+                return res.status(500).json({ 
+                    success: false, 
+                    message: 'Erro ao enviar email de verificação. Tente novamente mais tarde.' 
+                });
+            }
+            console.log('MODO DEV: Continuando mesmo com erro no envio de email');
         }
 
-        res.json({ 
+        return res.json({ 
             success: true, 
             message: 'Código de verificação enviado para seu email!',
             email: emailNormalizado
@@ -469,16 +495,30 @@ app.post('/api/verificar-email/solicitar', async (req, res) => {
     } catch (error) {
         console.error('Erro ao solicitar verificação de email:', error);
         console.error('Stack trace:', error.stack);
+        console.error('Error name:', error.name);
+        console.error('Error code:', error.code);
         
         // Garante que sempre retorna JSON
         if (!res.headersSent) {
+            res.setHeader('Content-Type', 'application/json');
+            
             if (error.code === 11000) {
                 return res.status(409).json({ 
                     success: false, 
                     message: 'Este email já está cadastrado.' 
                 });
             }
-            res.status(500).json({ 
+            
+            // Se for erro de conexão com MongoDB
+            if (error.message && error.message.includes('Falha na conexão')) {
+                return res.status(500).json({ 
+                    success: false, 
+                    message: 'Erro ao conectar com o banco de dados. Tente novamente mais tarde.',
+                    error: process.env.NODE_ENV === 'development' ? error.message : undefined
+                });
+            }
+            
+            return res.status(500).json({ 
                 success: false, 
                 message: 'Erro interno do servidor.',
                 error: process.env.NODE_ENV === 'development' ? error.message : undefined
