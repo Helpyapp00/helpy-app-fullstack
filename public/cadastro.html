@@ -17,44 +17,8 @@
     </div>
     <div id="form-message" class="form-message hidden"></div>
 
-    <!-- 🆕 NOVO: Etapa 1 - Verificação de Email -->
-    <div id="etapa-verificacao-email" class="etapa-cadastro">
-      <h2 style="text-align: center; margin-bottom: 20px;">Verificação de Email</h2>
-      <p style="text-align: center; color: #666; margin-bottom: 30px;">
-        Primeiro, precisamos verificar seu email. Enviaremos um código de verificação.
-      </p>
-      <div class="form-row">
-        <div class="form-group full-width">
-          <label for="email-verificacao">Email</label>
-          <input type="email" id="email-verificacao" name="email-verificacao" required placeholder="seu@email.com">
-        </div>
-      </div>
-      <button type="button" id="btn-solicitar-codigo" class="btn-submit-cadastro">Enviar Código de Verificação</button>
-    </div>
-
-    <!-- 🆕 NOVO: Etapa 2 - Validar Código -->
-    <div id="etapa-validar-codigo" class="etapa-cadastro" style="display: none;">
-      <h2 style="text-align: center; margin-bottom: 20px;">Validar Código</h2>
-      <p style="text-align: center; color: #666; margin-bottom: 30px;">
-        Digite o código de 6 dígitos que enviamos para <strong id="email-exibido"></strong>
-      </p>
-      <div class="form-row">
-        <div class="form-group full-width">
-          <label for="codigo-verificacao">Código de Verificação</label>
-          <input type="text" id="codigo-verificacao" name="codigo-verificacao" required placeholder="000000" maxlength="6" pattern="[0-9]{6}">
-        </div>
-      </div>
-      <div style="display: flex; gap: 10px; justify-content: center;">
-        <button type="button" id="btn-voltar-email" class="btn-submit-cadastro" style="background-color: #666;">Voltar</button>
-        <button type="button" id="btn-validar-codigo" class="btn-submit-cadastro">Validar Código</button>
-      </div>
-      <p style="text-align: center; margin-top: 15px;">
-        <a href="#" id="link-reenviar-codigo" style="color: #4CAF50; text-decoration: none;">Reenviar código</a>
-      </p>
-    </div>
-
-    <!-- 🆕 NOVO: Etapa 3 - Dados do Cadastro -->
-    <form id="form-cadastro" style="display: none;">
+    <!-- Etapa 1 - Dados do Cadastro -->
+    <form id="form-cadastro">
       <div class="form-row">
         <div class="form-group">
           <label for="nome">Nome</label>
@@ -117,7 +81,7 @@
         </div>
         <div class="form-group">
           <label for="email">Email</label>
-          <input type="email" id="email" name="email" readonly style="background-color: #f0f0f0;">
+          <input type="email" id="email" name="email" required placeholder="seu@email.com">
         </div>
       </div>
 
@@ -149,8 +113,33 @@
         </div>
       </div>
 
-      <button type="submit" class="btn-submit-cadastro">Finalizar Cadastro</button>
+      <button type="submit" class="btn-submit-cadastro">Próximo</button>
     </form>
+
+    <!-- Etapa 2 - Validar Código -->
+    <div id="etapa-validar-codigo" class="etapa-cadastro" style="display: none;">
+      <h2 style="text-align: center; margin-bottom: 20px;">Verificação de Email</h2>
+      <p style="text-align: center; color: #666; margin-bottom: 30px;">
+        Enviamos um código de 6 dígitos para <strong id="email-exibido"></strong><br>
+        Digite o código abaixo para finalizar seu cadastro.
+      </p>
+      <div class="form-row">
+        <div class="form-group full-width">
+          <label for="codigo-verificacao">Código de Verificação</label>
+          <input type="text" id="codigo-verificacao" name="codigo-verificacao" required placeholder="000000" maxlength="6" pattern="[0-9]{6}" style="text-align: center; font-size: 24px; letter-spacing: 8px; font-weight: bold;">
+        </div>
+      </div>
+      <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
+        <button type="button" id="btn-voltar-formulario" class="btn-submit-cadastro" style="background-color: #666;">Voltar</button>
+        <button type="button" id="btn-validar-codigo" class="btn-submit-cadastro">Validar e Criar Conta</button>
+      </div>
+      <p style="text-align: center; margin-top: 20px;">
+        <a href="#" id="link-reenviar-codigo" style="color: #4CAF50; text-decoration: none; font-weight: 500;">
+          <i class="fas fa-redo"></i> Reenviar código
+        </a>
+      </p>
+    </div>
+
       <div class="link-login-container">
           <div class="link-login-divider">
             <span class="divider-line"></span>

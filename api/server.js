@@ -745,16 +745,21 @@ app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
             return res.status(400).json({ success: false, message: 'Campos obrigatórios (Nome, Email, Senha, Tipo) não preenchidos.' });
         }
 
-        // Verifica se o e-mail já está em uso
-        const usuarioExistente = await User.findOne({ email });
-        if (usuarioExistente) {
+        const emailNormalizado = email.toLowerCase().trim();
+
+        // Verifica se já existe um usuário com este email
+        let usuarioExistente = await User.findOne({ email: emailNormalizado });
+        
+        // Se existe um usuário verificado, retorna erro
+        if (usuarioExistente && usuarioExistente.emailVerificado) {
             return res.status(400).json({ 
                 success: false, 
                 message: 'Este e-mail já está cadastrado. Por favor, use outro e-mail ou faça login.'
             });
         }
 
-        const emailNormalizado = email.toLowerCase().trim();
+        // Se existe um usuário não verificado, vamos atualizá-lo
+        const atualizarUsuario = usuarioExistente && !usuarioExistente.emailVerificado;
 
         // --- Lógica de Upload S3 ---
         let fotoUrl = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
@@ -774,39 +779,50 @@ app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const senhaHash = await bcrypt.hash(senha, salt);
 
-        // 🛑 ATUALIZADO: Salva o 'tema'
-        // Gera código de verificação
-        const codigoVerificacao = gerarCodigoVerificacao();
-        const dataExpiracao = new Date();
-        dataExpiracao.setHours(dataExpiracao.getHours() + 24); // Expira em 24 horas
+        let usuarioFinal;
 
-        const newUser = new User({
-            nome,
-            idade,
-            cidade,
-            estado, 
-            tipo,
-            atuacao: tipo === 'trabalhador' ? atuacao : null,
-            telefone,
-            descricao,
-            email: emailNormalizado,
-            senha: senhaHash,
-            foto: fotoUrl,
-            avatarUrl: fotoUrl,
-            tema: tema || 'light',
-            emailVerificado: false,
-            codigoVerificacao,
-            codigoExpiracao: dataExpiracao
-        });
+        if (atualizarUsuario) {
+            // Atualiza o usuário temporário com os dados completos
+            usuarioExistente.nome = nome;
+            usuarioExistente.idade = idade;
+            usuarioExistente.cidade = cidade;
+            usuarioExistente.estado = estado;
+            usuarioExistente.tipo = tipo;
+            usuarioExistente.atuacao = tipo === 'trabalhador' ? atuacao : null;
+            usuarioExistente.telefone = telefone;
+            usuarioExistente.descricao = descricao;
+            usuarioExistente.senha = senhaHash;
+            usuarioExistente.foto = fotoUrl;
+            usuarioExistente.avatarUrl = fotoUrl;
+            usuarioExistente.tema = tema || 'light';
+            // Mantém emailVerificado como true (já foi verificado na etapa anterior)
+            usuarioExistente.emailVerificado = true;
+            usuarioExistente.codigoVerificacao = null;
+            usuarioExistente.codigoVerificacaoExpira = null;
+            
+            await usuarioExistente.save();
+            usuarioFinal = usuarioExistente;
+        } else {
+            // Cria novo usuário (caso não tenha passado pela verificação de email)
+            const newUser = new User({
+                nome,
+                idade,
+                cidade,
+                estado, 
+                tipo,
+                atuacao: tipo === 'trabalhador' ? atuacao : null,
+                telefone,
+                descricao,
+                email: emailNormalizado,
+                senha: senhaHash,
+                foto: fotoUrl,
+                avatarUrl: fotoUrl,
+                tema: tema || 'light',
+                emailVerificado: true // Assumindo que já foi verificado antes de chegar aqui
+            });
 
-        // Salva o usuário
-        await newUser.save();
-
-        // Envia e-mail de verificação
-        const emailEnviado = await enviarEmailVerificacao(emailNormalizado, codigoVerificacao);
-        if (!emailEnviado) {
-            console.error('Falha ao enviar e-mail de verificação');
-            // Não retornamos erro, apenas registramos, pois o usuário já foi criado
+            await newUser.save();
+            usuarioFinal = newUser;
         }
 
         if (!process.env.JWT_SECRET) {
@@ -816,17 +832,29 @@ app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
                 message: "Erro de configuração do servidor." 
             });
         }
+
+        // Gera token de autenticação
+        const token = jwt.sign(
+            { 
+                id: usuarioFinal._id, 
+                email: usuarioFinal.email, 
+                tipo: usuarioFinal.tipo 
+            }, 
+            process.env.JWT_SECRET, 
+            { expiresIn: '1d' }
+        );
         
         // 🛑 ATUALIZADO: Envia o tema salvo
         res.status(201).json({ 
             success: true, 
-            message: 'Usuário cadastrado com sucesso! Por favor, verifique seu e-mail para ativar sua conta.',
-            userId: newUser._id,
-            emailVerificado: false,
-            userType: newUser.tipo,
-            userName: newUser.nome,
-            userPhotoUrl: newUser.avatarUrl,
-            userTheme: newUser.tema || 'light'
+            message: 'Cadastro realizado com sucesso!',
+            token,
+            userId: usuarioFinal._id,
+            emailVerificado: usuarioFinal.emailVerificado,
+            userType: usuarioFinal.tipo,
+            userName: usuarioFinal.nome,
+            userPhotoUrl: usuarioFinal.avatarUrl,
+            userTheme: usuarioFinal.tema || 'light'
         });
     } catch (error) {
         console.error('Erro ao cadastrar usuário:', error);

@@ -1,22 +1,18 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Elementos das etapas
-    const etapaVerificacaoEmail = document.getElementById('etapa-verificacao-email');
     const etapaValidarCodigo = document.getElementById('etapa-validar-codigo');
     const formCadastro = document.getElementById('form-cadastro');
     
-    // Elementos da etapa 1 - Verificação de Email
-    const emailVerificacaoInput = document.getElementById('email-verificacao');
-    const btnSolicitarCodigo = document.getElementById('btn-solicitar-codigo');
-    
-    // Elementos da etapa 2 - Validar Código
+    // Elementos da etapa de validação
     const codigoVerificacaoInput = document.getElementById('codigo-verificacao');
     const btnValidarCodigo = document.getElementById('btn-validar-codigo');
-    const btnVoltarEmail = document.getElementById('btn-voltar-email');
+    const btnVoltarFormulario = document.getElementById('btn-voltar-formulario');
     const linkReenviarCodigo = document.getElementById('link-reenviar-codigo');
     const emailExibido = document.getElementById('email-exibido');
     
-    // Variável para armazenar o email verificado
-    let emailVerificado = null;
+    // Variáveis para armazenar dados do formulário
+    let emailDoFormulario = null;
+    let dadosFormulario = null;
     
     // Elementos do formulário de cadastro
     const nomeInput = document.getElementById('nome');
@@ -51,127 +47,46 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Função para mostrar etapa ---
     function mostrarEtapa(etapa) {
-        etapaVerificacaoEmail.style.display = 'none';
         etapaValidarCodigo.style.display = 'none';
         formCadastro.style.display = 'none';
         
-        if (etapa === 'email') {
-            etapaVerificacaoEmail.style.display = 'block';
-        } else if (etapa === 'codigo') {
+        if (etapa === 'codigo') {
             etapaValidarCodigo.style.display = 'block';
         } else if (etapa === 'cadastro') {
             formCadastro.style.display = 'block';
         }
     }
 
-    // --- Etapa 1: Solicitar Código de Verificação ---
-    btnSolicitarCodigo.addEventListener('click', async function() {
-        const email = emailVerificacaoInput.value.trim();
-        
-        if (!email) {
-            showMessage('Por favor, informe seu email.', 'error');
-            return;
-        }
-
-        if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-            showMessage('Por favor, informe um email válido.', 'error');
-            return;
-        }
-
-        showMessage('Enviando código de verificação...', 'info');
-        btnSolicitarCodigo.disabled = true;
-        btnSolicitarCodigo.textContent = 'Enviando...';
-
-        try {
-            const response = await fetch('/api/verificar-email/solicitar', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ email })
-            });
-
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                emailVerificado = data.email;
-                emailExibido.textContent = emailVerificado;
-                mostrarEtapa('codigo');
-                showMessage('Código enviado! Verifique sua caixa de entrada.', 'success');
-                codigoVerificacaoInput.focus();
-            } else {
-                throw new Error(data.message || 'Erro ao enviar código de verificação.');
-            }
-        } catch (error) {
-            console.error('Erro ao solicitar código:', error);
-            showMessage(`Erro: ${error.message}`, 'error');
-        } finally {
-            btnSolicitarCodigo.disabled = false;
-            btnSolicitarCodigo.textContent = 'Enviar Código de Verificação';
-        }
-    });
-
-    // --- Etapa 2: Validar Código ---
-    btnValidarCodigo.addEventListener('click', async function() {
-        const codigo = codigoVerificacaoInput.value.trim();
-        
-        if (!codigo || codigo.length !== 6) {
-            showMessage('Por favor, informe o código de 6 dígitos.', 'error');
-            return;
-        }
-
-        if (!emailVerificado) {
-            showMessage('Erro: Email não encontrado. Por favor, comece novamente.', 'error');
-            mostrarEtapa('email');
-            return;
-        }
-
-        showMessage('Validando código...', 'info');
-        btnValidarCodigo.disabled = true;
-        btnValidarCodigo.textContent = 'Validando...';
-
-        try {
-            const response = await fetch('/api/verificar-email/validar', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ 
-                    email: emailVerificado,
-                    codigo: codigo 
-                })
-            });
-
-            const data = await response.json();
-
-            if (response.ok && data.success) {
-                // Email verificado com sucesso! Mostra formulário de cadastro
-                emailInput.value = emailVerificado;
-                mostrarEtapa('cadastro');
-                showMessage('Email verificado com sucesso! Complete seus dados.', 'success');
-            } else {
-                throw new Error(data.message || 'Código inválido.');
-            }
-        } catch (error) {
-            console.error('Erro ao validar código:', error);
-            showMessage(`Erro: ${error.message}`, 'error');
-        } finally {
-            btnValidarCodigo.disabled = false;
-            btnValidarCodigo.textContent = 'Validar Código';
-        }
-    });
-
-    // --- Voltar para etapa de email ---
-    btnVoltarEmail.addEventListener('click', function() {
-        mostrarEtapa('email');
+    // --- Voltar para formulário ---
+    btnVoltarFormulario.addEventListener('click', function() {
+        mostrarEtapa('cadastro');
         codigoVerificacaoInput.value = '';
     });
 
     // --- Reenviar código ---
     linkReenviarCodigo.addEventListener('click', async function(e) {
         e.preventDefault();
-        if (emailVerificado) {
-            btnSolicitarCodigo.click();
+        if (emailDoFormulario) {
+            showMessage('Reenviando código...', 'info');
+            try {
+                const response = await fetch('/api/verificar-email/solicitar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email: emailDoFormulario })
+                });
+
+                const data = await response.json();
+                if (response.ok && data.success) {
+                    showMessage('Código reenviado! Verifique sua caixa de entrada.', 'success');
+                } else {
+                    throw new Error(data.message || 'Erro ao reenviar código.');
+                }
+            } catch (error) {
+                console.error('Erro ao reenviar código:', error);
+                showMessage(`Erro: ${error.message}`, 'error');
+            }
         }
     });
 
@@ -232,53 +147,130 @@ document.addEventListener('DOMContentLoaded', function() {
     formCadastro.addEventListener('submit', async function(event) {
         event.preventDefault(); 
 
+        // Validações
         if (senhaInput.value !== confirmarSenhaInput.value) {
             showMessage('As senhas não coincidem.', 'error');
             return;
         }
 
-        if (!emailVerificado) {
-            showMessage('Erro: Email não verificado. Por favor, comece novamente.', 'error');
-            mostrarEtapa('email');
+        const email = emailInput.value.trim();
+        if (!email || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+            showMessage('Por favor, informe um email válido.', 'error');
             return;
         }
 
-        showMessage('Enviando dados...', 'info'); 
-
+        // Armazena dados do formulário
+        emailDoFormulario = email;
         const formData = new FormData(formCadastro);
         // Combina nome e sobrenome em um único campo "nome"
         const nomeCompleto = `${nomeInput.value.trim()} ${sobrenomeInput.value.trim()}`.trim();
-        formData.set('nome', nomeCompleto); // Substitui o campo nome pelo nome completo
-        formData.append('email', emailVerificado); // Garante que o email correto seja enviado
+        formData.set('nome', nomeCompleto);
+        dadosFormulario = formData;
+
+        // Solicita código de verificação
+        showMessage('Enviando código de verificação...', 'info');
+        const submitButton = formCadastro.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Enviando...';
 
         try {
-            const response = await fetch('/api/cadastro', {
+            const response = await fetch('/api/verificar-email/solicitar', {
                 method: 'POST',
-                body: formData
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email })
             });
 
             const data = await response.json();
 
             if (response.ok && data.success) {
-                showMessage(data.message || 'Cadastro realizado com sucesso! Redirecionando...', 'success');
+                emailExibido.textContent = email;
+                mostrarEtapa('codigo');
+                showMessage('Código enviado! Verifique sua caixa de entrada.', 'success');
+                codigoVerificacaoInput.focus();
+            } else {
+                throw new Error(data.message || 'Erro ao enviar código de verificação.');
+            }
+        } catch (error) {
+            console.error('Erro ao solicitar código:', error);
+            showMessage(`Erro: ${error.message}`, 'error');
+        } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = 'Próximo';
+        }
+    });
+
+    // --- Validar Código e Criar Conta ---
+    btnValidarCodigo.addEventListener('click', async function() {
+        const codigo = codigoVerificacaoInput.value.trim();
+        
+        if (!codigo || codigo.length !== 6) {
+            showMessage('Por favor, informe o código de 6 dígitos.', 'error');
+            return;
+        }
+
+        if (!emailDoFormulario || !dadosFormulario) {
+            showMessage('Erro: Dados do formulário não encontrados. Por favor, comece novamente.', 'error');
+            mostrarEtapa('cadastro');
+            return;
+        }
+
+        showMessage('Validando código e criando conta...', 'info');
+        btnValidarCodigo.disabled = true;
+        btnValidarCodigo.textContent = 'Processando...';
+
+        try {
+            // Primeiro valida o código
+            const validarResponse = await fetch('/api/verificar-email/validar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    email: emailDoFormulario,
+                    codigo: codigo 
+                })
+            });
+
+            const validarData = await validarResponse.json();
+
+            if (!validarResponse.ok || !validarData.success) {
+                throw new Error(validarData.message || 'Código inválido.');
+            }
+
+            // Se código válido, cria a conta
+            const cadastroResponse = await fetch('/api/cadastro', {
+                method: 'POST',
+                body: dadosFormulario
+            });
+
+            const cadastroData = await cadastroResponse.json();
+
+            if (cadastroResponse.ok && cadastroData.success) {
+                showMessage('Cadastro realizado com sucesso! Redirecionando...', 'success');
                 // Loga o usuário e redireciona
-                localStorage.setItem('jwtToken', data.token);
-                localStorage.setItem('userId', data.userId);
-                localStorage.setItem('userType', data.userType);
-                localStorage.setItem('userName', data.userName);
-                localStorage.setItem('userPhotoUrl', data.userPhotoUrl);
+                if (cadastroData.token) {
+                    localStorage.setItem('jwtToken', cadastroData.token);
+                }
+                localStorage.setItem('userId', cadastroData.userId);
+                localStorage.setItem('userType', cadastroData.userType);
+                localStorage.setItem('userName', cadastroData.userName);
+                localStorage.setItem('userPhotoUrl', cadastroData.userPhotoUrl);
                 
                 setTimeout(() => {
                     window.location.href = 'index.html';
                 }, 2000);
-
             } else {
-                throw new Error(data.message || 'Houve um erro no cadastro.');
+                throw new Error(cadastroData.message || 'Houve um erro ao criar a conta.');
             }
 
         } catch (error) {
-            console.error('Erro ao enviar o formulário:', error);
+            console.error('Erro ao validar código e criar conta:', error);
             showMessage(`Erro: ${error.message}`, 'error');
+        } finally {
+            btnValidarCodigo.disabled = false;
+            btnValidarCodigo.textContent = 'Validar e Criar Conta';
         }
     });
 });
