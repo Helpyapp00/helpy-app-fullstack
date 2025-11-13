@@ -8,8 +8,8 @@
   "scripts": {
     "start": "node api/server",
     "dev": "nodemon api/server",
-    "build": "echo 'Build step completo'",
-    "vercel-build": "echo 'Build do Vercel'"
+    "build": "echo 'Build completo - nenhuma ação necessária'",
+    "vercel-build": "echo 'Build do Vercel completo'"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.588.0",
