@@ -11,6 +11,7 @@ const multer = require('multer');
 const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
 const sharp = require('sharp');
 const { URL } = require('url');
+const nodemailer = require('nodemailer');
 
 const app = express();
 
@@ -214,6 +215,9 @@ const userSchema = new mongoose.Schema({
     avatarUrl: { type: String, default: 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png' },
     servicosImagens: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Servico' }],
     isVerified: { type: Boolean, default: false },
+    emailVerificado: { type: Boolean, default: false },
+    codigoVerificacao: { type: String, default: null },
+    codigoVerificacaoExpira: { type: Date, default: null },
     mediaAvaliacao: { type: Number, default: 0 },
     totalAvaliacoes: { type: Number, default: 0 },
     avaliacoes: [avaliacaoSchema],
@@ -257,8 +261,220 @@ const upload = multer({ storage: storage, limits: { fileSize: 10 * 1024 * 1024 }
 // ----------------------------------------------------------------------
 
 // ----------------------------------------------------------------------
+// FUNÇÕES DE VERIFICAÇÃO DE EMAIL
+// ----------------------------------------------------------------------
+
+// Função para criar transporter de email
+function criarTransporterEmail() {
+    // Se tiver configurações de SMTP no .env, usa elas. Caso contrário, usa modo de teste
+    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+        return nodemailer.createTransport({
+            host: process.env.SMTP_HOST,
+            port: parseInt(process.env.SMTP_PORT) || 587,
+            secure: process.env.SMTP_SECURE === 'true',
+            requireTLS: process.env.SMTP_SECURE !== 'true', // Requer TLS para porta 587
+            auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS
+            }
+        });
+    } else {
+        // Modo de teste (apenas loga no console)
+        return nodemailer.createTransport({
+            host: 'smtp.ethereal.email',
+            port: 587,
+            auth: {
+                user: 'test@ethereal.email',
+                pass: 'test'
+            }
+        });
+    }
+}
+
+// Função para gerar código de verificação
+function gerarCodigoVerificacao() {
+    return Math.floor(100000 + Math.random() * 900000).toString(); // Código de 6 dígitos
+}
+
+// Função para enviar código de verificação por email
+async function enviarCodigoVerificacao(email, codigo) {
+    try {
+        const transporter = criarTransporterEmail();
+        
+        const mailOptions = {
+            from: process.env.SMTP_FROM || 'Helpy <noreply@helpy.com>',
+            to: email,
+            subject: 'Código de Verificação - Helpy',
+            html: `
+                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #4CAF50;">Verificação de Email - Helpy</h2>
+                    <p>Olá!</p>
+                    <p>Seu código de verificação é:</p>
+                    <div style="background-color: #f4f4f4; padding: 20px; text-align: center; margin: 20px 0;">
+                        <h1 style="color: #4CAF50; font-size: 36px; letter-spacing: 5px; margin: 0;">${codigo}</h1>
+                    </div>
+                    <p>Este código expira em 10 minutos.</p>
+                    <p>Se você não solicitou este código, ignore este email.</p>
+                    <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                    <p style="color: #999; font-size: 12px;">Equipe Helpy</p>
+                </div>
+            `,
+            text: `Seu código de verificação é: ${codigo}. Este código expira em 10 minutos.`
+        };
+
+        const info = await transporter.sendMail(mailOptions);
+        console.log('Email de verificação enviado:', info.messageId);
+        return true;
+    } catch (error) {
+        console.error('Erro ao enviar email de verificação:', error);
+        // Em modo de desenvolvimento, ainda retorna true para não bloquear o cadastro
+        if (process.env.NODE_ENV !== 'production') {
+            console.log('MODO DEV: Código de verificação seria:', codigo);
+            return true;
+        }
+        return false;
+    }
+}
+
+// ----------------------------------------------------------------------
 // ROTAS DE API
 // ----------------------------------------------------------------------
+
+// 🆕 NOVO: Rota para solicitar código de verificação de email
+app.post('/api/verificar-email/solicitar', async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({ success: false, message: 'Email é obrigatório.' });
+        }
+
+        // Verifica se o email já está verificado em outra conta
+        const emailJaVerificado = await User.findOne({ 
+            email: email.toLowerCase().trim(),
+            emailVerificado: true 
+        });
+
+        if (emailJaVerificado) {
+            return res.status(409).json({ 
+                success: false, 
+                message: 'Este email já está vinculado a outra conta verificada. Por favor, use outro email ou faça login na conta existente.' 
+            });
+        }
+
+        // Gera código de verificação
+        const codigo = gerarCodigoVerificacao();
+        const expiraEm = new Date();
+        expiraEm.setMinutes(expiraEm.getMinutes() + 10); // Expira em 10 minutos
+
+        // Verifica se já existe um usuário temporário com este email (não verificado)
+        let usuarioTemp = await User.findOne({ 
+            email: email.toLowerCase().trim(),
+            emailVerificado: false 
+        });
+
+        if (usuarioTemp) {
+            // Atualiza código existente
+            usuarioTemp.codigoVerificacao = codigo;
+            usuarioTemp.codigoVerificacaoExpira = expiraEm;
+            await usuarioTemp.save();
+        } else {
+            // Cria usuário temporário apenas para armazenar o código
+            usuarioTemp = new User({
+                email: email.toLowerCase().trim(),
+                senha: 'temp_' + Date.now(), // Senha temporária
+                nome: 'TEMP',
+                tipo: 'cliente',
+                codigoVerificacao: codigo,
+                codigoVerificacaoExpira: expiraEm,
+                emailVerificado: false
+            });
+            await usuarioTemp.save();
+        }
+
+        // Envia código por email
+        const emailEnviado = await enviarCodigoVerificacao(email, codigo);
+
+        if (!emailEnviado && process.env.NODE_ENV === 'production') {
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Erro ao enviar email de verificação. Tente novamente mais tarde.' 
+            });
+        }
+
+        res.json({ 
+            success: true, 
+            message: 'Código de verificação enviado para seu email!',
+            email: email.toLowerCase().trim()
+        });
+    } catch (error) {
+        console.error('Erro ao solicitar verificação de email:', error);
+        if (error.code === 11000) {
+            return res.status(409).json({ 
+                success: false, 
+                message: 'Este email já está cadastrado.' 
+            });
+        }
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// 🆕 NOVO: Rota para validar código de verificação
+app.post('/api/verificar-email/validar', async (req, res) => {
+    try {
+        const { email, codigo } = req.body;
+        
+        if (!email || !codigo) {
+            return res.status(400).json({ success: false, message: 'Email e código são obrigatórios.' });
+        }
+
+        const usuario = await User.findOne({ 
+            email: email.toLowerCase().trim() 
+        });
+
+        if (!usuario) {
+            return res.status(404).json({ success: false, message: 'Email não encontrado. Solicite um novo código.' });
+        }
+
+        // Verifica se o código está correto e não expirou
+        if (usuario.codigoVerificacao !== codigo) {
+            return res.status(400).json({ success: false, message: 'Código de verificação inválido.' });
+        }
+
+        if (usuario.codigoVerificacaoExpira && new Date() > usuario.codigoVerificacaoExpira) {
+            return res.status(400).json({ success: false, message: 'Código de verificação expirado. Solicite um novo código.' });
+        }
+
+        // Verifica se o email já está verificado em outra conta
+        const emailJaVerificadoEmOutraConta = await User.findOne({ 
+            email: email.toLowerCase().trim(),
+            emailVerificado: true,
+            _id: { $ne: usuario._id } // Exclui o próprio usuário
+        });
+
+        if (emailJaVerificadoEmOutraConta) {
+            return res.status(409).json({ 
+                success: false, 
+                message: 'Este email já está vinculado a outra conta verificada. Não é possível usar este email.' 
+            });
+        }
+
+        // Marca email como verificado
+        usuario.emailVerificado = true;
+        usuario.codigoVerificacao = null;
+        usuario.codigoVerificacaoExpira = null;
+        await usuario.save();
+
+        res.json({ 
+            success: true, 
+            message: 'Email verificado com sucesso!',
+            email: email.toLowerCase().trim()
+        });
+    } catch (error) {
+        console.error('Erro ao validar código:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
 
 // Rota de Login
 app.post('/api/login', async (req, res) => {
@@ -298,7 +514,7 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
-// Rota de Cadastro
+// 🆕 ATUALIZADO: Rota de Cadastro com verificação de email
 app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
     try {
         // 🛑 ATUALIZADO: Recebe 'tema'
@@ -308,6 +524,39 @@ app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
         if (!nome || !email || !senha || !tipo) {
             return res.status(400).json({ message: 'Campos obrigatórios (Nome, Email, Senha, Tipo) não preenchidos.' });
         }
+
+        const emailNormalizado = email.toLowerCase().trim();
+
+        // 🆕 NOVO: Verifica se o email já está verificado em outra conta
+        const emailJaVerificado = await User.findOne({ 
+            email: emailNormalizado,
+            emailVerificado: true 
+        });
+
+        if (emailJaVerificado) {
+            return res.status(409).json({ 
+                success: false,
+                message: 'Este email já está vinculado a outra conta verificada. Por favor, use outro email ou faça login na conta existente.' 
+            });
+        }
+
+        // 🆕 NOVO: Verifica se existe um usuário com este email que foi verificado
+        let usuarioExistente = await User.findOne({ 
+            email: emailNormalizado,
+            emailVerificado: true 
+        });
+
+        // Se não existe usuário ou o email não foi verificado, retorna erro
+        if (!usuarioExistente) {
+            return res.status(400).json({ 
+                success: false,
+                message: 'Email não verificado. Por favor, verifique seu email antes de completar o cadastro.' 
+            });
+        }
+
+        // Se chegou aqui, o email foi verificado. Atualiza o usuário com os dados completos
+        const salt = await bcrypt.genSalt(10);
+        const senhaHash = await bcrypt.hash(senha, salt);
         
         // --- Lógica de Upload S3 ---
         let fotoUrl = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
@@ -324,44 +573,41 @@ app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
         }
         // --- Fim da Lógica S3 ---
 
-        const salt = await bcrypt.genSalt(10);
-        const senhaHash = await bcrypt.hash(senha, salt);
-
-        // 🛑 ATUALIZADO: Salva o 'tema'
-        const newUser = new User({
-            nome,
-            idade,
-            cidade,
-            estado, 
-            tipo,
-            atuacao: tipo === 'trabalhador' ? atuacao : null,
-            telefone,
-            descricao,
-            email,
-            senha: senhaHash,
-            foto: fotoUrl,
-            avatarUrl: fotoUrl,
-            tema: tema || 'light' // <-- SALVA O TEMA
-        });
-        await newUser.save();
+        // Atualiza o usuário existente com os dados completos
+        usuarioExistente.nome = nome;
+        usuarioExistente.idade = idade;
+        usuarioExistente.cidade = cidade;
+        usuarioExistente.estado = estado;
+        usuarioExistente.tipo = tipo;
+        usuarioExistente.atuacao = tipo === 'trabalhador' ? atuacao : null;
+        usuarioExistente.telefone = telefone;
+        usuarioExistente.descricao = descricao;
+        usuarioExistente.senha = senhaHash;
+        usuarioExistente.foto = fotoUrl;
+        usuarioExistente.avatarUrl = fotoUrl;
+        usuarioExistente.tema = tema || 'light';
+        usuarioExistente.codigoVerificacao = null;
+        usuarioExistente.codigoVerificacaoExpira = null;
+        
+        await usuarioExistente.save();
         
         if (!process.env.JWT_SECRET) {
             console.error("JWT_SECRET não definido!");
             return res.status(500).json({ message: "Erro de configuração do servidor." });
         }
         
-        const token = jwt.sign({ id: newUser._id, email: newUser.email, tipo: newUser.tipo }, process.env.JWT_SECRET, { expiresIn: '1d' });
+        const token = jwt.sign({ id: usuarioExistente._id, email: usuarioExistente.email, tipo: usuarioExistente.tipo }, process.env.JWT_SECRET, { expiresIn: '1d' });
         
         // 🛑 ATUALIZADO: Envia o tema salvo
         res.status(201).json({ 
             success: true, 
             message: 'Usuário cadastrado com sucesso!', 
             token, 
-            userId: newUser._id,
-            userType: newUser.tipo,
-            userName: newUser.nome,
-            userPhotoUrl: newUser.foto,
-            userTheme: newUser.tema // <-- ENVIA O TEMA
+            userId: usuarioExistente._id,
+            userType: usuarioExistente.tipo,
+            userName: usuarioExistente.nome,
+            userPhotoUrl: usuarioExistente.foto,
+            userTheme: usuarioExistente.tema // <-- ENVIA O TEMA
         });
     } catch (error) {
         console.error('Erro ao cadastrar usuário:', error);

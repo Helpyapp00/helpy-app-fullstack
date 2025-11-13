@@ -2,7 +2,6 @@
   "name": "helpy-app-fullstack",
   "version": "1.0.0",
   "description": "Aplicativo Fullstack Helpy",
-  
   "engines": {
     "node": "22.x"
   },
@@ -23,6 +22,7 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.4.1",
     "multer": "^2.0.2",
+    "nodemailer": "^6.9.8",
     "sharp": "^0.33.4"
   },
   "devDependencies": {
