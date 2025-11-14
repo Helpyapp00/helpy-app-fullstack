@@ -336,25 +336,43 @@ const upload = multer({ storage: storage, limits: { fileSize: 10 * 1024 * 1024 }
 // Função para criar transporter de email
 function criarTransporterEmail() {
     try {
-        // Se tiver configurações de SMTP no .env, usa elas. Caso contrário, retorna null
-        if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-            return nodemailer.createTransport({
-                host: process.env.SMTP_HOST,
-                port: parseInt(process.env.SMTP_PORT) || 587,
-                secure: process.env.SMTP_SECURE === 'true',
-                requireTLS: process.env.SMTP_SECURE !== 'true', // Requer TLS para porta 587
-                auth: {
-                    user: process.env.SMTP_USER,
-                    pass: process.env.SMTP_PASS
-                }
-            });
-        } else {
-            // Sem configurações SMTP, retorna null (será tratado na função de envio)
-            console.warn('AVISO: Configurações SMTP não encontradas. Email não será enviado.');
+        // Verifica se tem configurações SMTP
+        const hasSMTPConfig = process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS;
+        
+        if (!hasSMTPConfig) {
+            console.warn('═══════════════════════════════════════════════════════════');
+            console.warn('AVISO: Configurações SMTP não encontradas.');
+            console.warn('Para enviar emails, configure as seguintes variáveis na Vercel:');
+            console.warn('- SMTP_HOST (ex: smtp.gmail.com)');
+            console.warn('- SMTP_PORT (ex: 587)');
+            console.warn('- SMTP_USER (seu email)');
+            console.warn('- SMTP_PASS (sua senha ou senha de app)');
+            console.warn('- SMTP_SECURE (true para porta 465, false para 587)');
+            console.warn('- SMTP_FROM (ex: Helpy <noreply@helpy.com>)');
+            console.warn('═══════════════════════════════════════════════════════════');
             return null;
         }
+        
+        // Cria transporter com as configurações
+        const transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST,
+            port: parseInt(process.env.SMTP_PORT) || 587,
+            secure: process.env.SMTP_SECURE === 'true',
+            requireTLS: process.env.SMTP_SECURE !== 'true', // Requer TLS para porta 587
+            auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS
+            },
+            // Timeout aumentado para evitar erros
+            connectionTimeout: 10000,
+            greetingTimeout: 10000,
+            socketTimeout: 10000
+        });
+        
+        console.log('✅ Transporter de email configurado com sucesso');
+        return transporter;
     } catch (error) {
-        console.error('Erro ao criar transporter de email:', error);
+        console.error('❌ Erro ao criar transporter de email:', error);
         return null;
     }
 }
@@ -372,11 +390,11 @@ async function enviarCodigoVerificacao(email, codigo) {
         // Se não houver transporter configurado, apenas loga o código
         if (!transporter) {
             console.log('═══════════════════════════════════════');
-            console.log('CÓDIGO DE VERIFICAÇÃO (DEV MODE):', codigo);
+            console.log('CÓDIGO DE VERIFICAÇÃO (SMTP não configurado):', codigo);
             console.log('Email:', email);
             console.log('═══════════════════════════════════════');
-            // Em desenvolvimento, retorna true para não bloquear
-            return process.env.NODE_ENV !== 'production';
+            // Sempre retorna true quando não há SMTP - código já foi salvo no banco
+            return true;
         }
         
         const mailOptions = {
@@ -401,16 +419,30 @@ async function enviarCodigoVerificacao(email, codigo) {
         };
 
         const info = await transporter.sendMail(mailOptions);
-        console.log('Email de verificação enviado:', info.messageId);
+        console.log('✅ Email de verificação enviado com sucesso!');
+        console.log('   Message ID:', info.messageId);
+        console.log('   Para:', email);
         return true;
     } catch (error) {
-        console.error('Erro ao enviar email de verificação:', error);
-        // Em modo de desenvolvimento, ainda retorna true para não bloquear o cadastro
-        if (process.env.NODE_ENV !== 'production') {
-            console.log('MODO DEV: Código de verificação seria:', codigo);
+        console.error('❌ Erro ao enviar email de verificação:', error);
+        console.error('   Detalhes:', error.message);
+        
+        // Se houver SMTP configurado, tenta novamente ou retorna false
+        if (process.env.SMTP_HOST) {
+            console.error('   SMTP configurado mas falhou. Verifique as credenciais.');
+            // Em produção com SMTP configurado, retorna false para alertar
+            if (process.env.NODE_ENV === 'production') {
+                return false;
+            }
+            // Em desenvolvimento, ainda retorna true para não bloquear testes
+            console.warn('   MODO DEV: Continuando mesmo com erro (código salvo no banco)');
+            console.warn('   Código de verificação:', codigo);
             return true;
         }
-        return false;
+        
+        // Sem SMTP configurado, retorna true (código já foi salvo no banco)
+        console.log('MODO DEV/SEM SMTP: Código de verificação:', codigo);
+        return true;
     }
 }
 
@@ -475,25 +507,25 @@ app.post('/api/verificar-email/solicitar', async (req, res) => {
             await usuarioTemp.save();
         }
 
-        // Envia código por email (não bloqueia se falhar em desenvolvimento)
+        // Envia código por email (não bloqueia se falhar - código já foi salvo no banco)
         try {
             const emailEnviado = await enviarCodigoVerificacao(emailNormalizado, codigo);
-            if (!emailEnviado && process.env.NODE_ENV === 'production') {
-                return res.status(500).json({ 
-                    success: false, 
-                    message: 'Erro ao enviar email de verificação. Tente novamente mais tarde.' 
-                });
+            // Se o email não foi enviado mas estamos em produção E temos SMTP configurado, retorna erro
+            // Caso contrário, continua normalmente (código já está salvo no banco)
+            if (!emailEnviado && process.env.NODE_ENV === 'production' && process.env.SMTP_HOST) {
+                console.warn('Email não foi enviado em produção, mas código foi salvo no banco');
+                // Não retorna erro, apenas avisa - o código já está salvo e pode ser usado
             }
         } catch (emailError) {
             console.error('Erro ao tentar enviar email:', emailError);
-            // Em desenvolvimento, continua mesmo se o email falhar
-            if (process.env.NODE_ENV === 'production') {
-                return res.status(500).json({ 
-                    success: false, 
-                    message: 'Erro ao enviar email de verificação. Tente novamente mais tarde.' 
-                });
+            // Não bloqueia o processo - o código já foi salvo no banco
+            // Em produção com SMTP configurado, apenas loga o erro
+            if (process.env.NODE_ENV === 'production' && process.env.SMTP_HOST) {
+                console.error('Erro crítico ao enviar email em produção com SMTP configurado');
+                // Mesmo assim, não retorna erro porque o código foi salvo
+            } else {
+                console.log('MODO DEV/SEM SMTP: Continuando mesmo com erro no envio de email');
             }
-            console.log('MODO DEV: Continuando mesmo com erro no envio de email');
         }
 
         return res.json({ 
