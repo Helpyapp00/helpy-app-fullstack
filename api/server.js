@@ -11,8 +11,17 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const nodemailer = require('nodemailer');
 const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/client-s3');
-const sharp = require('sharp');
 const { URL } = require('url');
+
+// Função helper para carregar sharp apenas quando necessário (lazy loading)
+function getSharp() {
+    try {
+        return require('sharp');
+    } catch (error) {
+        console.error('Erro ao carregar sharp:', error);
+        return null;
+    }
+}
 
 const app = express();
 
@@ -828,6 +837,10 @@ app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
         let fotoUrl = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
         if (avatarFile && s3Client) {
             try {
+                const sharp = getSharp();
+                if (!sharp) {
+                    throw new Error('Sharp não disponível');
+                }
                 const imageBuffer = await sharp(avatarFile.buffer).resize(400, 400, { fit: 'cover' }).toFormat('jpeg').toBuffer();
                 const key = `avatars/${Date.now()}_${path.basename(avatarFile.originalname || 'avatar')}`;
                 const uploadCommand = new PutObjectCommand({ Bucket: bucketName, Key: key, Body: imageBuffer, ContentType: 'image/jpeg' });
@@ -974,11 +987,19 @@ app.put('/api/editar-perfil/:id', authMiddleware, upload.single('avatar'), async
         
         let fotoUrl = null;
         if (avatarFile && s3Client) {
-            const imageBuffer = await sharp(avatarFile.buffer).resize(400, 400, { fit: 'cover' }).toFormat('jpeg').toBuffer();
-            const key = `avatars/${Date.now()}_${path.basename(avatarFile.originalname || 'avatar')}`;
-            const uploadCommand = new PutObjectCommand({ Bucket: bucketName, Key: key, Body: imageBuffer, ContentType: 'image/jpeg' });
-            await s3Client.send(uploadCommand);
-            fotoUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+            try {
+                const sharp = getSharp();
+                if (!sharp) {
+                    throw new Error('Sharp não disponível');
+                }
+                const imageBuffer = await sharp(avatarFile.buffer).resize(400, 400, { fit: 'cover' }).toFormat('jpeg').toBuffer();
+                const key = `avatars/${Date.now()}_${path.basename(avatarFile.originalname || 'avatar')}`;
+                const uploadCommand = new PutObjectCommand({ Bucket: bucketName, Key: key, Body: imageBuffer, ContentType: 'image/jpeg' });
+                await s3Client.send(uploadCommand);
+                fotoUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+            } catch (s3Error) {
+                console.warn("Falha no upload da foto de perfil para o S3:", s3Error);
+            }
         }
         
         // 🛑 ATUALIZAÇÃO: Objeto de updates
@@ -1417,13 +1438,22 @@ app.post('/api/servico', authMiddleware, upload.array('images', 5), async (req, 
         
         let imageUrls = [];
         if (files && files.length > 0 && s3Client) {
-            await Promise.all(files.map(async (file) => {
-                const imageBuffer = await sharp(file.buffer).resize(800, 600, { fit: 'cover' }).toFormat('jpeg').toBuffer();
-                const key = `servicos/${userId}/${Date.now()}_${path.basename(file.originalname)}`;
-                const uploadCommand = new PutObjectCommand({ Bucket: bucketName, Key: key, Body: imageBuffer, ContentType: 'image/jpeg' });
-                await s3Client.send(uploadCommand);
-                imageUrls.push(`https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`);
-            }));
+            const sharp = getSharp();
+            if (!sharp) {
+                console.warn('Sharp não disponível, pulando processamento de imagens');
+            } else {
+                await Promise.all(files.map(async (file) => {
+                    try {
+                        const imageBuffer = await sharp(file.buffer).resize(800, 600, { fit: 'cover' }).toFormat('jpeg').toBuffer();
+                        const key = `servicos/${userId}/${Date.now()}_${path.basename(file.originalname)}`;
+                        const uploadCommand = new PutObjectCommand({ Bucket: bucketName, Key: key, Body: imageBuffer, ContentType: 'image/jpeg' });
+                        await s3Client.send(uploadCommand);
+                        imageUrls.push(`https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`);
+                    } catch (error) {
+                        console.error('Erro ao processar imagem:', error);
+                    }
+                }));
+            }
         }
 
         // Processa tecnologias (pode vir como string separada por vírgula ou array)
