@@ -207,6 +207,31 @@ body {
     box-shadow: 0 0 0 3px rgba(74, 107, 255, 0.1);
 }
 
+.toggle-password-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+    z-index: 10;
+}
+
+.toggle-password-btn:hover {
+    color: var(--primary-color);
+}
+
+.toggle-password-btn:focus {
+    outline: none;
+}
+
 .form-actions {
     margin-top: 1.5rem;
 }

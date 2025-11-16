@@ -466,6 +466,185 @@ form textarea:focus {
     font-size: 14px;
 }
 
+/* Botão mostrar/ocultar senha */
+.toggle-password-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #6c757d;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+    z-index: 10;
+    font-size: 16px;
+}
+
+.toggle-password-btn:hover {
+    color: #007bff;
+}
+
+.toggle-password-btn:focus {
+    outline: none;
+}
+
+/* Seleção visual de tema */
+.tema-selecao-container {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.tema-opcao {
+    flex: 1;
+    min-width: 200px;
+    max-width: 280px;
+    cursor: pointer;
+    border: 3px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 15px;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.tema-opcao:hover {
+    border-color: #007bff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 123, 255, 0.15);
+}
+
+.tema-opcao.selecionado {
+    border-color: #007bff;
+    background: #f0f7ff;
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.25);
+}
+
+.tema-preview {
+    width: 100%;
+    height: 180px;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.light-preview {
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    border: 1px solid #e0e0e0;
+}
+
+.dark-preview {
+    background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+    border: 1px solid #404040;
+}
+
+.preview-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.preview-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.light-preview .preview-avatar {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+}
+
+.dark-preview .preview-avatar {
+    background: linear-gradient(135deg, #4a6bff 0%, #3a5bef 100%);
+}
+
+.preview-lines {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.preview-line {
+    height: 8px;
+    border-radius: 4px;
+    width: 100%;
+}
+
+.preview-line.short {
+    width: 60%;
+}
+
+.light-preview .preview-line {
+    background: #e0e0e0;
+}
+
+.dark-preview .preview-line {
+    background: #404040;
+}
+
+.preview-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.preview-card {
+    height: 50px;
+    border-radius: 6px;
+    width: 100%;
+}
+
+.light-preview .preview-card {
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+}
+
+.dark-preview .preview-card {
+    background: #2d2d2d;
+    border: 1px solid #404040;
+}
+
+.tema-label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-weight: 600;
+    color: #333;
+    font-size: 16px;
+}
+
+.tema-opcao.selecionado .tema-label {
+    color: #007bff;
+}
+
+.tema-label i {
+    font-size: 18px;
+}
+
+@media (max-width: 650px) {
+    .tema-selecao-container {
+        flex-direction: column;
+    }
+    
+    .tema-opcao {
+        max-width: 100%;
+    }
+}
+
 /* Responsividade para a seção de login */
 @media (max-width: 650px) {
     .link-login {

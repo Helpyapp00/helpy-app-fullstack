@@ -3,6 +3,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const emailInput = document.getElementById('email');
     const senhaInput = document.getElementById('senha');
     const formMessage = document.getElementById('form-message');
+    const toggleSenhaBtn = document.getElementById('toggle-senha-login');
+
+    // Toggle mostrar/ocultar senha
+    if (toggleSenhaBtn) {
+        toggleSenhaBtn.addEventListener('click', function() {
+            const type = senhaInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            senhaInput.setAttribute('type', type);
+            
+            const icon = toggleSenhaBtn.querySelector('i');
+            if (type === 'password') {
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            } else {
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            }
+        });
+    }
 
     function showMessage(message, type) {
         formMessage.textContent = message;

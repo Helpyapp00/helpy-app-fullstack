@@ -32,6 +32,59 @@ document.addEventListener('DOMContentLoaded', function() {
     const senhaInput = document.getElementById('senha');
     const confirmarSenhaInput = document.getElementById('confirmar-senha');
     const formMessage = document.getElementById('form-message');
+    const toggleSenhaBtn = document.getElementById('toggle-senha');
+    const toggleConfirmarSenhaBtn = document.getElementById('toggle-confirmar-senha');
+    const temaInput = document.getElementById('tema');
+    const temaOpcoes = document.querySelectorAll('.tema-opcao');
+
+    // Toggle mostrar/ocultar senha
+    if (toggleSenhaBtn) {
+        toggleSenhaBtn.addEventListener('click', function() {
+            const type = senhaInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            senhaInput.setAttribute('type', type);
+            
+            const icon = toggleSenhaBtn.querySelector('i');
+            if (type === 'password') {
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            } else {
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            }
+        });
+    }
+
+    // Toggle mostrar/ocultar confirmar senha
+    if (toggleConfirmarSenhaBtn) {
+        toggleConfirmarSenhaBtn.addEventListener('click', function() {
+            const type = confirmarSenhaInput.getAttribute('type') === 'password' ? 'text' : 'password';
+            confirmarSenhaInput.setAttribute('type', type);
+            
+            const icon = toggleConfirmarSenhaBtn.querySelector('i');
+            if (type === 'password') {
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            } else {
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            }
+        });
+    }
+
+    // Seleção visual de tema
+    temaOpcoes.forEach(opcao => {
+        opcao.addEventListener('click', function() {
+            temaOpcoes.forEach(o => o.classList.remove('selecionado'));
+            this.classList.add('selecionado');
+            const tema = this.getAttribute('data-tema');
+            temaInput.value = tema;
+        });
+    });
+
+    // Seleciona tema claro por padrão
+    if (temaOpcoes.length > 0) {
+        temaOpcoes[0].classList.add('selecionado');
+    }
 
     // --- Funções de Feedback ---
     function showMessage(message, type) {

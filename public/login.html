@@ -54,7 +54,12 @@
 
                 <div class="form-group">
                     <label for="senha">Senha</label>
-                    <input type="password" id="senha" name="senha" placeholder="••••••••" required>
+                    <div style="position: relative;">
+                        <input type="password" id="senha" name="senha" placeholder="••••••••" required style="padding-right: 45px;">
+                        <button type="button" id="toggle-senha-login" class="toggle-password-btn" aria-label="Mostrar senha">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <div style="text-align: right; margin-bottom: 1rem;">

@@ -871,24 +871,66 @@ app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
             });
         }
 
-        // --- Lógica de Upload S3 ---
+        // --- Lógica de Upload S3 ou Local ---
         let fotoUrl = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
-        if (avatarFile && s3Client) {
+        if (avatarFile) {
             try {
                 const sharp = getSharp();
-                if (!sharp) {
-                    throw new Error('Sharp não disponível');
+                let imageBuffer;
+                
+                if (sharp) {
+                    // Processa a imagem com Sharp
+                    imageBuffer = await sharp(avatarFile.buffer).resize(400, 400, { fit: 'cover' }).toFormat('jpeg').toBuffer();
+                } else {
+                    // Se Sharp não estiver disponível, usa o buffer original
+                    imageBuffer = avatarFile.buffer;
+                    console.warn('Sharp não disponível, usando imagem original sem redimensionamento');
                 }
-                const imageBuffer = await sharp(avatarFile.buffer).resize(400, 400, { fit: 'cover' }).toFormat('jpeg').toBuffer();
-                const key = `avatars/${Date.now()}_${path.basename(avatarFile.originalname || 'avatar')}`;
-                const uploadCommand = new PutObjectCommand({ Bucket: bucketName, Key: key, Body: imageBuffer, ContentType: 'image/jpeg' });
-                await s3Client.send(uploadCommand);
-                fotoUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
-            } catch (s3Error) {
-                console.warn("Falha no upload da foto de perfil para o S3:", s3Error);
+
+                if (s3Client) {
+                    // Upload para S3
+                    try {
+                        const key = `avatars/${Date.now()}_${path.basename(avatarFile.originalname || 'avatar')}`;
+                        const uploadCommand = new PutObjectCommand({ 
+                            Bucket: bucketName, 
+                            Key: key, 
+                            Body: imageBuffer, 
+                            ContentType: 'image/jpeg' 
+                        });
+                        await s3Client.send(uploadCommand);
+                        fotoUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+                        console.log('✅ Foto enviada para S3:', fotoUrl);
+                    } catch (s3Error) {
+                        console.warn("Falha no upload da foto de perfil para o S3:", s3Error);
+                        // Continua para o fallback local
+                    }
+                }
+                
+                // Fallback: Salvar localmente se S3 não estiver configurado ou falhou
+                if (!s3Client || fotoUrl === 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png') {
+                    const uploadsDir = path.join(__dirname, '../public/uploads/avatars');
+                    
+                    // Cria o diretório se não existir
+                    if (!fs.existsSync(uploadsDir)) {
+                        fs.mkdirSync(uploadsDir, { recursive: true });
+                    }
+                    
+                    const fileName = `${Date.now()}_${path.basename(avatarFile.originalname || 'avatar.jpg')}`;
+                    const filePath = path.join(uploadsDir, fileName);
+                    
+                    // Salva o arquivo
+                    fs.writeFileSync(filePath, imageBuffer);
+                    
+                    // URL relativa para servir via express.static
+                    fotoUrl = `/uploads/avatars/${fileName}`;
+                    console.log('✅ Foto salva localmente:', fotoUrl);
+                }
+            } catch (uploadError) {
+                console.error('Erro ao processar upload da foto:', uploadError);
+                // Mantém a foto padrão em caso de erro
             }
         }
-        // --- Fim da Lógica S3 ---
+        // --- Fim da Lógica de Upload ---
 
         const salt = await bcrypt.genSalt(10);
         const senhaHash = await bcrypt.hash(senha, salt);
@@ -1172,19 +1214,61 @@ app.put('/api/editar-perfil/:id', authMiddleware, upload.single('avatar'), async
         }
         
         let fotoUrl = null;
-        if (avatarFile && s3Client) {
+        if (avatarFile) {
             try {
                 const sharp = getSharp();
-                if (!sharp) {
-                    throw new Error('Sharp não disponível');
+                let imageBuffer;
+                
+                if (sharp) {
+                    // Processa a imagem com Sharp
+                    imageBuffer = await sharp(avatarFile.buffer).resize(400, 400, { fit: 'cover' }).toFormat('jpeg').toBuffer();
+                } else {
+                    // Se Sharp não estiver disponível, usa o buffer original
+                    imageBuffer = avatarFile.buffer;
+                    console.warn('Sharp não disponível, usando imagem original sem redimensionamento');
                 }
-                const imageBuffer = await sharp(avatarFile.buffer).resize(400, 400, { fit: 'cover' }).toFormat('jpeg').toBuffer();
-                const key = `avatars/${Date.now()}_${path.basename(avatarFile.originalname || 'avatar')}`;
-                const uploadCommand = new PutObjectCommand({ Bucket: bucketName, Key: key, Body: imageBuffer, ContentType: 'image/jpeg' });
-                await s3Client.send(uploadCommand);
-                fotoUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
-            } catch (s3Error) {
-                console.warn("Falha no upload da foto de perfil para o S3:", s3Error);
+
+                if (s3Client) {
+                    // Upload para S3
+                    try {
+                        const key = `avatars/${Date.now()}_${path.basename(avatarFile.originalname || 'avatar')}`;
+                        const uploadCommand = new PutObjectCommand({ 
+                            Bucket: bucketName, 
+                            Key: key, 
+                            Body: imageBuffer, 
+                            ContentType: 'image/jpeg' 
+                        });
+                        await s3Client.send(uploadCommand);
+                        fotoUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+                        console.log('✅ Foto enviada para S3:', fotoUrl);
+                    } catch (s3Error) {
+                        console.warn("Falha no upload da foto de perfil para o S3:", s3Error);
+                        // Continua para o fallback local
+                    }
+                }
+                
+                // Fallback: Salvar localmente se S3 não estiver configurado ou falhou
+                if (!s3Client || !fotoUrl) {
+                    const uploadsDir = path.join(__dirname, '../public/uploads/avatars');
+                    
+                    // Cria o diretório se não existir
+                    if (!fs.existsSync(uploadsDir)) {
+                        fs.mkdirSync(uploadsDir, { recursive: true });
+                    }
+                    
+                    const fileName = `${Date.now()}_${path.basename(avatarFile.originalname || 'avatar.jpg')}`;
+                    const filePath = path.join(uploadsDir, fileName);
+                    
+                    // Salva o arquivo
+                    fs.writeFileSync(filePath, imageBuffer);
+                    
+                    // URL relativa para servir via express.static
+                    fotoUrl = `/uploads/avatars/${fileName}`;
+                    console.log('✅ Foto salva localmente:', fotoUrl);
+                }
+            } catch (uploadError) {
+                console.error('Erro ao processar upload da foto:', uploadError);
+                // Mantém fotoUrl como null em caso de erro
             }
         }
         
