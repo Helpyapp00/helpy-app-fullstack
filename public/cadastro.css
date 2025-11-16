@@ -468,6 +468,25 @@ form textarea:focus {
     font-size: 14px;
 }
 
+/* Container do input de senha precisa ter position relative */
+.form-group > div[style*="position: relative"] {
+    position: relative !important;
+    width: 100%;
+    display: block;
+}
+
+/* Garantir que o input dentro do container ocupe toda a largura */
+.form-group > div[style*="position: relative"] > input {
+    width: 100% !important;
+    box-sizing: border-box;
+    padding-right: 45px !important; /* Espaço para o botão */
+}
+
+/* Garantir que o container não tenha overflow que corte o botão */
+.form-group > div[style*="position: relative"] {
+    overflow: visible; /* Permite que o botão seja visível */
+}
+
 /* Botão mostrar/ocultar senha - igual ao login */
 .toggle-password-btn {
     position: absolute;
@@ -484,23 +503,19 @@ form textarea:focus {
     justify-content: center;
     transition: color 0.2s ease;
     z-index: 10;
-}
-
-/* Container do input de senha precisa ter position relative */
-.form-group > div[style*="position: relative"] {
-    position: relative !important;
-    width: 100%;
-    display: block;
-}
-
-/* Garantir que o input dentro do container ocupe toda a largura */
-.form-group > div[style*="position: relative"] > input {
-    width: 100% !important;
-    box-sizing: border-box;
+    width: auto;
+    height: auto;
+    min-width: 24px;
+    min-height: 24px;
 }
 
 .toggle-password-btn:hover {
     color: #007bff;
+    /* Não altera transform no hover para manter posição fixa */
+}
+
+.toggle-password-btn:active {
+    transform: translateY(-50%); /* Mantém posição ao clicar */
 }
 
 .toggle-password-btn:focus {

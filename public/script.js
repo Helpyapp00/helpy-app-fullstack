@@ -127,7 +127,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (userAvatarHeader) {
             if (storedPhotoUrl && storedPhotoUrl !== 'undefined' && !storedPhotoUrl.includes('pixabay')) {
+                // Força recarregamento da imagem para garantir qualidade
+                userAvatarHeader.src = '';
                 userAvatarHeader.src = storedPhotoUrl;
+                // Adiciona atributo para melhor qualidade
+                userAvatarHeader.loading = 'eager';
             } else {
                 userAvatarHeader.src = 'imagens/default-user.png';
             }

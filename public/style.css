@@ -96,7 +96,21 @@ header {
 .search { flex-grow: 1; max-width: 400px; padding: 8px 15px; border: none; border-radius: 20px; background: var(--bg-input); color: var(--text-primary); margin: 0 20px; }
 .search::placeholder { color: var(--text-placeholder); } 
 .user-info { display: flex; align-items: center; gap: 15px; }
-.user-avatar-header { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: 2px solid white; }
+.user-avatar-header { 
+    width: 50px; 
+    height: 50px; 
+    border-radius: 50%; 
+    object-fit: cover; 
+    border: 2px solid white;
+    /* Melhora a qualidade da renderização da imagem */
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    /* Força o navegador a usar a melhor qualidade disponível */
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+}
 .user-info span { font-weight: bold; color: var(--text-header); } 
 #logout-button { background-color: var(--btn-primary-bg); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: background-color 0.2s; }
 #logout-button:hover { background-color: var(--btn-primary-hover); } 
