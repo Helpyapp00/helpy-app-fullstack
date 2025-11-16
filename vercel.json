@@ -37,5 +37,6 @@
       "runtime": "@vercel/node@2.0.0",
       "maxDuration": 30
     }
-  }
+  },
+  "installCommand": "npm install --include=optional || npm install"
 }    

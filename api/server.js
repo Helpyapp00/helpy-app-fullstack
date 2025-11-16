@@ -14,11 +14,27 @@ const { S3Client, PutObjectCommand, DeleteObjectCommand } = require('@aws-sdk/cl
 const { URL } = require('url');
 
 // Função helper para carregar sharp apenas quando necessário (lazy loading)
+// Cache para evitar múltiplas tentativas de carregamento
+let sharpCache = null;
+let sharpLoadAttempted = false;
+
 function getSharp() {
+    // Se já tentou carregar antes e falhou, retorna null imediatamente
+    if (sharpLoadAttempted) {
+        return sharpCache;
+    }
+    
+    sharpLoadAttempted = true;
+    
     try {
-        return require('sharp');
+        sharpCache = require('sharp');
+        return sharpCache;
     } catch (error) {
-        console.error('Erro ao carregar sharp:', error);
+        // Não loga como erro crítico, apenas como aviso informativo
+        // O sistema funciona normalmente sem Sharp usando o buffer original
+        console.warn('⚠️ Sharp não disponível - usando processamento básico de imagem');
+        console.warn('   Detalhes:', error.message);
+        sharpCache = null;
         return null;
     }
 }
