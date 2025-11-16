@@ -905,15 +905,15 @@ app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
                 
                 if (sharp) {
                     // Processa a imagem com Sharp com máxima qualidade
-                    // Usa tamanho 600x600 para melhor qualidade (bom equilíbrio qualidade/tamanho)
+                    // Usa tamanho 1000x1000 para melhor qualidade quando redimensionada pelo navegador
                     imageBuffer = await sharp(avatarFile.buffer)
-                        .resize(600, 600, { 
+                        .resize(1000, 1000, { 
                             fit: 'cover',
                             withoutEnlargement: true, // Não aumenta imagens menores
                             kernel: 'lanczos3' // Melhor algoritmo de redimensionamento
                         })
                         .jpeg({ 
-                            quality: 95, 
+                            quality: 98, 
                             mozjpeg: true,
                             progressive: true,
                             optimizeScans: true,
@@ -1261,15 +1261,15 @@ app.put('/api/editar-perfil/:id', authMiddleware, upload.single('avatar'), async
                 
                 if (sharp) {
                     // Processa a imagem com Sharp com máxima qualidade
-                    // Usa tamanho 600x600 para melhor qualidade (bom equilíbrio qualidade/tamanho)
+                    // Usa tamanho 1000x1000 para melhor qualidade quando redimensionada pelo navegador
                     imageBuffer = await sharp(avatarFile.buffer)
-                        .resize(600, 600, { 
+                        .resize(1000, 1000, { 
                             fit: 'cover',
                             withoutEnlargement: true, // Não aumenta imagens menores
                             kernel: 'lanczos3' // Melhor algoritmo de redimensionamento
                         })
                         .jpeg({ 
-                            quality: 95, 
+                            quality: 98, 
                             mozjpeg: true,
                             progressive: true,
                             optimizeScans: true,

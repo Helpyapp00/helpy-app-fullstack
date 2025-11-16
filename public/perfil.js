@@ -105,8 +105,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Força recarregamento da imagem para garantir qualidade
                 userAvatarHeader.src = '';
                 userAvatarHeader.src = storedPhotoUrl;
-                // Adiciona atributo para melhor qualidade
+                
+                // Adiciona atributos para melhor qualidade
                 userAvatarHeader.loading = 'eager';
+                userAvatarHeader.decoding = 'async';
+                
+                // Garante que a imagem seja carregada com alta qualidade
+                userAvatarHeader.onload = function() {
+                    // Força repaint para melhor renderização
+                    this.style.opacity = '0.99';
+                    setTimeout(() => {
+                        this.style.opacity = '1';
+                    }, 10);
+                };
             } else {
                 userAvatarHeader.src = 'imagens/default-user.png';
             }

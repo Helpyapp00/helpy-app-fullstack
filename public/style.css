@@ -103,13 +103,18 @@ header {
     object-fit: cover; 
     border: 2px solid white;
     /* Melhora a qualidade da renderização da imagem */
+    image-rendering: auto;
     image-rendering: -webkit-optimize-contrast;
-    image-rendering: crisp-edges;
     /* Força o navegador a usar a melhor qualidade disponível */
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
     -webkit-transform: translateZ(0);
     transform: translateZ(0);
+    /* Evita suavização que pode degradar a qualidade */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Garante que a imagem seja renderizada com alta qualidade */
+    will-change: transform;
 }
 .user-info span { font-weight: bold; color: var(--text-header); } 
 #logout-button { background-color: var(--btn-primary-bg); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: background-color 0.2s; }

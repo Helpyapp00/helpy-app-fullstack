@@ -128,10 +128,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (userAvatarHeader) {
             if (storedPhotoUrl && storedPhotoUrl !== 'undefined' && !storedPhotoUrl.includes('pixabay')) {
                 // Força recarregamento da imagem para garantir qualidade
+                // Remove src primeiro para forçar reload
+                const tempSrc = userAvatarHeader.src;
                 userAvatarHeader.src = '';
                 userAvatarHeader.src = storedPhotoUrl;
-                // Adiciona atributo para melhor qualidade
+                
+                // Adiciona atributos para melhor qualidade
                 userAvatarHeader.loading = 'eager';
+                userAvatarHeader.decoding = 'async';
+                
+                // Garante que a imagem seja carregada com alta qualidade
+                userAvatarHeader.onload = function() {
+                    // Força repaint para melhor renderização
+                    this.style.opacity = '0.99';
+                    setTimeout(() => {
+                        this.style.opacity = '1';
+                    }, 10);
+                };
             } else {
                 userAvatarHeader.src = 'imagens/default-user.png';
             }
