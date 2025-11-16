@@ -895,8 +895,11 @@ app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
                 let imageBuffer;
                 
                 if (sharp) {
-                    // Processa a imagem com Sharp
-                    imageBuffer = await sharp(avatarFile.buffer).resize(400, 400, { fit: 'cover' }).toFormat('jpeg').toBuffer();
+                    // Processa a imagem com Sharp com alta qualidade
+                    imageBuffer = await sharp(avatarFile.buffer)
+                        .resize(400, 400, { fit: 'cover' })
+                        .jpeg({ quality: 90, mozjpeg: true })
+                        .toBuffer();
                 } else {
                     // Se Sharp não estiver disponível, usa o buffer original
                     imageBuffer = avatarFile.buffer;
@@ -1236,8 +1239,11 @@ app.put('/api/editar-perfil/:id', authMiddleware, upload.single('avatar'), async
                 let imageBuffer;
                 
                 if (sharp) {
-                    // Processa a imagem com Sharp
-                    imageBuffer = await sharp(avatarFile.buffer).resize(400, 400, { fit: 'cover' }).toFormat('jpeg').toBuffer();
+                    // Processa a imagem com Sharp com alta qualidade
+                    imageBuffer = await sharp(avatarFile.buffer)
+                        .resize(400, 400, { fit: 'cover' })
+                        .jpeg({ quality: 90, mozjpeg: true })
+                        .toBuffer();
                 } else {
                     // Se Sharp não estiver disponível, usa o buffer original
                     imageBuffer = avatarFile.buffer;

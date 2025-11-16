@@ -37,7 +37,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const atuacaoItem = document.getElementById('atuacao-item');
     const descricaoPerfil = document.getElementById('descricaoPerfil');
     
-    // 🛑 ATUALIZAÇÃO: Seletores de Localização
+    // 🛑 ATUALIZAÇÃO: Seletores de Localização (agora juntos)
+    const localizacaoPerfil = document.getElementById('localizacaoPerfil');
+    const localizacaoItem = document.getElementById('localizacao-item');
+    // Mantém compatibilidade com elementos antigos se existirem
     const cidadePerfil = document.getElementById('cidadePerfil');
     const estadoPerfil = document.getElementById('estadoPerfil');
     const cidadeItem = document.getElementById('cidade-item');
@@ -195,7 +198,21 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
         
-        // 🛑 ATUALIZAÇÃO: Renderização de Localização
+        // 🛑 ATUALIZAÇÃO: Renderização de Localização (Cidade - Estado juntos)
+        const localizacaoPerfil = document.getElementById('localizacaoPerfil');
+        if (localizacaoPerfil) {
+            const cidade = user.cidade || 'Não informado';
+            const estado = user.estado ? user.estado.toUpperCase() : '';
+            if (estado) {
+                localizacaoPerfil.textContent = `${cidade} - ${estado}`;
+            } else {
+                localizacaoPerfil.textContent = cidade;
+            }
+        }
+        
+        // Mantém compatibilidade com elementos antigos se existirem
+        const cidadePerfil = document.getElementById('cidadePerfil');
+        const estadoPerfil = document.getElementById('estadoPerfil');
         if (cidadePerfil) cidadePerfil.textContent = user.cidade || 'Não informado';
         if (estadoPerfil) estadoPerfil.textContent = user.estado ? user.estado.toUpperCase() : 'Não informado';
 
@@ -494,18 +511,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const viewElements = [
             nomePerfil, idadePerfil, telefonePerfil, atuacaoPerfil, 
             descricaoPerfil, emailPerfil, btnEditarPerfil,
-            cidadePerfil, estadoPerfil // Spans de Cidade e Estado
+            localizacaoPerfil // Span de Localização (Cidade - Estado)
         ];
         
         // 🛑 ATUALIZAÇÃO: Lista de elementos de edição
         const editElements = [
             inputNome, inputIdade, inputWhatsapp, inputAtuacao, 
-            inputDescricao, inputEmail, botoesEdicao,
-            inputCidade, inputEstado // Inputs de Cidade e Estado
+            inputDescricao, inputEmail, botoesEdicao
         ];
+        
+        // Elementos de localização (inputs dentro de um div)
+        const localizacaoInputs = localizacaoItem ? localizacaoItem.querySelector('.input-edicao') : null;
         
         viewElements.forEach(el => el && el.classList.toggle('oculto', isEditing));
         editElements.forEach(el => el && el.classList.toggle('oculto', !isEditing));
+        
+        // Mostra/esconde inputs de localização
+        if (localizacaoInputs) {
+            localizacaoInputs.classList.toggle('oculto', !isEditing);
+        }
+        
+        // Esconde itens antigos de cidade/estado se existirem
+        if (cidadeItem) cidadeItem.style.display = 'none';
+        if (estadoItem) estadoItem.style.display = 'none';
         
         if (labelInputFotoPerfil) labelInputFotoPerfil.classList.toggle('oculto', !isEditing); // Mostra "Alterar Foto"
 
@@ -539,9 +567,16 @@ document.addEventListener('DOMContentLoaded', () => {
         inputDescricao.value = descricaoPerfil.textContent.replace('Nenhuma descrição disponível.', '');
         inputEmail.value = emailPerfil.textContent.trim();
         
-        // 🛑 ATUALIZAÇÃO: Lê os dados do dataset
-        inputCidade.value = fotoPerfil.dataset.cidade || '';
-        inputEstado.value = fotoPerfil.dataset.estado || '';
+        // 🛑 ATUALIZAÇÃO: Lê os dados do dataset ou do texto de localização
+        if (localizacaoPerfil) {
+            const localizacaoTexto = localizacaoPerfil.textContent || '';
+            const partes = localizacaoTexto.split(' - ');
+            inputCidade.value = partes[0] || fotoPerfil.dataset.cidade || '';
+            inputEstado.value = partes[1] || fotoPerfil.dataset.estado || '';
+        } else {
+            inputCidade.value = fotoPerfil.dataset.cidade || '';
+            inputEstado.value = fotoPerfil.dataset.estado || '';
+        }
     }
 
     if (btnEditarPerfil) {

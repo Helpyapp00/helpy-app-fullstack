@@ -94,14 +94,14 @@
                         <input type="text" id="inputAtuacao" class="input-edicao oculto" placeholder="Área de Atuação">
                     </li>
                     
-                    <!-- 🛑 ATUALIZAÇÃO: Cidade e Estado visíveis -->
-                    <li id="cidade-item">
-                        <i class="fas fa-city"></i> <span id="cidadePerfil">...</span>
-                        <input type="text" id="inputCidade" class="input-edicao oculto" placeholder="Sua Cidade">
-                    </li>
-                    <li id="estado-item">
-                        <i class="fas fa-map-location-dot"></i> <span id="estadoPerfil">...</span>
-                        <input type="text" id="inputEstado" class="input-edicao oculto" placeholder="Estado (Ex: SP)" maxlength="2">
+                    <!-- 🛑 ATUALIZAÇÃO: Cidade e Estado juntos -->
+                    <li id="localizacao-item">
+                        <i class="fas fa-map-marker-alt"></i> <span id="localizacaoPerfil">...</span>
+                        <div class="input-edicao oculto" style="display: flex; gap: 10px; align-items: center;">
+                            <input type="text" id="inputCidade" placeholder="Sua Cidade" style="flex: 2;">
+                            <span style="color: var(--text-secondary);">-</span>
+                            <input type="text" id="inputEstado" placeholder="Estado (Ex: SP)" maxlength="2" style="flex: 1; max-width: 80px;">
+                        </div>
                     </li>
                     
                 </ul>

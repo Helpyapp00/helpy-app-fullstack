@@ -469,20 +469,28 @@ form textarea:focus {
 /* Botão mostrar/ocultar senha */
 .toggle-password-btn {
     position: absolute;
-    right: 12px;
+    right: 10px;
     top: 50%;
     transform: translateY(-50%);
     background: none;
     border: none;
     color: #6c757d;
     cursor: pointer;
-    padding: 5px;
+    padding: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: color 0.2s ease;
     z-index: 10;
     font-size: 16px;
+    width: 32px;
+    height: 32px;
+}
+
+/* Garantir que inputs de senha tenham padding suficiente */
+#senha,
+#confirmar-senha {
+    padding-right: 50px !important;
 }
 
 .toggle-password-btn:hover {
