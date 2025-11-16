@@ -895,10 +895,22 @@ app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
                 let imageBuffer;
                 
                 if (sharp) {
-                    // Processa a imagem com Sharp com alta qualidade
+                    // Processa a imagem com Sharp com máxima qualidade
+                    // Usa tamanho 600x600 para melhor qualidade (bom equilíbrio qualidade/tamanho)
                     imageBuffer = await sharp(avatarFile.buffer)
-                        .resize(400, 400, { fit: 'cover' })
-                        .jpeg({ quality: 90, mozjpeg: true })
+                        .resize(600, 600, { 
+                            fit: 'cover',
+                            withoutEnlargement: true, // Não aumenta imagens menores
+                            kernel: 'lanczos3' // Melhor algoritmo de redimensionamento
+                        })
+                        .jpeg({ 
+                            quality: 95, 
+                            mozjpeg: true,
+                            progressive: true,
+                            optimizeScans: true,
+                            trellisQuantisation: true,
+                            overshootDeringing: true
+                        })
                         .toBuffer();
                 } else {
                     // Se Sharp não estiver disponível, usa o buffer original
@@ -1239,10 +1251,22 @@ app.put('/api/editar-perfil/:id', authMiddleware, upload.single('avatar'), async
                 let imageBuffer;
                 
                 if (sharp) {
-                    // Processa a imagem com Sharp com alta qualidade
+                    // Processa a imagem com Sharp com máxima qualidade
+                    // Usa tamanho 600x600 para melhor qualidade (bom equilíbrio qualidade/tamanho)
                     imageBuffer = await sharp(avatarFile.buffer)
-                        .resize(400, 400, { fit: 'cover' })
-                        .jpeg({ quality: 90, mozjpeg: true })
+                        .resize(600, 600, { 
+                            fit: 'cover',
+                            withoutEnlargement: true, // Não aumenta imagens menores
+                            kernel: 'lanczos3' // Melhor algoritmo de redimensionamento
+                        })
+                        .jpeg({ 
+                            quality: 95, 
+                            mozjpeg: true,
+                            progressive: true,
+                            optimizeScans: true,
+                            trellisQuantisation: true,
+                            overshootDeringing: true
+                        })
                         .toBuffer();
                 } else {
                     // Se Sharp não estiver disponível, usa o buffer original
