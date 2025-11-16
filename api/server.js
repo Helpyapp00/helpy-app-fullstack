@@ -27,13 +27,22 @@ function getSharp() {
     sharpLoadAttempted = true;
     
     try {
+        // Tenta carregar o Sharp
         sharpCache = require('sharp');
-        return sharpCache;
+        
+        // Verifica se o Sharp está funcionando
+        if (sharpCache && typeof sharpCache === 'function') {
+            return sharpCache;
+        }
+        throw new Error('Sharp carregado mas não funcional');
     } catch (error) {
         // Não loga como erro crítico, apenas como aviso informativo
         // O sistema funciona normalmente sem Sharp usando o buffer original
+        // Só loga detalhes em desenvolvimento para não poluir logs de produção
         console.warn('⚠️ Sharp não disponível - usando processamento básico de imagem');
-        console.warn('   Detalhes:', error.message);
+        if (process.env.NODE_ENV === 'development') {
+            console.warn('   Detalhes:', error.message);
+        }
         sharpCache = null;
         return null;
     }

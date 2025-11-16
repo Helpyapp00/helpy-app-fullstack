@@ -9,7 +9,7 @@
     "start": "node api/server",
     "dev": "nodemon api/server",
     "build": "echo 'Build completo - nenhuma ação necessária'",
-    "vercel-build": "npm install --include=optional sharp || echo 'Sharp não instalado - sistema funcionará com fallback' && echo 'Build do Vercel completo'"
+    "vercel-build": "node vercel-build.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.588.0",

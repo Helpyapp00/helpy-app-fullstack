@@ -38,5 +38,6 @@
       "maxDuration": 30
     }
   },
-  "installCommand": "npm install --include=optional || npm install"
+  "installCommand": "npm install",
+  "buildCommand": "npm run vercel-build"
 }    
