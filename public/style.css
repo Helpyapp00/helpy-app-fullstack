@@ -101,20 +101,23 @@ header {
     height: 50px; 
     border-radius: 50%; 
     object-fit: cover; 
+    object-position: center center;
     border: 2px solid white;
-    /* Melhora a qualidade da renderização da imagem */
-    image-rendering: auto;
+    /* Técnica do Facebook: alta qualidade de renderização sem pixelização */
     image-rendering: -webkit-optimize-contrast;
-    /* Força o navegador a usar a melhor qualidade disponível */
+    image-rendering: auto;
+    /* Força aceleração de hardware para melhor renderização */
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
     -webkit-transform: translateZ(0);
     transform: translateZ(0);
-    /* Evita suavização que pode degradar a qualidade */
+    /* Garante que a imagem seja renderizada com alta qualidade */
+    will-change: contents;
+    /* Melhora sutil a nitidez sem exagerar */
+    filter: contrast(1.02);
+    /* Força o navegador a usar alta qualidade */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Garante que a imagem seja renderizada com alta qualidade */
-    will-change: transform;
 }
 .user-info span { font-weight: bold; color: var(--text-header); } 
 #logout-button { background-color: var(--btn-primary-bg); color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: background-color 0.2s; }

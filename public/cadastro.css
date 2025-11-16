@@ -522,16 +522,30 @@ form textarea:focus {
 
 .toggle-password-btn:hover {
     color: #007bff;
+    background: transparent; /* Garante que não tenha background */
     transform: translateY(-50%); /* Mantém posição no hover */
 }
 
+.toggle-password-btn:hover i {
+    opacity: 0.8; /* Deixa o ícone um pouco mais suave no hover */
+}
+
 .toggle-password-btn:active {
+    color: #0056b3;
+    background: transparent;
     transform: translateY(-50%); /* Mantém posição ao clicar */
 }
 
 .toggle-password-btn:focus {
     outline: none;
+    background: transparent;
     transform: translateY(-50%); /* Mantém posição no focus */
+}
+
+.toggle-password-btn:focus-visible {
+    outline: 2px solid rgba(0, 123, 255, 0.3);
+    outline-offset: 2px;
+    border-radius: 4px;
 }
 
 .toggle-password-btn i {
