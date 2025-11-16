@@ -577,8 +577,23 @@ app.post('/api/verificar-email/validar', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Email e código são obrigatórios.' });
         }
 
+        const emailNormalizado = email.toLowerCase().trim();
+
+        // Verifica se o email já está verificado em outra conta (ANTES de validar o código)
+        const emailJaVerificadoEmOutraConta = await User.findOne({ 
+            email: emailNormalizado,
+            emailVerificado: true
+        });
+
+        if (emailJaVerificadoEmOutraConta) {
+            return res.status(409).json({ 
+                success: false, 
+                message: 'Este email já está vinculado a outra conta verificada. Por favor, use outro email ou faça login na conta existente.' 
+            });
+        }
+
         const usuario = await User.findOne({ 
-            email: email.toLowerCase().trim() 
+            email: emailNormalizado 
         });
 
         if (!usuario) {
@@ -594,30 +609,12 @@ app.post('/api/verificar-email/validar', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Código de verificação expirado. Solicite um novo código.' });
         }
 
-        // Verifica se o email já está verificado em outra conta
-        const emailJaVerificadoEmOutraConta = await User.findOne({ 
-            email: email.toLowerCase().trim(),
-            emailVerificado: true,
-            _id: { $ne: usuario._id } // Exclui o próprio usuário
-        });
-
-        if (emailJaVerificadoEmOutraConta) {
-            return res.status(409).json({ 
-                success: false, 
-                message: 'Este email já está vinculado a outra conta verificada. Não é possível usar este email.' 
-            });
-        }
-
-        // Marca email como verificado
-        usuario.emailVerificado = true;
-        usuario.codigoVerificacao = null;
-        usuario.codigoVerificacaoExpira = null;
-        await usuario.save();
-
+        // NÃO marca como verificado aqui - isso será feito no cadastro
+        // Apenas valida o código e retorna sucesso
         res.json({ 
             success: true, 
-            message: 'Email verificado com sucesso!',
-            email: email.toLowerCase().trim()
+            message: 'Código válido! Prosseguindo com o cadastro...',
+            email: emailNormalizado
         });
     } catch (error) {
         console.error('Erro ao validar código:', error);
@@ -638,7 +635,8 @@ app.post('/api/login', async (req, res) => {
         }
         
         console.log('Buscando usuário no banco de dados...');
-        const user = await User.findOne({ email });
+        const emailNormalizado = email.toLowerCase().trim();
+        const user = await User.findOne({ email: emailNormalizado });
         
         if (!user) {
             console.log('Usuário não encontrado para o email:', email);
@@ -862,8 +860,16 @@ app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
             });
         }
 
-        // Se existe um usuário não verificado, vamos atualizá-lo
+        // Se existe um usuário não verificado (temporário), vamos atualizá-lo
         const atualizarUsuario = usuarioExistente && !usuarioExistente.emailVerificado;
+
+        // Se existe um usuário temporário, verifica se tem código de verificação válido
+        if (atualizarUsuario && !usuarioExistente.codigoVerificacao) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Por favor, valide o código de verificação primeiro.'
+            });
+        }
 
         // --- Lógica de Upload S3 ---
         let fotoUrl = 'https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png';
@@ -899,11 +905,11 @@ app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
             usuarioExistente.atuacao = tipo === 'trabalhador' ? atuacao : null;
             usuarioExistente.telefone = telefone;
             usuarioExistente.descricao = descricao;
-            usuarioExistente.senha = senhaHash;
+            usuarioExistente.senha = senhaHash; // Atualiza com a senha hash correta
             usuarioExistente.foto = fotoUrl;
             usuarioExistente.avatarUrl = fotoUrl;
             usuarioExistente.tema = tema || 'light';
-            // Mantém emailVerificado como true (já foi verificado na etapa anterior)
+            // Marca email como verificado ao finalizar o cadastro
             usuarioExistente.emailVerificado = true;
             usuarioExistente.codigoVerificacao = null;
             usuarioExistente.codigoVerificacaoExpira = null;
@@ -970,6 +976,154 @@ app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
             return res.status(409).json({ message: 'Este email já está cadastrado.' });
         }
         res.status(500).json({ message: 'Erro interno do servidor.' });
+    }
+});
+
+// 🆕 NOVO: Rota para solicitar código de redefinição de senha
+app.post('/api/esqueci-senha/solicitar', async (req, res) => {
+    try {
+        const { email } = req.body;
+        
+        if (!email) {
+            return res.status(400).json({ success: false, message: 'Email é obrigatório.' });
+        }
+
+        const emailNormalizado = email.toLowerCase().trim();
+        
+        // Verifica se o usuário existe e está verificado
+        const usuario = await User.findOne({ 
+            email: emailNormalizado,
+            emailVerificado: true
+        });
+
+        if (!usuario) {
+            // Por segurança, não revela se o email existe ou não
+            return res.json({ 
+                success: true, 
+                message: 'Se o email estiver cadastrado, você receberá um código de verificação.' 
+            });
+        }
+
+        // Gera código de verificação
+        const codigo = gerarCodigoVerificacao();
+        const expiraEm = new Date();
+        expiraEm.setMinutes(expiraEm.getMinutes() + 10); // Expira em 10 minutos
+
+        // Salva o código no usuário
+        usuario.codigoVerificacao = codigo;
+        usuario.codigoVerificacaoExpira = expiraEm;
+        await usuario.save();
+
+        // Envia código por email
+        try {
+            await enviarCodigoVerificacao(emailNormalizado, codigo);
+        } catch (emailError) {
+            console.error('Erro ao enviar email de redefinição:', emailError);
+            // Não bloqueia o processo - código já foi salvo
+        }
+
+        return res.json({ 
+            success: true, 
+            message: 'Se o email estiver cadastrado, você receberá um código de verificação.',
+            email: emailNormalizado
+        });
+    } catch (error) {
+        console.error('Erro ao solicitar redefinição de senha:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// 🆕 NOVO: Rota para validar código de redefinição (sem redefinir senha ainda)
+app.post('/api/esqueci-senha/validar-codigo', async (req, res) => {
+    try {
+        const { email, codigo } = req.body;
+        
+        if (!email || !codigo) {
+            return res.status(400).json({ success: false, message: 'Email e código são obrigatórios.' });
+        }
+
+        const emailNormalizado = email.toLowerCase().trim();
+        
+        // Busca o usuário
+        const usuario = await User.findOne({ 
+            email: emailNormalizado,
+            emailVerificado: true
+        });
+
+        if (!usuario) {
+            return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
+        }
+
+        // Verifica se o código está correto e não expirou
+        if (usuario.codigoVerificacao !== codigo) {
+            return res.status(400).json({ success: false, message: 'Código de verificação inválido.' });
+        }
+
+        if (usuario.codigoVerificacaoExpira && new Date() > usuario.codigoVerificacaoExpira) {
+            return res.status(400).json({ success: false, message: 'Código de verificação expirado. Solicite um novo código.' });
+        }
+
+        res.json({ 
+            success: true, 
+            message: 'Código válido!'
+        });
+    } catch (error) {
+        console.error('Erro ao validar código de redefinição:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// 🆕 NOVO: Rota para validar código e redefinir senha
+app.post('/api/esqueci-senha/redefinir', async (req, res) => {
+    try {
+        const { email, codigo, novaSenha } = req.body;
+        
+        if (!email || !codigo || !novaSenha) {
+            return res.status(400).json({ success: false, message: 'Email, código e nova senha são obrigatórios.' });
+        }
+
+        if (novaSenha.length < 6) {
+            return res.status(400).json({ success: false, message: 'A senha deve ter pelo menos 6 caracteres.' });
+        }
+
+        const emailNormalizado = email.toLowerCase().trim();
+        
+        // Busca o usuário
+        const usuario = await User.findOne({ 
+            email: emailNormalizado,
+            emailVerificado: true
+        });
+
+        if (!usuario) {
+            return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
+        }
+
+        // Verifica se o código está correto e não expirou
+        if (usuario.codigoVerificacao !== codigo) {
+            return res.status(400).json({ success: false, message: 'Código de verificação inválido.' });
+        }
+
+        if (usuario.codigoVerificacaoExpira && new Date() > usuario.codigoVerificacaoExpira) {
+            return res.status(400).json({ success: false, message: 'Código de verificação expirado. Solicite um novo código.' });
+        }
+
+        // Hash da nova senha
+        const salt = await bcrypt.genSalt(10);
+        const senhaHash = await bcrypt.hash(novaSenha, salt);
+
+        // Atualiza a senha e limpa o código
+        usuario.senha = senhaHash;
+        usuario.codigoVerificacao = null;
+        usuario.codigoVerificacaoExpira = null;
+        await usuario.save();
+
+        res.json({ 
+            success: true, 
+            message: 'Senha redefinida com sucesso! Você já pode fazer login.'
+        });
+    } catch (error) {
+        console.error('Erro ao redefinir senha:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
     }
 });
 

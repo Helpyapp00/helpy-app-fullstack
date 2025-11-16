@@ -129,12 +129,16 @@
           <input type="text" id="codigo-verificacao" name="codigo-verificacao" required placeholder="000000" maxlength="6" pattern="[0-9]{6}" style="text-align: center; font-size: 24px; letter-spacing: 8px; font-weight: bold;">
         </div>
       </div>
-      <div style="display: flex; gap: 10px; justify-content: center; margin-top: 20px;">
-        <button type="button" id="btn-voltar-formulario" class="btn-submit-cadastro" style="background-color: #666;">Voltar</button>
-        <button type="button" id="btn-validar-codigo" class="btn-submit-cadastro">Validar e Criar Conta</button>
+      <div class="form-row" style="margin-top: 25px;">
+        <button type="button" id="btn-voltar-formulario" class="btn-submit-cadastro">
+          <i class="fas fa-arrow-left"></i> Voltar
+        </button>
+        <button type="button" id="btn-validar-codigo" class="btn-submit-cadastro">
+          <i class="fas fa-check-circle"></i> Validar e Criar Conta
+        </button>
       </div>
       <p style="text-align: center; margin-top: 20px;">
-        <a href="#" id="link-reenviar-codigo" style="color: #4CAF50; text-decoration: none; font-weight: 500;">
+        <a href="#" id="link-reenviar-codigo">
           <i class="fas fa-redo"></i> Reenviar código
         </a>
       </p>

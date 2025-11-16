@@ -218,7 +218,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         showMessage('Validando código e criando conta...', 'info');
         btnValidarCodigo.disabled = true;
-        btnValidarCodigo.textContent = 'Processando...';
+        btnValidarCodigo.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processando...';
 
         try {
             // Primeiro valida o código
@@ -270,7 +270,7 @@ document.addEventListener('DOMContentLoaded', function() {
             showMessage(`Erro: ${error.message}`, 'error');
         } finally {
             btnValidarCodigo.disabled = false;
-            btnValidarCodigo.textContent = 'Validar e Criar Conta';
+            btnValidarCodigo.innerHTML = '<i class="fas fa-check-circle"></i> Validar e Criar Conta';
         }
     });
 });

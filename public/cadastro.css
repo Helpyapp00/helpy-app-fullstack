@@ -383,12 +383,87 @@ form textarea:focus {
     box-shadow: 0 4px 15px rgba(0, 123, 255, 0.3);
     font-weight: 600;
     letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    border: none;
+    color: white;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
 }
 
 .btn-submit-cadastro:hover {
     background: linear-gradient(135deg, #0056b3 0%, #004085 100%);
     box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
     transform: translateY(-2px);
+}
+
+.btn-submit-cadastro:active {
+    transform: translateY(0);
+}
+
+.btn-submit-cadastro:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Estilos específicos para botões da etapa de validação */
+#btn-validar-codigo,
+#btn-voltar-formulario {
+    padding: 12px 24px;
+    font-size: 16px;
+    border-radius: 8px;
+    min-width: 150px;
+}
+
+#btn-voltar-formulario {
+    background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+}
+
+#btn-voltar-formulario:hover {
+    background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+    box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+}
+
+/* Container dos botões de validação */
+#etapa-validar-codigo .form-row:last-of-type {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 25px;
+}
+
+#etapa-validar-codigo .form-row:last-of-type button {
+    flex: 1;
+    min-width: 140px;
+    max-width: 200px;
+}
+
+/* Link de reenviar código */
+#link-reenviar-codigo {
+    color: #4CAF50;
+    text-decoration: none;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    padding: 8px 12px;
+    border-radius: 6px;
+}
+
+#link-reenviar-codigo:hover {
+    color: #45a049;
+    background-color: rgba(76, 175, 80, 0.1);
+    text-decoration: none;
+}
+
+#link-reenviar-codigo i {
+    font-size: 14px;
 }
 
 /* Responsividade para a seção de login */
