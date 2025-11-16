@@ -69,10 +69,7 @@ form textarea {
     box-sizing: border-box;
 }
 
-/* Inputs de senha precisam de padding extra para o botão */
-form input[type="password"] {
-    padding-right: 50px;
-}
+/* Padding dos inputs de senha é definido inline no HTML (igual ao login) */
 
 form textarea {
     resize: vertical;
@@ -471,32 +468,22 @@ form textarea:focus {
     font-size: 14px;
 }
 
-/* Botão mostrar/ocultar senha */
+/* Botão mostrar/ocultar senha - igual ao login */
 .toggle-password-btn {
     position: absolute;
-    right: 8px;
+    right: 12px;
     top: 50%;
     transform: translateY(-50%);
     background: none;
     border: none;
     color: #6c757d;
     cursor: pointer;
-    padding: 6px;
+    padding: 5px;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: color 0.2s ease;
     z-index: 10;
-    font-size: 16px;
-    width: 28px;
-    height: 28px;
-    box-sizing: border-box;
-}
-
-/* Garantir que inputs de senha tenham padding suficiente */
-#senha,
-#confirmar-senha {
-    padding-right: 45px !important;
 }
 
 /* Container do input de senha precisa ter position relative */
@@ -510,7 +497,6 @@ form textarea:focus {
 .form-group > div[style*="position: relative"] > input {
     width: 100% !important;
     box-sizing: border-box;
-    padding-right: 45px !important;
 }
 
 .toggle-password-btn:hover {
