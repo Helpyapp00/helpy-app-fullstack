@@ -130,6 +130,108 @@
     border-left: 4px solid var(--text-link); /* Aplicado */
 }
 
+/* 🌟 NOVO: Estilos para Avaliações Verificadas */
+.secao-perfil {
+    margin-top: 30px;
+    padding: 20px;
+    background: var(--bg-primary);
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.badge-verificado {
+    background: #28a745;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    margin-left: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.lista-avaliacoes {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-top: 15px;
+}
+
+.avaliacao-verificada-item {
+    background: var(--bg-secondary);
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #28a745;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.avaliacao-verificada-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.avaliacao-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+}
+
+.avaliacao-cliente {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.avatar-pequeno {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #28a745;
+}
+
+.avaliacao-cliente > div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.badge-verificado-item {
+    background: #28a745;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 8px;
+    font-size: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    width: fit-content;
+}
+
+.avaliacao-estrelas {
+    color: #ffc107;
+    font-size: 18px;
+    white-space: nowrap;
+}
+
+.avaliacao-comentario {
+    color: var(--text-primary);
+    margin: 10px 0;
+    line-height: 1.5;
+}
+
+.avaliacao-meta {
+    color: var(--text-secondary);
+    font-size: 12px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
 .input-edicao {
     display: block;
     width: 95%;

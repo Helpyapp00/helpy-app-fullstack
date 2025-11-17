@@ -191,13 +191,26 @@ const Agendamento = mongoose.model('Agendamento', agendamentoSchema);
 const HorarioDisponivel = mongoose.model('HorarioDisponivel', horarioDisponivelSchema);
 const EquipeVerificada = mongoose.model('EquipeVerificada', equipeVerificadaSchema);
 
-// 🆕 NOVO: Schema de Pagamento Seguro (Escrow)
+// 🆕 NOVO: Schema de Pagamento Seguro (Escrow) - EXPANDIDO
 const pagamentoSeguroSchema = new mongoose.Schema({
-    agendamentoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Agendamento', required: true },
+    // Referências flexíveis para diferentes tipos de serviços
+    agendamentoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Agendamento' },
+    pedidoUrgenteId: { type: mongoose.Schema.Types.ObjectId, ref: 'PedidoUrgente' },
+    vagaRelampagoId: { type: mongoose.Schema.Types.ObjectId, ref: 'VagaRelampago' },
+    projetoTimeId: { type: mongoose.Schema.Types.ObjectId, ref: 'ProjetoTime' },
+    
+    // Tipo de serviço para identificar qual referência usar
+    tipoServico: { 
+        type: String, 
+        enum: ['agendamento', 'pedido_urgente', 'vaga_relampago', 'projeto_time'], 
+        required: true 
+    },
+    
     clienteId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     profissionalId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     valor: { type: Number, required: true },
-    taxaPlataforma: { type: Number, default: 0.05 }, // 5%
+    taxaPlataforma: { type: Number, default: 0.05 }, // 5% padrão, pode ser configurável
+    valorLiquido: { type: Number }, // Valor que o profissional recebe (valor - taxa)
     status: { 
         type: String, 
         enum: ['pendente', 'pago', 'liberado', 'reembolsado', 'cancelado'], 
@@ -206,7 +219,9 @@ const pagamentoSeguroSchema = new mongoose.Schema({
     dataPagamento: { type: Date },
     dataLiberacao: { type: Date },
     metodoPagamento: { type: String },
-    transacaoId: { type: String }
+    transacaoId: { type: String },
+    // Flag para identificar serviços com Garantia Helpy (para XP extra)
+    temGarantiaHelpy: { type: Boolean, default: true }
 }, { timestamps: true });
 
 // 🆕 NOVO: Schema de Oportunidade (Mural)
@@ -240,13 +255,261 @@ const oportunidadeSchema = new mongoose.Schema({
 const PagamentoSeguro = mongoose.model('PagamentoSeguro', pagamentoSeguroSchema);
 const Oportunidade = mongoose.model('Oportunidade', oportunidadeSchema);
 
+// 🔔 NOVO: Schema de Notificações
+const notificacaoSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    tipo: { 
+        type: String, 
+        enum: [
+            'pagamento_garantido',
+            'pagamento_liberado',
+            'pagamento_reembolsado',
+            'proposta_aceita',
+            'servico_concluido',
+            'disputa_aberta',
+            'disputa_resolvida',
+            'avaliacao_recebida'
+        ], 
+        required: true 
+    },
+    titulo: { type: String, required: true },
+    mensagem: { type: String, required: true },
+    lida: { type: Boolean, default: false },
+    dataLeitura: { type: Date },
+    dadosAdicionais: { type: mongoose.Schema.Types.Mixed }, // Dados extras (IDs, valores, etc.)
+    link: { type: String } // Link para ação relacionada
+}, { timestamps: true });
+
+// ⚖️ NOVO: Schema de Disputas
+const disputaSchema = new mongoose.Schema({
+    pagamentoId: { type: mongoose.Schema.Types.ObjectId, ref: 'PagamentoSeguro', required: true },
+    criadorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }, // Cliente ou Profissional
+    tipo: { 
+        type: String, 
+        enum: ['cliente_nao_liberou', 'profissional_nao_executou', 'servico_nao_conforme', 'outro'], 
+        required: true 
+    },
+    motivo: { type: String, required: true },
+    status: { 
+        type: String, 
+        enum: ['aberta', 'em_analise', 'resolvida_cliente', 'resolvida_profissional', 'cancelada'], 
+        default: 'aberta' 
+    },
+    resolucao: { type: String }, // Decisão do admin
+    resolvidoPor: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Admin que resolveu
+    dataResolucao: { type: Date },
+    evidencias: [{ type: String }] // URLs de imagens/comprovantes
+}, { timestamps: true });
+
+// 📊 NOVO: Schema de Histórico de Transações (auditoria)
+const historicoTransacaoSchema = new mongoose.Schema({
+    pagamentoId: { type: mongoose.Schema.Types.ObjectId, ref: 'PagamentoSeguro', required: true },
+    acao: { 
+        type: String, 
+        enum: ['criado', 'pago', 'liberado', 'reembolsado', 'disputa_aberta', 'disputa_resolvida', 'cancelado'],
+        required: true 
+    },
+    realizadoPor: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    dadosAntes: { type: mongoose.Schema.Types.Mixed },
+    dadosDepois: { type: mongoose.Schema.Types.Mixed },
+    ip: { type: String },
+    userAgent: { type: String }
+}, { timestamps: true });
+
+const Notificacao = mongoose.model('Notificacao', notificacaoSchema);
+const Disputa = mongoose.model('Disputa', disputaSchema);
+const HistoricoTransacao = mongoose.model('HistoricoTransacao', historicoTransacaoSchema);
+
+// 🔔 Função auxiliar para criar notificações
+async function criarNotificacao(userId, tipo, titulo, mensagem, dadosAdicionais = {}, link = null) {
+    try {
+        const notificacao = new Notificacao({
+            userId,
+            tipo,
+            titulo,
+            mensagem,
+            dadosAdicionais,
+            link
+        });
+        await notificacao.save();
+        
+        // TODO: Aqui você pode integrar com serviços de push notification
+        // Exemplo: Firebase Cloud Messaging, OneSignal, etc.
+        // await enviarPushNotification(userId, titulo, mensagem);
+        
+        return notificacao;
+    } catch (error) {
+        console.error('Erro ao criar notificação:', error);
+        // Não falha a operação principal se a notificação falhar
+        return null;
+    }
+}
+
+// 📊 Função auxiliar para registrar histórico de transações
+async function registrarHistoricoTransacao(pagamentoId, acao, realizadoPor, dadosAntes = {}, dadosDepois = {}, req = null) {
+    try {
+        const historico = new HistoricoTransacao({
+            pagamentoId,
+            acao,
+            realizadoPor,
+            dadosAntes,
+            dadosDepois,
+            ip: req?.ip || req?.connection?.remoteAddress || null,
+            userAgent: req?.get('user-agent') || null
+        });
+        await historico.save();
+        return historico;
+    } catch (error) {
+        console.error('Erro ao registrar histórico:', error);
+        return null;
+    }
+}
+
+// 🌟 NOVO: Schema de Avaliação Verificada (Sistema Híbrido de Confiança)
+const avaliacaoVerificadaSchema = new mongoose.Schema({
+    profissionalId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    clienteId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    agendamentoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Agendamento', required: true },
+    estrelas: { type: Number, required: true, min: 1, max: 5 },
+    comentario: { type: String, trim: true },
+    isVerificada: { type: Boolean, default: true }, // Sempre true para avaliações verificadas
+    dataServico: { type: Date, required: true } // Data em que o serviço foi realizado
+}, { timestamps: true });
+
+// 🏢 NOVO: Schema de Time Local (Micro-Agência)
+const timeLocalSchema = new mongoose.Schema({
+    liderId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    nome: { type: String, required: true },
+    descricao: { type: String },
+    categoria: { type: String, required: true }, // ex: "construcao", "pintura", "jardinagem"
+    membros: [{
+        profissionalId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        funcao: { type: String, required: true }, // ex: "Pintor", "Ajudante", "Eletricista"
+        status: { type: String, enum: ['pendente', 'aceito', 'recusado'], default: 'pendente' },
+        dataConvite: { type: Date, default: Date.now }
+    }],
+    nivelMedio: { type: Number, default: 1 }, // Média dos níveis dos membros
+    projetosCompletos: { type: Number, default: 0 },
+    avaliacaoMedia: { type: Number, default: 0 },
+    isAtivo: { type: Boolean, default: true }
+}, { timestamps: true });
+
+// 📋 NOVO: Schema de Projeto de Time / Mutirão Pago
+const projetoTimeSchema = new mongoose.Schema({
+    clienteId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    titulo: { type: String, required: true },
+    descricao: { type: String, required: true },
+    categoria: { type: String, required: true },
+    localizacao: {
+        endereco: { type: String, required: true },
+        bairro: { type: String },
+        cidade: { type: String, required: true },
+        estado: { type: String, required: true },
+        latitude: { type: Number },
+        longitude: { type: Number }
+    },
+    dataServico: { type: Date, required: true },
+    horaInicio: { type: String, required: true }, // Formato "HH:MM"
+    horaFim: { type: String, required: true },
+    profissionaisNecessarios: [{
+        tipo: { type: String, required: true }, // ex: "pintor", "ajudante"
+        quantidade: { type: Number, default: 1 },
+        valorPorPessoa: { type: Number, required: true }
+    }],
+    valorTotal: { type: Number, required: true },
+    candidatos: [{
+        timeLocalId: { type: mongoose.Schema.Types.ObjectId, ref: 'TimeLocal' },
+        proposta: { type: String },
+        status: { type: String, enum: ['pendente', 'aceita', 'rejeitada'], default: 'pendente' },
+        dataCandidatura: { type: Date, default: Date.now }
+    }],
+    status: { 
+        type: String, 
+        enum: ['aberto', 'em_andamento', 'concluido', 'cancelado'], 
+        default: 'aberto' 
+    },
+    timeSelecionado: { type: mongoose.Schema.Types.ObjectId, ref: 'TimeLocal' }
+}, { timestamps: true });
+
+// 🚨 NOVO: Schema de Pedido Urgente ("Preciso Agora!")
+const pedidoUrgenteSchema = new mongoose.Schema({
+    clienteId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    servico: { type: String, required: true }, // Tipo de serviço necessário
+    descricao: { type: String },
+    localizacao: {
+        endereco: { type: String, required: true },
+        cidade: { type: String, required: true },
+        estado: { type: String, required: true },
+        latitude: { type: Number },
+        longitude: { type: Number }
+    },
+    categoria: { type: String, required: true }, // Para filtrar profissionais
+    propostas: [{
+        profissionalId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        valor: { type: Number, required: true },
+        tempoChegada: { type: String, required: true }, // ex: "30 min", "1 hora"
+        observacoes: { type: String },
+        status: { type: String, enum: ['pendente', 'aceita', 'rejeitada', 'cancelada'], default: 'pendente' },
+        dataProposta: { type: Date, default: Date.now }
+    }],
+    propostaSelecionada: { type: mongoose.Schema.Types.ObjectId },
+    status: { 
+        type: String, 
+        enum: ['aberto', 'em_andamento', 'concluido', 'cancelado'], 
+        default: 'aberto' 
+    },
+    dataExpiracao: { type: Date }, // Pedidos urgentes expiram rápido
+    notificacoesEnviadas: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }] // Profissionais notificados
+}, { timestamps: true });
+
+const AvaliacaoVerificada = mongoose.model('AvaliacaoVerificada', avaliacaoVerificadaSchema);
+const TimeLocal = mongoose.model('TimeLocal', timeLocalSchema);
+const ProjetoTime = mongoose.model('ProjetoTime', projetoTimeSchema);
+const PedidoUrgente = mongoose.model('PedidoUrgente', pedidoUrgenteSchema);
+
+// 🏢 NOVO: Schema de Vaga-Relâmpago (para empresas)
+const vagaRelampagoSchema = new mongoose.Schema({
+    empresaId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    titulo: { type: String, required: true }, // ex: "Preciso de 2 Garçons"
+    descricao: { type: String, required: true },
+    cargo: { type: String, required: true }, // ex: "Garçom", "Carregador", "Vendedor"
+    quantidade: { type: Number, required: true, min: 1 },
+    dataServico: { type: Date, required: true }, // Quando precisa
+    horaInicio: { type: String, required: true }, // Formato "HH:MM"
+    horaFim: { type: String, required: true },
+    valorPorPessoa: { type: Number, required: true }, // Pagamento por pessoa
+    formaPagamento: { type: String, enum: ['via_helpy', 'direto'], default: 'via_helpy' },
+    localizacao: {
+        endereco: { type: String, required: true },
+        cidade: { type: String, required: true },
+        estado: { type: String, required: true },
+        latitude: { type: Number },
+        longitude: { type: Number }
+    },
+    candidatos: [{
+        profissionalId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        status: { type: String, enum: ['pendente', 'aceito', 'rejeitado'], default: 'pendente' },
+        dataCandidatura: { type: Date, default: Date.now }
+    }],
+    profissionaisAceitos: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    status: { 
+        type: String, 
+        enum: ['aberta', 'em_andamento', 'concluida', 'cancelada'], 
+        default: 'aberta' 
+    },
+    dataExpiracao: { type: Date }, // Vagas expiram rápido
+    notificacoesEnviadas: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }] // Profissionais notificados
+}, { timestamps: true });
+
+const VagaRelampago = mongoose.model('VagaRelampago', vagaRelampagoSchema);
+
 // 🛑 ATUALIZADO: Schema de Usuário
 const userSchema = new mongoose.Schema({
     nome: { type: String, required: true },
     idade: { type: Number },
     cidade: { type: String }, 
     estado: { type: String }, 
-    tipo: { type: String, enum: ['cliente', 'trabalhador'], required: true },
+    tipo: { type: String, enum: ['cliente', 'trabalhador', 'empresa'], required: true },
     atuacao: { type: String, default: null },
     telefone: { type: String, default: null },
     descricao: { type: String, default: null },
@@ -290,12 +553,16 @@ const userSchema = new mongoose.Schema({
         xpProximoNivel: { type: Number, default: 100 },
         desafiosCompletos: [{ type: String }],
         portfolioValidado: { type: Boolean, default: false },
+        mediaAvaliacoesVerificadas: { type: Number, default: 0 },
+        totalAvaliacoesVerificadas: { type: Number, default: 0 },
         temSeloQualidade: { type: Boolean, default: false }, // Nível 10+
         temSeloHumano: { type: Boolean, default: false }, // Selo de trabalho 100% humano
         nivelReputacao: { type: String, enum: ['iniciante', 'validado', 'mestre'], default: 'iniciante' }
     },
     // 🆕 NOVO: Status de disponibilidade (para "Preciso agora!")
-    disponivelAgora: { type: Boolean, default: false }
+    disponivelAgora: { type: Boolean, default: false },
+    // 👑 NOVO: Flag de administrador
+    isAdmin: { type: Boolean, default: false }
 }, { timestamps: true });
 
 const User = mongoose.model('User', userSchema);
@@ -1350,6 +1617,26 @@ app.put('/api/editar-perfil/:id', authMiddleware, upload.single('avatar'), async
     }
 });
 
+// Rota para obter dados do usuário logado
+app.get('/api/usuario/me', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const user = await User.findById(userId).select('-senha').exec();
+        
+        if (!user) {
+            return res.status(404).json({ message: 'Usuário não encontrado.' });
+        }
+        
+        res.json({
+            ...user.toObject(),
+            isAdmin: user.isAdmin || false
+        });
+    } catch (error) {
+        console.error('Erro ao buscar usuário:', error);
+        res.status(500).json({ message: 'Erro interno do servidor.' });
+    }
+});
+
 // Rota de Buscar Usuário (Genérica) - 🆕 ATUALIZADO: Inclui gamificação
 app.get('/api/usuario/:id', authMiddleware, async (req, res) => {
     try {
@@ -2142,7 +2429,98 @@ app.post('/api/user/xp', authMiddleware, async (req, res) => {
     }
 });
 
-// 🆕 NOVO: Atualizar avaliação para adicionar XP automaticamente
+// 🌟 NOVO: Criar Avaliação Verificada (após serviço concluído)
+app.post('/api/avaliacao-verificada', authMiddleware, async (req, res) => {
+    try {
+        const { profissionalId, agendamentoId, estrelas, comentario, dataServico } = req.body;
+        const clienteId = req.user.id;
+
+        // Verifica se o agendamento existe e foi concluído
+        const agendamento = await Agendamento.findById(agendamentoId);
+        if (!agendamento) {
+            return res.status(404).json({ success: false, message: 'Agendamento não encontrado.' });
+        }
+
+        if (agendamento.clienteId.toString() !== clienteId) {
+            return res.status(403).json({ success: false, message: 'Você não pode avaliar este serviço.' });
+        }
+
+        if (agendamento.status !== 'concluido') {
+            return res.status(400).json({ success: false, message: 'O serviço precisa estar concluído para ser avaliado.' });
+        }
+
+        // Verifica se já existe avaliação para este agendamento
+        const avaliacaoExistente = await AvaliacaoVerificada.findOne({ agendamentoId });
+        if (avaliacaoExistente) {
+            return res.status(400).json({ success: false, message: 'Este serviço já foi avaliado.' });
+        }
+
+        // Cria a avaliação verificada
+        const novaAvaliacao = new AvaliacaoVerificada({
+            profissionalId,
+            clienteId,
+            agendamentoId,
+            estrelas,
+            comentario,
+            dataServico: dataServico || agendamento.dataHora
+        });
+
+        await novaAvaliacao.save();
+
+        // Atualiza XP do profissional baseado na avaliação verificada
+        let xpGanho = 0;
+        if (estrelas === 5) {
+            xpGanho = 100; // Mais XP para avaliações verificadas 5 estrelas
+        } else if (estrelas === 4) {
+            xpGanho = 50;
+        } else if (estrelas === 3) {
+            xpGanho = 25;
+        } else {
+            xpGanho = 10; // Mesmo avaliações baixas dão XP (serviço foi feito)
+        }
+
+        await adicionarXP(profissionalId, xpGanho, `Avaliação verificada ${estrelas} estrelas`);
+
+        // Recalcula média de avaliações verificadas do profissional
+        const avaliacoesVerificadas = await AvaliacaoVerificada.find({ profissionalId });
+        const mediaVerificada = avaliacoesVerificadas.reduce((acc, av) => acc + av.estrelas, 0) / avaliacoesVerificadas.length;
+        
+        await User.findByIdAndUpdate(profissionalId, {
+            'gamificacao.mediaAvaliacoesVerificadas': mediaVerificada,
+            'gamificacao.totalAvaliacoesVerificadas': avaliacoesVerificadas.length
+        });
+
+        res.status(201).json({ 
+            success: true, 
+            message: 'Avaliação verificada criada com sucesso!',
+            avaliacao: novaAvaliacao,
+            xpGanho
+        });
+    } catch (error) {
+        console.error('Erro ao criar avaliação verificada:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// 🌟 NOVO: Listar Avaliações Verificadas de um Profissional
+app.get('/api/avaliacoes-verificadas/:profissionalId', async (req, res) => {
+    try {
+        const { profissionalId } = req.params;
+        
+        const avaliacoes = await AvaliacaoVerificada.find({ profissionalId })
+            .populate('clienteId', 'nome foto avatarUrl')
+            .populate('agendamentoId', 'servico dataHora')
+            .sort({ createdAt: -1 })
+            .exec();
+
+        res.json({ success: true, avaliacoes });
+    } catch (error) {
+        console.error('Erro ao buscar avaliações verificadas:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// 🆕 NOVO: Atualizar avaliação para adicionar XP automaticamente (MANTIDO PARA COMPATIBILIDADE)
 app.post('/api/avaliar-trabalhador', authMiddleware, async (req, res) => {
     try {
         const { trabalhadorId, estrelas, comentario } = req.body;
@@ -2181,7 +2559,731 @@ app.post('/api/avaliar-trabalhador', authMiddleware, async (req, res) => {
     }
 });
 
-// 🆕 NOVO: Rotas de Times Locais
+// 🏢 NOVO: Rotas de Times Locais (Micro-Agências)
+// Criar Time Local
+app.post('/api/times-locais', authMiddleware, async (req, res) => {
+    try {
+        const { nome, descricao, categoria } = req.body;
+        const liderId = req.user.id;
+        
+        const lider = await User.findById(liderId);
+        if (!lider || lider.tipo !== 'trabalhador') {
+            return res.status(403).json({ success: false, message: 'Apenas profissionais podem criar times locais.' });
+        }
+
+        // Verifica se o líder tem nível suficiente (Nível 10+)
+        if ((lider.gamificacao?.nivel || 1) < 10) {
+            return res.status(403).json({ success: false, message: 'Você precisa ser Nível 10 ou superior para criar um time local.' });
+        }
+
+        const novoTime = new TimeLocal({
+            liderId,
+            nome,
+            descricao,
+            categoria,
+            nivelMedio: lider.gamificacao?.nivel || 1
+        });
+
+        await novoTime.save();
+        
+        res.status(201).json({ success: true, message: 'Time local criado com sucesso!', time: novoTime });
+    } catch (error) {
+        console.error('Erro ao criar time local:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Convidar membro para Time Local
+app.post('/api/times-locais/:timeId/convidar', authMiddleware, async (req, res) => {
+    try {
+        const { timeId } = req.params;
+        const { profissionalId, funcao } = req.body;
+        const liderId = req.user.id;
+
+        const time = await TimeLocal.findById(timeId);
+        if (!time) {
+            return res.status(404).json({ success: false, message: 'Time local não encontrado.' });
+        }
+
+        if (time.liderId.toString() !== liderId) {
+            return res.status(403).json({ success: false, message: 'Apenas o líder pode convidar membros.' });
+        }
+
+        const profissional = await User.findById(profissionalId);
+        if (!profissional || profissional.tipo !== 'trabalhador') {
+            return res.status(400).json({ success: false, message: 'Usuário inválido.' });
+        }
+
+        // Verifica se já é membro
+        const jaMembro = time.membros.some(m => m.profissionalId.toString() === profissionalId);
+        if (jaMembro) {
+            return res.status(400).json({ success: false, message: 'Este profissional já é membro do time.' });
+        }
+
+        time.membros.push({
+            profissionalId,
+            funcao,
+            status: 'pendente'
+        });
+
+        // Recalcula nível médio
+        const membrosAtivos = await User.find({ 
+            _id: { $in: [...time.membros.map(m => m.profissionalId), time.liderId] } 
+        });
+        const nivelMedio = membrosAtivos.reduce((sum, m) => sum + (m.gamificacao?.nivel || 1), 0) / membrosAtivos.length;
+        time.nivelMedio = Math.round(nivelMedio);
+
+        await time.save();
+        
+        res.json({ success: true, message: 'Convite enviado com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao convidar membro:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Listar Times Locais
+app.get('/api/times-locais', async (req, res) => {
+    try {
+        const { categoria, cidade } = req.query;
+        
+        let query = { isAtivo: true };
+        if (categoria) {
+            query.categoria = categoria;
+        }
+
+        const times = await TimeLocal.find(query)
+            .populate('liderId', 'nome foto avatarUrl atuacao cidade estado gamificacao')
+            .populate('membros.profissionalId', 'nome foto avatarUrl atuacao gamificacao')
+            .sort({ nivelMedio: -1, projetosCompletos: -1 })
+            .exec();
+
+        // Filtra por cidade se especificado
+        let timesFiltrados = times;
+        if (cidade) {
+            const normalizeString = (str) => {
+                return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+            };
+            const cidadeNormalizada = normalizeString(cidade);
+            timesFiltrados = times.filter(time => {
+                const cidadeLider = time.liderId?.cidade || '';
+                return normalizeString(cidadeLider).includes(cidadeNormalizada) ||
+                       cidadeNormalizada.includes(normalizeString(cidadeLider));
+            });
+        }
+
+        res.json({ success: true, times: timesFiltrados });
+    } catch (error) {
+        console.error('Erro ao buscar times locais:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// 📋 NOVO: Rotas de Projetos de Time / Mutirão Pago
+// Criar Projeto de Time
+app.post('/api/projetos-time', authMiddleware, async (req, res) => {
+    try {
+        const { titulo, descricao, categoria, localizacao, dataServico, horaInicio, horaFim, profissionaisNecessarios, valorTotal } = req.body;
+        const clienteId = req.user.id;
+
+        const novoProjeto = new ProjetoTime({
+            clienteId,
+            titulo,
+            descricao,
+            categoria,
+            localizacao,
+            dataServico: new Date(dataServico),
+            horaInicio,
+            horaFim,
+            profissionaisNecessarios,
+            valorTotal
+        });
+
+        await novoProjeto.save();
+        
+        res.status(201).json({ success: true, message: 'Projeto de time criado com sucesso!', projeto: novoProjeto });
+    } catch (error) {
+        console.error('Erro ao criar projeto de time:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Candidatar Time Local a Projeto
+app.post('/api/projetos-time/:projetoId/candidatar', authMiddleware, async (req, res) => {
+    try {
+        const { projetoId } = req.params;
+        const { timeLocalId, proposta } = req.body;
+        const liderId = req.user.id;
+
+        const projeto = await ProjetoTime.findById(projetoId);
+        if (!projeto) {
+            return res.status(404).json({ success: false, message: 'Projeto não encontrado.' });
+        }
+
+        const time = await TimeLocal.findById(timeLocalId);
+        if (!time || time.liderId.toString() !== liderId) {
+            return res.status(403).json({ success: false, message: 'Você não é líder deste time.' });
+        }
+
+        if (projeto.status !== 'aberto') {
+            return res.status(400).json({ success: false, message: 'Este projeto não está mais aceitando candidatos.' });
+        }
+
+        projeto.candidatos.push({
+            timeLocalId,
+            proposta,
+            status: 'pendente'
+        });
+
+        await projeto.save();
+        
+        res.json({ success: true, message: 'Candidatura enviada com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao candidatar time:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Listar Projetos de Time
+app.get('/api/projetos-time', async (req, res) => {
+    try {
+        const { cidade, categoria, status = 'aberto' } = req.query;
+        
+        let query = { status };
+        if (categoria) {
+            query.categoria = categoria;
+        }
+
+        const projetos = await ProjetoTime.find(query)
+            .populate('clienteId', 'nome foto avatarUrl cidade estado')
+            .populate('candidatos.timeLocalId')
+            .populate('timeSelecionado')
+            .sort({ createdAt: -1 })
+            .exec();
+
+        // Filtra por cidade se especificado
+        let projetosFiltrados = projetos;
+        if (cidade) {
+            const normalizeString = (str) => {
+                return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+            };
+            const cidadeNormalizada = normalizeString(cidade);
+            projetosFiltrados = projetos.filter(projeto => {
+                const cidadeProjeto = projeto.localizacao?.cidade || '';
+                return normalizeString(cidadeProjeto).includes(cidadeNormalizada) ||
+                       cidadeNormalizada.includes(normalizeString(cidadeProjeto));
+            });
+        }
+
+        res.json({ success: true, projetos: projetosFiltrados });
+    } catch (error) {
+        console.error('Erro ao buscar projetos de time:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// 🚨 NOVO: Rotas de Pedidos Urgentes ("Preciso Agora!")
+// Criar Pedido Urgente
+app.post('/api/pedidos-urgentes', authMiddleware, async (req, res) => {
+    try {
+        const { servico, descricao, localizacao, categoria } = req.body;
+        const clienteId = req.user.id;
+
+        // Define expiração em 1 hora
+        const dataExpiracao = new Date();
+        dataExpiracao.setHours(dataExpiracao.getHours() + 1);
+
+        const novoPedido = new PedidoUrgente({
+            clienteId,
+            servico,
+            descricao,
+            localizacao,
+            categoria,
+            dataExpiracao
+        });
+
+        await novoPedido.save();
+
+        // Busca profissionais online na região e categoria
+        const profissionais = await User.find({
+            tipo: 'trabalhador',
+            atuacao: categoria,
+            'localizacao.latitude': { $exists: true },
+            'localizacao.longitude': { $exists: true },
+            disponivelAgora: true // Campo que indica se está online/disponível
+        }).select('nome foto avatarUrl atuacao cidade estado gamificacao localizacao disponivelAgora').exec();
+
+        // TODO: Implementar notificações push aqui
+        // Por enquanto, apenas salva os IDs dos profissionais notificados
+        novoPedido.notificacoesEnviadas = profissionais.map(p => p._id);
+        await novoPedido.save();
+
+        res.status(201).json({ 
+            success: true, 
+            message: 'Pedido urgente criado! Profissionais foram notificados.',
+            pedido: novoPedido,
+            profissionaisNotificados: profissionais.length
+        });
+    } catch (error) {
+        console.error('Erro ao criar pedido urgente:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Enviar Proposta Rápida para Pedido Urgente
+app.post('/api/pedidos-urgentes/:pedidoId/proposta', authMiddleware, async (req, res) => {
+    try {
+        const { pedidoId } = req.params;
+        const { valor, tempoChegada, observacoes } = req.body;
+        const profissionalId = req.user.id;
+
+        const profissional = await User.findById(profissionalId);
+        if (!profissional || profissional.tipo !== 'trabalhador') {
+            return res.status(403).json({ success: false, message: 'Apenas profissionais podem enviar propostas.' });
+        }
+
+        const pedido = await PedidoUrgente.findById(pedidoId);
+        if (!pedido) {
+            return res.status(404).json({ success: false, message: 'Pedido urgente não encontrado.' });
+        }
+
+        if (pedido.status !== 'aberto') {
+            return res.status(400).json({ success: false, message: 'Este pedido não está mais aceitando propostas.' });
+        }
+
+        if (new Date() > pedido.dataExpiracao) {
+            return res.status(400).json({ success: false, message: 'Este pedido expirou.' });
+        }
+
+        // Verifica se já enviou proposta
+        const jaPropos = pedido.propostas.some(p => p.profissionalId.toString() === profissionalId);
+        if (jaPropos) {
+            return res.status(400).json({ success: false, message: 'Você já enviou uma proposta para este pedido.' });
+        }
+
+        pedido.propostas.push({
+            profissionalId,
+            valor,
+            tempoChegada,
+            observacoes,
+            status: 'pendente'
+        });
+
+        await pedido.save();
+        
+        res.json({ success: true, message: 'Proposta enviada com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao enviar proposta:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Listar Propostas de um Pedido Urgente (para o cliente)
+app.get('/api/pedidos-urgentes/:pedidoId/propostas', authMiddleware, async (req, res) => {
+    try {
+        const { pedidoId } = req.params;
+        const clienteId = req.user.id;
+
+        const pedido = await PedidoUrgente.findById(pedidoId)
+            .populate('propostas.profissionalId', 'nome foto avatarUrl atuacao cidade estado gamificacao mediaAvaliacao totalAvaliacoes')
+            .exec();
+
+        if (!pedido) {
+            return res.status(404).json({ success: false, message: 'Pedido não encontrado.' });
+        }
+
+        if (pedido.clienteId.toString() !== clienteId) {
+            return res.status(403).json({ success: false, message: 'Acesso negado.' });
+        }
+
+        res.json({ success: true, propostas: pedido.propostas });
+    } catch (error) {
+        console.error('Erro ao buscar propostas:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Aceitar Proposta de Pedido Urgente
+app.post('/api/pedidos-urgentes/:pedidoId/aceitar-proposta', authMiddleware, async (req, res) => {
+    try {
+        const { pedidoId } = req.params;
+        const { propostaId } = req.body;
+        const clienteId = req.user.id;
+
+        const pedido = await PedidoUrgente.findById(pedidoId);
+        if (!pedido) {
+            return res.status(404).json({ success: false, message: 'Pedido não encontrado.' });
+        }
+
+        if (pedido.clienteId.toString() !== clienteId) {
+            return res.status(403).json({ success: false, message: 'Apenas o cliente pode aceitar propostas.' });
+        }
+
+        const proposta = pedido.propostas.id(propostaId);
+        if (!proposta) {
+            return res.status(404).json({ success: false, message: 'Proposta não encontrada.' });
+        }
+
+        // Rejeita outras propostas
+        pedido.propostas.forEach(p => {
+            if (p._id.toString() !== propostaId) {
+                p.status = 'rejeitada';
+            }
+        });
+
+        proposta.status = 'aceita';
+        pedido.propostaSelecionada = propostaId;
+        pedido.status = 'em_andamento';
+
+        await pedido.save();
+
+        // Cria agendamento automaticamente
+        const agendamento = new Agendamento({
+            profissionalId: proposta.profissionalId,
+            clienteId,
+            dataHora: new Date(), // Serviço urgente começa imediatamente
+            servico: pedido.servico,
+            observacoes: `Pedido urgente: ${pedido.descricao || ''}. ${proposta.observacoes || ''}`,
+            endereco: pedido.localizacao,
+            status: 'confirmado'
+        });
+
+        await agendamento.save();
+        
+        res.json({ 
+            success: true, 
+            message: 'Proposta aceita! O profissional foi notificado.',
+            pedido,
+            agendamento
+        });
+    } catch (error) {
+        console.error('Erro ao aceitar proposta:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Listar Pedidos Urgentes Disponíveis (para profissionais)
+app.get('/api/pedidos-urgentes', authMiddleware, async (req, res) => {
+    try {
+        const { categoria, cidade } = req.query;
+        const profissionalId = req.user.id;
+
+        const profissional = await User.findById(profissionalId);
+        if (!profissional || profissional.tipo !== 'trabalhador') {
+            return res.status(403).json({ success: false, message: 'Apenas profissionais podem ver pedidos urgentes.' });
+        }
+
+        let query = { 
+            status: 'aberto',
+            dataExpiracao: { $gt: new Date() } // Apenas pedidos não expirados
+        };
+
+        if (categoria) {
+            query.categoria = categoria;
+        } else if (profissional.atuacao) {
+            query.categoria = profissional.atuacao;
+        }
+
+        const pedidos = await PedidoUrgente.find(query)
+            .populate('clienteId', 'nome foto avatarUrl cidade estado')
+            .sort({ createdAt: -1 })
+            .exec();
+
+        // Filtra por cidade se especificado
+        let pedidosFiltrados = pedidos;
+        if (cidade) {
+            const normalizeString = (str) => {
+                return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+            };
+            const cidadeNormalizada = normalizeString(cidade);
+            pedidosFiltrados = pedidos.filter(pedido => {
+                const cidadePedido = pedido.localizacao?.cidade || '';
+                return normalizeString(cidadePedido).includes(cidadeNormalizada) ||
+                       cidadeNormalizada.includes(normalizeString(cidadePedido));
+            });
+        }
+
+        res.json({ success: true, pedidos: pedidosFiltrados });
+    } catch (error) {
+        console.error('Erro ao buscar pedidos urgentes:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// ⚡ NOVO: Rotas de Vagas-Relâmpago (para empresas)
+// Criar Vaga-Relâmpago
+app.post('/api/vagas-relampago', authMiddleware, async (req, res) => {
+    try {
+        const { titulo, descricao, cargo, quantidade, dataServico, horaInicio, horaFim, valorPorPessoa, formaPagamento, localizacao } = req.body;
+        const empresaId = req.user.id;
+
+        const empresa = await User.findById(empresaId);
+        if (!empresa || empresa.tipo !== 'empresa') {
+            return res.status(403).json({ success: false, message: 'Apenas empresas podem criar vagas-relâmpago.' });
+        }
+
+        // Define expiração baseada na data do serviço (expira 1 hora antes do início)
+        const dataServicoObj = new Date(dataServico);
+        const dataExpiracao = new Date(dataServicoObj);
+        dataExpiracao.setHours(dataExpiracao.getHours() - 1);
+
+        const novaVaga = new VagaRelampago({
+            empresaId,
+            titulo,
+            descricao,
+            cargo,
+            quantidade,
+            dataServico: dataServicoObj,
+            horaInicio,
+            horaFim,
+            valorPorPessoa,
+            formaPagamento: formaPagamento || 'via_helpy',
+            localizacao,
+            dataExpiracao
+        });
+
+        await novaVaga.save();
+
+        // Busca profissionais com a atuação correspondente ao cargo
+        const profissionais = await User.find({
+            tipo: 'trabalhador',
+            $or: [
+                { atuacao: { $regex: cargo, $options: 'i' } },
+                { atuacao: { $regex: cargo.toLowerCase(), $options: 'i' } }
+            ],
+            'localizacao.latitude': { $exists: true },
+            'localizacao.longitude': { $exists: true },
+            disponivelAgora: true
+        }).select('nome foto avatarUrl atuacao cidade estado gamificacao localizacao disponivelAgora').exec();
+
+        // TODO: Implementar notificações push aqui
+        novaVaga.notificacoesEnviadas = profissionais.map(p => p._id);
+        await novaVaga.save();
+
+        res.status(201).json({ 
+            success: true, 
+            message: 'Vaga-relâmpago criada! Profissionais foram notificados.',
+            vaga: novaVaga,
+            profissionaisNotificados: profissionais.length
+        });
+    } catch (error) {
+        console.error('Erro ao criar vaga-relâmpago:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Listar Vagas-Relâmpago Disponíveis (para profissionais)
+app.get('/api/vagas-relampago', authMiddleware, async (req, res) => {
+    try {
+        const { cargo, cidade } = req.query;
+        const profissionalId = req.user.id;
+
+        const profissional = await User.findById(profissionalId);
+        if (!profissional || profissional.tipo !== 'trabalhador') {
+            return res.status(403).json({ success: false, message: 'Apenas profissionais podem ver vagas-relâmpago.' });
+        }
+
+        let query = { 
+            status: 'aberta',
+            $or: [
+                { dataExpiracao: { $gt: new Date() } },
+                { dataExpiracao: { $exists: false } }
+            ]
+        };
+
+        if (cargo) {
+            query.cargo = { $regex: cargo, $options: 'i' };
+        }
+
+        const vagas = await VagaRelampago.find(query)
+            .populate('empresaId', 'nome foto avatarUrl cidade estado')
+            .sort({ createdAt: -1 })
+            .exec();
+
+        // Filtra por cidade se especificado
+        let vagasFiltradas = vagas;
+        if (cidade) {
+            const normalizeString = (str) => {
+                return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+            };
+            const cidadeNormalizada = normalizeString(cidade);
+            vagasFiltradas = vagas.filter(vaga => {
+                const cidadeVaga = vaga.localizacao?.cidade || '';
+                return normalizeString(cidadeVaga).includes(cidadeNormalizada) ||
+                       cidadeNormalizada.includes(normalizeString(cidadeVaga));
+            });
+        }
+
+        res.json({ success: true, vagas: vagasFiltradas });
+    } catch (error) {
+        console.error('Erro ao buscar vagas-relâmpago:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Candidatar-se a uma Vaga-Relâmpago
+app.post('/api/vagas-relampago/:vagaId/candidatar', authMiddleware, async (req, res) => {
+    try {
+        const { vagaId } = req.params;
+        const profissionalId = req.user.id;
+
+        const profissional = await User.findById(profissionalId);
+        if (!profissional || profissional.tipo !== 'trabalhador') {
+            return res.status(403).json({ success: false, message: 'Apenas profissionais podem se candidatar.' });
+        }
+
+        const vaga = await VagaRelampago.findById(vagaId);
+        if (!vaga) {
+            return res.status(404).json({ success: false, message: 'Vaga não encontrada.' });
+        }
+
+        if (vaga.status !== 'aberta') {
+            return res.status(400).json({ success: false, message: 'Esta vaga não está mais aceitando candidatos.' });
+        }
+
+        if (new Date() > vaga.dataExpiracao) {
+            return res.status(400).json({ success: false, message: 'Esta vaga expirou.' });
+        }
+
+        // Verifica se já se candidatou
+        const jaCandidatou = vaga.candidatos.some(c => c.profissionalId.toString() === profissionalId);
+        if (jaCandidatou) {
+            return res.status(400).json({ success: false, message: 'Você já se candidatou a esta vaga.' });
+        }
+
+        // Verifica se já foi aceito
+        const jaAceito = vaga.profissionaisAceitos.some(id => id.toString() === profissionalId);
+        if (jaAceito) {
+            return res.status(400).json({ success: false, message: 'Você já foi aceito nesta vaga.' });
+        }
+
+        vaga.candidatos.push({
+            profissionalId,
+            status: 'pendente'
+        });
+
+        await vaga.save();
+        
+        res.json({ success: true, message: 'Candidatura enviada com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao candidatar-se:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Listar Candidatos de uma Vaga-Relâmpago (para empresa)
+app.get('/api/vagas-relampago/:vagaId/candidatos', authMiddleware, async (req, res) => {
+    try {
+        const { vagaId } = req.params;
+        const empresaId = req.user.id;
+
+        const vaga = await VagaRelampago.findById(vagaId)
+            .populate('candidatos.profissionalId', 'nome foto avatarUrl atuacao cidade estado gamificacao mediaAvaliacao totalAvaliacoes')
+            .populate('profissionaisAceitos', 'nome foto avatarUrl atuacao cidade estado gamificacao')
+            .exec();
+
+        if (!vaga) {
+            return res.status(404).json({ success: false, message: 'Vaga não encontrada.' });
+        }
+
+        if (vaga.empresaId.toString() !== empresaId) {
+            return res.status(403).json({ success: false, message: 'Acesso negado.' });
+        }
+
+        res.json({ 
+            success: true, 
+            candidatos: vaga.candidatos,
+            profissionaisAceitos: vaga.profissionaisAceitos,
+            quantidadeNecessaria: vaga.quantidade,
+            quantidadeAceita: vaga.profissionaisAceitos.length
+        });
+    } catch (error) {
+        console.error('Erro ao buscar candidatos:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Aceitar/Rejeitar Candidato
+app.post('/api/vagas-relampago/:vagaId/candidatos/:candidatoId/avaliar', authMiddleware, async (req, res) => {
+    try {
+        const { vagaId, candidatoId } = req.params;
+        const { acao } = req.body; // 'aceitar' ou 'rejeitar'
+        const empresaId = req.user.id;
+
+        const vaga = await VagaRelampago.findById(vagaId);
+        if (!vaga) {
+            return res.status(404).json({ success: false, message: 'Vaga não encontrada.' });
+        }
+
+        if (vaga.empresaId.toString() !== empresaId) {
+            return res.status(403).json({ success: false, message: 'Apenas a empresa pode avaliar candidatos.' });
+        }
+
+        if (vaga.status !== 'aberta') {
+            return res.status(400).json({ success: false, message: 'Esta vaga não está mais aceitando candidatos.' });
+        }
+
+        // Verifica se já tem profissionais suficientes
+        if (acao === 'aceitar' && vaga.profissionaisAceitos.length >= vaga.quantidade) {
+            return res.status(400).json({ success: false, message: 'Todas as vagas já foram preenchidas.' });
+        }
+
+        const candidato = vaga.candidatos.id(candidatoId);
+        if (!candidato) {
+            return res.status(404).json({ success: false, message: 'Candidato não encontrado.' });
+        }
+
+        if (acao === 'aceitar') {
+            candidato.status = 'aceito';
+            if (!vaga.profissionaisAceitos.includes(candidato.profissionalId)) {
+                vaga.profissionaisAceitos.push(candidato.profissionalId);
+            }
+
+            // Se preencheu todas as vagas, fecha a vaga
+            if (vaga.profissionaisAceitos.length >= vaga.quantidade) {
+                vaga.status = 'em_andamento';
+            }
+        } else if (acao === 'rejeitar') {
+            candidato.status = 'rejeitado';
+        }
+
+        await vaga.save();
+        
+        res.json({ 
+            success: true, 
+            message: acao === 'aceitar' ? 'Candidato aceito!' : 'Candidato rejeitado.',
+            vagasRestantes: Math.max(0, vaga.quantidade - vaga.profissionaisAceitos.length)
+        });
+    } catch (error) {
+        console.error('Erro ao avaliar candidato:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Listar Vagas-Relâmpago da Empresa
+app.get('/api/vagas-relampago/empresa/minhas', authMiddleware, async (req, res) => {
+    try {
+        const empresaId = req.user.id;
+
+        const empresa = await User.findById(empresaId);
+        if (!empresa || empresa.tipo !== 'empresa') {
+            return res.status(403).json({ success: false, message: 'Apenas empresas podem ver suas vagas.' });
+        }
+
+        const vagas = await VagaRelampago.find({ empresaId })
+            .populate('candidatos.profissionalId', 'nome foto avatarUrl atuacao cidade estado gamificacao')
+            .populate('profissionaisAceitos', 'nome foto avatarUrl atuacao cidade estado gamificacao')
+            .sort({ createdAt: -1 })
+            .exec();
+
+        res.json({ success: true, vagas });
+    } catch (error) {
+        console.error('Erro ao buscar vagas da empresa:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// 🆕 NOVO: Rotas de Times Locais (COMPATIBILIDADE - mantido para não quebrar código existente)
 // Criar Time de Projeto - 🆕 ATUALIZADO: Permite profissionais também
 app.post('/api/times-projeto', authMiddleware, async (req, res) => {
     try {
@@ -2564,41 +3666,216 @@ app.get('/api/equipes', authMiddleware, async (req, res) => {
 });
 
 
-// 🆕 NOVO: Rotas de Pagamento Seguro Helpy
-// Criar pagamento seguro (quando cliente confirma agendamento)
+// 💰 NOVO: Rotas de Pagamento Seguro Helpy (Escrow) - EXPANDIDO
+// Criar pagamento seguro (suporta todos os tipos de serviços)
 app.post('/api/pagamento-seguro', authMiddleware, async (req, res) => {
     try {
-        const { agendamentoId, valor, metodoPagamento } = req.body;
+        const { 
+            tipoServico, // 'agendamento', 'pedido_urgente', 'vaga_relampago', 'projeto_time'
+            agendamentoId, 
+            pedidoUrgenteId,
+            vagaRelampagoId,
+            projetoTimeId,
+            valor, 
+            metodoPagamento,
+            taxaPlataforma: taxaCustomizada // Opcional, padrão 5%
+        } = req.body;
         const clienteId = req.user.id;
         
-        const agendamento = await Agendamento.findById(agendamentoId);
-        if (!agendamento || agendamento.clienteId.toString() !== clienteId) {
-            return res.status(403).json({ success: false, message: 'Agendamento não encontrado ou acesso negado.' });
+        if (!tipoServico || !valor) {
+            return res.status(400).json({ success: false, message: 'Tipo de serviço e valor são obrigatórios.' });
+        }
+
+        let profissionalId = null;
+        let referenciaId = null;
+
+        // Busca profissional e valida acesso baseado no tipo de serviço
+        switch (tipoServico) {
+            case 'agendamento':
+                if (!agendamentoId) {
+                    return res.status(400).json({ success: false, message: 'ID do agendamento é obrigatório.' });
+                }
+                const agendamento = await Agendamento.findById(agendamentoId);
+                if (!agendamento || agendamento.clienteId.toString() !== clienteId) {
+                    return res.status(403).json({ success: false, message: 'Agendamento não encontrado ou acesso negado.' });
+                }
+                profissionalId = agendamento.profissionalId;
+                referenciaId = agendamentoId;
+                break;
+
+            case 'pedido_urgente':
+                if (!pedidoUrgenteId) {
+                    return res.status(400).json({ success: false, message: 'ID do pedido urgente é obrigatório.' });
+                }
+                const pedidoUrgente = await PedidoUrgente.findById(pedidoUrgenteId);
+                if (!pedidoUrgente || pedidoUrgente.clienteId.toString() !== clienteId) {
+                    return res.status(403).json({ success: false, message: 'Pedido urgente não encontrado ou acesso negado.' });
+                }
+                if (!pedidoUrgente.propostaSelecionada) {
+                    return res.status(400).json({ success: false, message: 'Nenhuma proposta foi aceita ainda.' });
+                }
+                const propostaAceita = pedidoUrgente.propostas.id(pedidoUrgente.propostaSelecionada);
+                if (!propostaAceita || propostaAceita.status !== 'aceita') {
+                    return res.status(400).json({ success: false, message: 'Proposta aceita não encontrada.' });
+                }
+                profissionalId = propostaAceita.profissionalId;
+                referenciaId = pedidoUrgenteId;
+                break;
+
+            case 'vaga_relampago':
+                if (!vagaRelampagoId) {
+                    return res.status(400).json({ success: false, message: 'ID da vaga-relâmpago é obrigatório.' });
+                }
+                // Para vagas-relâmpago, o profissional já foi aceito pela empresa
+                // O pagamento é feito pela empresa, não pelo cliente individual
+                // Mas vamos manter flexível para casos futuros
+                return res.status(400).json({ success: false, message: 'Pagamento de vagas-relâmpago será implementado em breve.' });
+            
+            case 'projeto_time':
+                if (!projetoTimeId) {
+                    return res.status(400).json({ success: false, message: 'ID do projeto de time é obrigatório.' });
+                }
+                const projetoTime = await ProjetoTime.findById(projetoTimeId);
+                if (!projetoTime || projetoTime.clienteId.toString() !== clienteId) {
+                    return res.status(403).json({ success: false, message: 'Projeto não encontrado ou acesso negado.' });
+                }
+                // Para projetos de time, o pagamento é feito ao time, não a um profissional individual
+                return res.status(400).json({ success: false, message: 'Pagamento de projetos de time será implementado em breve.' });
+
+            default:
+                return res.status(400).json({ success: false, message: 'Tipo de serviço inválido.' });
+        }
+
+        // Calcula taxa da plataforma (padrão 5%, pode ser customizada)
+        const taxa = taxaCustomizada || 0.05;
+        const taxaPlataforma = valor * taxa;
+        const valorLiquido = valor - taxaPlataforma; // Valor que o profissional recebe
+        
+        // Verifica se já existe pagamento para este serviço
+        let queryPagamentoExistente = {};
+        switch (tipoServico) {
+            case 'agendamento':
+                queryPagamentoExistente = { agendamentoId: referenciaId };
+                break;
+            case 'pedido_urgente':
+                queryPagamentoExistente = { pedidoUrgenteId: referenciaId };
+                break;
+        }
+
+        const pagamentoExistente = await PagamentoSeguro.findOne({
+            ...queryPagamentoExistente,
+            status: { $in: ['pendente', 'pago'] }
+        });
+
+        if (pagamentoExistente) {
+            return res.status(400).json({ success: false, message: 'Já existe um pagamento seguro para este serviço.' });
         }
         
-        const taxaPlataforma = valor * 0.05; // 5%
-        const valorFinal = valor + taxaPlataforma;
-        
         const pagamento = new PagamentoSeguro({
-            agendamentoId,
+            tipoServico,
+            agendamentoId: tipoServico === 'agendamento' ? referenciaId : undefined,
+            pedidoUrgenteId: tipoServico === 'pedido_urgente' ? referenciaId : undefined,
             clienteId,
-            profissionalId: agendamento.profissionalId,
+            profissionalId,
             valor,
             taxaPlataforma,
-            metodoPagamento,
-            status: 'pago' // Em produção, seria 'pendente' até confirmação do gateway
+            valorLiquido,
+            metodoPagamento: metodoPagamento || 'cartao_credito',
+            status: 'pago', // Em produção, seria 'pendente' até confirmação do gateway de pagamento
+            dataPagamento: new Date(),
+            temGarantiaHelpy: true
+            // 💳 INTEGRAÇÃO COM GATEWAY DE PAGAMENTO
+            // Exemplo com Stripe:
+            // const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+            // const paymentIntent = await stripe.paymentIntents.create({
+            //     amount: Math.round(valorTotal * 100), // Stripe usa centavos
+            //     currency: 'brl',
+            //     payment_method: metodoPagamento, // ID do método de pagamento do cliente
+            //     confirm: true,
+            //     metadata: {
+            //         pagamentoId: pagamento._id.toString(),
+            //         clienteId: clienteId.toString(),
+            //         profissionalId: profissionalId.toString()
+            //     }
+            // });
+            // pagamento.transacaoId = paymentIntent.id;
+            // pagamento.status = paymentIntent.status === 'succeeded' ? 'pago' : 'pendente';
+            
+            // Exemplo com PagSeguro:
+            // const pagseguro = require('pagseguro-nodejs');
+            // const transaction = await pagseguro.transaction({
+            //     paymentMode: 'default',
+            //     paymentMethod: metodoPagamento,
+            //     currency: 'BRL',
+            //     itemId1: pagamento._id.toString(),
+            //     itemDescription1: `Serviço ${tipoServico}`,
+            //     itemAmount1: valorTotal.toFixed(2),
+            //     itemQuantity1: 1,
+            //     reference: pagamento._id.toString()
+            // });
+            // pagamento.transacaoId = transaction.code;
+            // pagamento.status = transaction.status === '3' ? 'pago' : 'pendente';
+            
+            // Exemplo com Mercado Pago:
+            // const mercadopago = require('mercadopago');
+            // mercadopago.configure({ access_token: process.env.MP_ACCESS_TOKEN });
+            // const payment = await mercadopago.payment.save({
+            //     transaction_amount: valorTotal,
+            //     token: metodoPagamento, // Token do cartão
+            //     description: `Serviço ${tipoServico}`,
+            //     installments: 1,
+            //     payment_method_id: 'visa',
+            //     payer: { email: cliente.email }
+            // });
+            // pagamento.transacaoId = payment.body.id;
+            // pagamento.status = payment.body.status === 'approved' ? 'pago' : 'pendente';
         });
         
         await pagamento.save();
+
+        // 📊 Registra histórico
+        await registrarHistoricoTransacao(
+            pagamento._id,
+            'criado',
+            clienteId,
+            {},
+            { status: 'pago', valor, valorLiquido },
+            req
+        );
+
+        // 🔔 Notifica o profissional que o pagamento está garantido
+        await criarNotificacao(
+            profissionalId,
+            'pagamento_garantido',
+            '💰 Pagamento Garantido!',
+            `Um cliente garantiu o pagamento de R$ ${valor.toFixed(2)}. Você receberá R$ ${valorLiquido.toFixed(2)} após concluir o serviço.`,
+            { pagamentoId: pagamento._id, valor, valorLiquido },
+            '/pagamentos-garantidos'
+        );
+
+        // Atualiza status do serviço para indicar que tem pagamento garantido
+        if (tipoServico === 'agendamento') {
+            await Agendamento.findByIdAndUpdate(referenciaId, { status: 'confirmado' });
+        } else if (tipoServico === 'pedido_urgente') {
+            await PedidoUrgente.findByIdAndUpdate(referenciaId, { status: 'em_andamento' });
+        }
         
-        res.status(201).json({ success: true, message: 'Pagamento seguro criado!', pagamento });
+        res.status(201).json({ 
+            success: true, 
+            message: 'Pagamento seguro criado! O profissional foi notificado que o pagamento está garantido.',
+            pagamento: {
+                ...pagamento.toObject(),
+                valorLiquido,
+                taxaPlataforma: taxaPlataforma.toFixed(2)
+            }
+        });
     } catch (error) {
         console.error('Erro ao criar pagamento seguro:', error);
         res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
     }
 });
 
-// Liberar pagamento (quando cliente marca como concluído)
+// Liberar pagamento (quando cliente marca como concluído) - EXPANDIDO
 app.post('/api/pagamento-seguro/:pagamentoId/liberar', authMiddleware, async (req, res) => {
     try {
         const { pagamentoId } = req.params;
@@ -2618,31 +3895,219 @@ app.post('/api/pagamento-seguro/:pagamentoId/liberar', authMiddleware, async (re
             return res.status(400).json({ success: false, message: 'Pagamento não está pago.' });
         }
         
+        const dadosAntes = { status: pagamento.status };
         pagamento.status = 'liberado';
         pagamento.dataLiberacao = new Date();
         await pagamento.save();
         
-        // Atualiza agendamento
-        const agendamento = await Agendamento.findById(pagamento.agendamentoId);
-        if (agendamento) {
-            agendamento.status = 'concluido';
-            await agendamento.save();
+        // 📊 Registra histórico
+        await registrarHistoricoTransacao(
+            pagamentoId,
+            'liberado',
+            userId,
+            dadosAntes,
+            { status: 'liberado', dataLiberacao: pagamento.dataLiberacao },
+            req
+        );
+
+        // 🔔 Notifica o profissional que o pagamento foi liberado
+        await criarNotificacao(
+            pagamento.profissionalId,
+            'pagamento_liberado',
+            '✅ Pagamento Liberado!',
+            `O cliente liberou o pagamento de R$ ${pagamento.valor.toFixed(2)}. Você receberá R$ ${(pagamento.valorLiquido || (pagamento.valor - pagamento.taxaPlataforma)).toFixed(2)}.`,
+            { pagamentoId: pagamento._id, valor: pagamento.valor, valorLiquido: pagamento.valorLiquido },
+            '/pagamentos-garantidos'
+        );
+        
+        // Atualiza status do serviço baseado no tipo
+        if (pagamento.tipoServico === 'agendamento' && pagamento.agendamentoId) {
+            const agendamento = await Agendamento.findById(pagamento.agendamentoId);
+            if (agendamento) {
+                agendamento.status = 'concluido';
+                await agendamento.save();
+            }
+        } else if (pagamento.tipoServico === 'pedido_urgente' && pagamento.pedidoUrgenteId) {
+            const pedidoUrgente = await PedidoUrgente.findById(pagamento.pedidoUrgenteId);
+            if (pedidoUrgente) {
+                pedidoUrgente.status = 'concluido';
+                await pedidoUrgente.save();
+            }
+        }
+
+        // 💰 NOVO: Adiciona XP EXTRA para serviços com Garantia Helpy
+        if (pagamento.temGarantiaHelpy) {
+            // XP em dobro para serviços com garantia Helpy
+            const xpBase = 50; // XP base por serviço concluído
+            const xpExtra = xpBase * 2; // XP em dobro
+            await adicionarXP(pagamento.profissionalId, xpExtra, `Serviço concluído com Garantia Helpy`);
         }
         
-        res.json({ success: true, message: 'Pagamento liberado com sucesso!', pagamento });
+        res.json({ 
+            success: true, 
+            message: 'Pagamento liberado com sucesso! O profissional recebeu XP extra por usar a Garantia Helpy.',
+            pagamento: {
+                ...pagamento.toObject(),
+                valorLiquido: pagamento.valorLiquido || (pagamento.valor - pagamento.taxaPlataforma)
+            }
+        });
     } catch (error) {
         console.error('Erro ao liberar pagamento:', error);
         res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
     }
 });
 
-// Listar pagamentos do profissional
+// 💰 NOVO: Reembolsar pagamento (se cliente cancelar antes do serviço)
+app.post('/api/pagamento-seguro/:pagamentoId/reembolsar', authMiddleware, async (req, res) => {
+    try {
+        const { pagamentoId } = req.params;
+        const userId = req.user.id;
+        const { motivo } = req.body;
+        
+        const pagamento = await PagamentoSeguro.findById(pagamentoId);
+        if (!pagamento) {
+            return res.status(404).json({ success: false, message: 'Pagamento não encontrado.' });
+        }
+        
+        // Só cliente pode solicitar reembolso
+        if (pagamento.clienteId.toString() !== userId) {
+            return res.status(403).json({ success: false, message: 'Acesso negado.' });
+        }
+        
+        if (pagamento.status !== 'pago') {
+            return res.status(400).json({ success: false, message: 'Apenas pagamentos pagos podem ser reembolsados.' });
+        }
+        
+        const dadosAntes = { status: pagamento.status };
+        
+        // 💳 INTEGRAÇÃO COM GATEWAY DE PAGAMENTO
+        // Exemplo com Stripe:
+        // const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+        // const refund = await stripe.refunds.create({ 
+        //     payment_intent: pagamento.transacaoId,
+        //     amount: Math.round(pagamento.valor * 100) // Stripe usa centavos
+        // });
+        // pagamento.transacaoIdReembolso = refund.id;
+        
+        // Exemplo com PagSeguro:
+        // const pagseguro = require('pagseguro-nodejs');
+        // const refund = await pagseguro.refund({
+        //     transactionCode: pagamento.transacaoId,
+        //     refundValue: pagamento.valor
+        // });
+        
+        // Exemplo com Mercado Pago:
+        // const mercadopago = require('mercadopago');
+        // mercadopago.configure({ access_token: process.env.MP_ACCESS_TOKEN });
+        // const refund = await mercadopago.payment.refund(pagamento.transacaoId);
+        
+        pagamento.status = 'reembolsado';
+        await pagamento.save();
+        
+        // 📊 Registra histórico
+        await registrarHistoricoTransacao(
+            pagamentoId,
+            'reembolsado',
+            userId,
+            dadosAntes,
+            { status: 'reembolsado', motivo },
+            req
+        );
+
+        // 🔔 Notifica ambos os usuários sobre o reembolso
+        await criarNotificacao(
+            pagamento.clienteId,
+            'pagamento_reembolsado',
+            '💸 Reembolso Processado',
+            `Seu reembolso de R$ ${pagamento.valor.toFixed(2)} foi processado. O valor será devolvido em até 5 dias úteis.`,
+            { pagamentoId: pagamento._id, valor: pagamento.valor },
+            '/meus-pagamentos'
+        );
+
+        await criarNotificacao(
+            pagamento.profissionalId,
+            'pagamento_reembolsado',
+            '⚠️ Pagamento Reembolsado',
+            `O pagamento de R$ ${pagamento.valor.toFixed(2)} foi reembolsado ao cliente.`,
+            { pagamentoId: pagamento._id, valor: pagamento.valor },
+            '/pagamentos-garantidos'
+        );
+        
+        // Atualiza status do serviço
+        if (pagamento.tipoServico === 'agendamento' && pagamento.agendamentoId) {
+            await Agendamento.findByIdAndUpdate(pagamento.agendamentoId, { status: 'cancelado' });
+        } else if (pagamento.tipoServico === 'pedido_urgente' && pagamento.pedidoUrgenteId) {
+            await PedidoUrgente.findByIdAndUpdate(pagamento.pedidoUrgenteId, { status: 'cancelado' });
+        }
+        
+        res.json({ 
+            success: true, 
+            message: 'Reembolso processado. O valor será devolvido em até 5 dias úteis.',
+            pagamento 
+        });
+    } catch (error) {
+        console.error('Erro ao reembolsar pagamento:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Listar pagamentos do profissional - EXPANDIDO
 app.get('/api/pagamento-seguro/profissional', authMiddleware, async (req, res) => {
     try {
         const profissionalId = req.user.id;
-        const pagamentos = await PagamentoSeguro.find({ profissionalId })
+        const { status } = req.query; // Filtro opcional por status
+        
+        let query = { profissionalId };
+        if (status) {
+            query.status = status;
+        }
+        
+        const pagamentos = await PagamentoSeguro.find(query)
             .populate('clienteId', 'nome foto avatarUrl')
             .populate('agendamentoId')
+            .populate('pedidoUrgenteId')
+            .sort({ createdAt: -1 })
+            .exec();
+        
+        // Calcula totais
+        const totalRecebido = pagamentos
+            .filter(p => p.status === 'liberado')
+            .reduce((sum, p) => sum + (p.valorLiquido || (p.valor - p.taxaPlataforma)), 0);
+        
+        const totalAReceber = pagamentos
+            .filter(p => p.status === 'pago')
+            .reduce((sum, p) => sum + (p.valorLiquido || (p.valor - p.taxaPlataforma)), 0);
+        
+        res.json({ 
+            success: true, 
+            pagamentos,
+            resumo: {
+                totalRecebido: totalRecebido.toFixed(2),
+                totalAReceber: totalAReceber.toFixed(2),
+                totalPagamentos: pagamentos.length
+            }
+        });
+    } catch (error) {
+        console.error('Erro ao buscar pagamentos:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Listar pagamentos do cliente - EXPANDIDO
+app.get('/api/pagamento-seguro/cliente', authMiddleware, async (req, res) => {
+    try {
+        const clienteId = req.user.id;
+        const { status } = req.query; // Filtro opcional por status
+        
+        let query = { clienteId };
+        if (status) {
+            query.status = status;
+        }
+        
+        const pagamentos = await PagamentoSeguro.find(query)
+            .populate('profissionalId', 'nome foto avatarUrl atuacao gamificacao')
+            .populate('agendamentoId')
+            .populate('pedidoUrgenteId')
             .sort({ createdAt: -1 })
             .exec();
         
@@ -2653,19 +4118,421 @@ app.get('/api/pagamento-seguro/profissional', authMiddleware, async (req, res) =
     }
 });
 
-// Listar pagamentos do cliente
-app.get('/api/pagamento-seguro/cliente', authMiddleware, async (req, res) => {
+// 💰 NOVO: Verificar se serviço tem pagamento garantido
+app.get('/api/pagamento-seguro/verificar/:tipoServico/:servicoId', authMiddleware, async (req, res) => {
     try {
-        const clienteId = req.user.id;
-        const pagamentos = await PagamentoSeguro.find({ clienteId })
-            .populate('profissionalId', 'nome foto avatarUrl atuacao')
-            .populate('agendamentoId')
+        const { tipoServico, servicoId } = req.params;
+        const userId = req.user.id;
+        
+        let query = {};
+        switch (tipoServico) {
+            case 'agendamento':
+                query = { agendamentoId: servicoId };
+                break;
+            case 'pedido_urgente':
+                query = { pedidoUrgenteId: servicoId };
+                break;
+            default:
+                return res.status(400).json({ success: false, message: 'Tipo de serviço inválido.' });
+        }
+        
+        const pagamento = await PagamentoSeguro.findOne(query)
+            .populate('clienteId', 'nome')
+            .populate('profissionalId', 'nome')
+            .exec();
+        
+        if (!pagamento) {
+            return res.json({ success: true, temPagamento: false });
+        }
+        
+        // Verifica se o usuário tem acesso a este pagamento
+        const temAcesso = pagamento.clienteId._id.toString() === userId || 
+                         pagamento.profissionalId._id.toString() === userId;
+        
+        if (!temAcesso) {
+            return res.status(403).json({ success: false, message: 'Acesso negado.' });
+        }
+        
+        res.json({ 
+            success: true, 
+            temPagamento: true,
+            pagamento: {
+                status: pagamento.status,
+                valor: pagamento.valor,
+                valorLiquido: pagamento.valorLiquido || (pagamento.valor - pagamento.taxaPlataforma),
+                taxaPlataforma: pagamento.taxaPlataforma,
+                temGarantiaHelpy: pagamento.temGarantiaHelpy,
+                dataPagamento: pagamento.dataPagamento,
+                dataLiberacao: pagamento.dataLiberacao
+            }
+        });
+    } catch (error) {
+        console.error('Erro ao verificar pagamento:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// 🔔 NOVO: Rotas de Notificações
+// Listar notificações do usuário
+app.get('/api/notificacoes', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { lida, limit = 50 } = req.query;
+        
+        let query = { userId };
+        if (lida !== undefined) {
+            query.lida = lida === 'true';
+        }
+        
+        const notificacoes = await Notificacao.find(query)
+            .sort({ createdAt: -1 })
+            .limit(parseInt(limit))
+            .exec();
+        
+        const naoLidas = await Notificacao.countDocuments({ userId, lida: false });
+        
+        res.json({ 
+            success: true, 
+            notificacoes,
+            totalNaoLidas: naoLidas
+        });
+    } catch (error) {
+        console.error('Erro ao buscar notificações:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Marcar notificação como lida
+app.put('/api/notificacoes/:notificacaoId/lida', authMiddleware, async (req, res) => {
+    try {
+        const { notificacaoId } = req.params;
+        const userId = req.user.id;
+        
+        const notificacao = await Notificacao.findById(notificacaoId);
+        if (!notificacao || notificacao.userId.toString() !== userId) {
+            return res.status(403).json({ success: false, message: 'Notificação não encontrada.' });
+        }
+        
+        notificacao.lida = true;
+        notificacao.dataLeitura = new Date();
+        await notificacao.save();
+        
+        res.json({ success: true, notificacao });
+    } catch (error) {
+        console.error('Erro ao marcar notificação como lida:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Marcar todas as notificações como lidas
+app.put('/api/notificacoes/marcar-todas-lidas', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        await Notificacao.updateMany(
+            { userId, lida: false },
+            { lida: true, dataLeitura: new Date() }
+        );
+        
+        res.json({ success: true, message: 'Todas as notificações foram marcadas como lidas.' });
+    } catch (error) {
+        console.error('Erro ao marcar notificações como lidas:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// ⚖️ NOVO: Rotas de Disputas
+// Criar disputa
+app.post('/api/disputas', authMiddleware, async (req, res) => {
+    try {
+        const { pagamentoId, tipo, motivo, evidencias } = req.body;
+        const criadorId = req.user.id;
+        
+        const pagamento = await PagamentoSeguro.findById(pagamentoId);
+        if (!pagamento) {
+            return res.status(404).json({ success: false, message: 'Pagamento não encontrado.' });
+        }
+        
+        // Verifica se o usuário tem direito de criar disputa
+        const podeCriarDisputa = pagamento.clienteId.toString() === criadorId || 
+                                 pagamento.profissionalId.toString() === criadorId;
+        if (!podeCriarDisputa) {
+            return res.status(403).json({ success: false, message: 'Acesso negado.' });
+        }
+        
+        // Verifica se já existe disputa aberta
+        const disputaExistente = await Disputa.findOne({ 
+            pagamentoId, 
+            status: { $in: ['aberta', 'em_analise'] } 
+        });
+        if (disputaExistente) {
+            return res.status(400).json({ success: false, message: 'Já existe uma disputa aberta para este pagamento.' });
+        }
+        
+        // Só pode criar disputa se pagamento está pago mas não liberado
+        if (pagamento.status !== 'pago') {
+            return res.status(400).json({ success: false, message: 'Apenas pagamentos garantidos podem ter disputas.' });
+        }
+        
+        const disputa = new Disputa({
+            pagamentoId,
+            criadorId,
+            tipo,
+            motivo,
+            evidencias: evidencias || []
+        });
+        
+        await disputa.save();
+        
+        // 📊 Registra histórico
+        await registrarHistoricoTransacao(
+            pagamentoId,
+            'disputa_aberta',
+            criadorId,
+            {},
+            { disputaId: disputa._id, tipo, motivo },
+            req
+        );
+        
+        // 🔔 Notifica ambos os usuários sobre a disputa
+        const outroUsuario = pagamento.clienteId.toString() === criadorId ? 
+                           pagamento.profissionalId : pagamento.clienteId;
+        
+        await criarNotificacao(
+            outroUsuario,
+            'disputa_aberta',
+            '⚖️ Disputa Aberta',
+            `Uma disputa foi aberta para o pagamento de R$ ${pagamento.valor.toFixed(2)}. Nossa equipe analisará o caso.`,
+            { disputaId: disputa._id, pagamentoId },
+            '/disputas'
+        );
+        
+        res.status(201).json({ success: true, message: 'Disputa criada com sucesso!', disputa });
+    } catch (error) {
+        console.error('Erro ao criar disputa:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Listar disputas do usuário
+app.get('/api/disputas', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        
+        // Busca disputas onde o usuário é cliente ou profissional do pagamento
+        const pagamentos = await PagamentoSeguro.find({
+            $or: [{ clienteId: userId }, { profissionalId: userId }]
+        }).select('_id');
+        
+        const pagamentoIds = pagamentos.map(p => p._id);
+        
+        const disputas = await Disputa.find({ pagamentoId: { $in: pagamentoIds } })
+            .populate('pagamentoId')
+            .populate('criadorId', 'nome foto avatarUrl')
+            .populate('resolvidoPor', 'nome')
             .sort({ createdAt: -1 })
             .exec();
         
-        res.json({ success: true, pagamentos });
+        res.json({ success: true, disputas });
     } catch (error) {
-        console.error('Erro ao buscar pagamentos:', error);
+        console.error('Erro ao buscar disputas:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Resolver disputa (apenas admin)
+app.post('/api/disputas/:disputaId/resolver', authMiddleware, async (req, res) => {
+    try {
+        const { disputaId } = req.params;
+        const { resolucao, favoravelA } = req.body; // 'cliente' ou 'profissional'
+        const adminId = req.user.id;
+        
+        // Verificar se usuário é admin
+        const user = await User.findById(adminId);
+        if (!user || !user.isAdmin) {
+            return res.status(403).json({ success: false, message: 'Apenas administradores podem resolver disputas.' });
+        }
+        
+        const disputa = await Disputa.findById(disputaId)
+            .populate('pagamentoId');
+        
+        if (!disputa) {
+            return res.status(404).json({ success: false, message: 'Disputa não encontrada.' });
+        }
+        
+        if (disputa.status !== 'aberta' && disputa.status !== 'em_analise') {
+            return res.status(400).json({ success: false, message: 'Esta disputa já foi resolvida.' });
+        }
+        
+        const pagamento = disputa.pagamentoId;
+        
+        // Resolve a disputa
+        disputa.status = favoravelA === 'cliente' ? 'resolvida_cliente' : 'resolvida_profissional';
+        disputa.resolucao = resolucao;
+        disputa.resolvidoPor = adminId;
+        disputa.dataResolucao = new Date();
+        await disputa.save();
+        
+        // Atualiza pagamento baseado na resolução
+        if (favoravelA === 'cliente') {
+            // Reembolsa o cliente
+            pagamento.status = 'reembolsado';
+            await pagamento.save();
+        } else {
+            // Libera para o profissional
+            pagamento.status = 'liberado';
+            pagamento.dataLiberacao = new Date();
+            await pagamento.save();
+        }
+        
+        // 📊 Registra histórico
+        await registrarHistoricoTransacao(
+            pagamento._id,
+            'disputa_resolvida',
+            adminId,
+            { status: 'pago' },
+            { status: pagamento.status, resolucao },
+            req
+        );
+        
+        // 🔔 Notifica ambos os usuários
+        await criarNotificacao(
+            pagamento.clienteId,
+            'disputa_resolvida',
+            '⚖️ Disputa Resolvida',
+            `A disputa foi resolvida. ${resolucao}`,
+            { disputaId: disputa._id, pagamentoId: pagamento._id },
+            '/disputas'
+        );
+        
+        await criarNotificacao(
+            pagamento.profissionalId,
+            'disputa_resolvida',
+            '⚖️ Disputa Resolvida',
+            `A disputa foi resolvida. ${resolucao}`,
+            { disputaId: disputa._id, pagamentoId: pagamento._id },
+            '/disputas'
+        );
+        
+        res.json({ success: true, message: 'Disputa resolvida com sucesso!', disputa, pagamento });
+    } catch (error) {
+        console.error('Erro ao resolver disputa:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// 📊 NOVO: Rotas de Histórico de Transações
+// Obter histórico de um pagamento
+app.get('/api/pagamento-seguro/:pagamentoId/historico', authMiddleware, async (req, res) => {
+    try {
+        const { pagamentoId } = req.params;
+        const userId = req.user.id;
+        
+        const pagamento = await PagamentoSeguro.findById(pagamentoId);
+        if (!pagamento) {
+            return res.status(404).json({ success: false, message: 'Pagamento não encontrado.' });
+        }
+        
+        // Verifica acesso
+        if (pagamento.clienteId.toString() !== userId && pagamento.profissionalId.toString() !== userId) {
+            return res.status(403).json({ success: false, message: 'Acesso negado.' });
+        }
+        
+        const historico = await HistoricoTransacao.find({ pagamentoId })
+            .populate('realizadoPor', 'nome foto avatarUrl')
+            .sort({ createdAt: -1 })
+            .exec();
+        
+        res.json({ success: true, historico });
+    } catch (error) {
+        console.error('Erro ao buscar histórico:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// 📈 NOVO: Dashboard Administrativo
+app.get('/api/admin/dashboard', authMiddleware, async (req, res) => {
+    try {
+        const adminId = req.user.id;
+        
+        // Verificar se usuário é admin
+        const user = await User.findById(adminId);
+        if (!user || !user.isAdmin) {
+            return res.status(403).json({ success: false, message: 'Acesso negado. Apenas administradores podem acessar o dashboard.' });
+        }
+        
+        const hoje = new Date();
+        const inicioMes = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+        const inicioAno = new Date(hoje.getFullYear(), 0, 1);
+        
+        // Estatísticas de pagamentos
+        const [
+            totalPagamentos,
+            pagamentosMes,
+            pagamentosAno,
+            pagamentosPendentes,
+            pagamentosLiberados,
+            pagamentosReembolsados,
+            totalReceitaMes,
+            totalReceitaAno,
+            disputasAbertas,
+            disputasResolvidasMes
+        ] = await Promise.all([
+            PagamentoSeguro.countDocuments(),
+            PagamentoSeguro.countDocuments({ createdAt: { $gte: inicioMes } }),
+            PagamentoSeguro.countDocuments({ createdAt: { $gte: inicioAno } }),
+            PagamentoSeguro.countDocuments({ status: 'pago' }),
+            PagamentoSeguro.countDocuments({ status: 'liberado' }),
+            PagamentoSeguro.countDocuments({ status: 'reembolsado' }),
+            PagamentoSeguro.aggregate([
+                { $match: { status: 'liberado', dataLiberacao: { $gte: inicioMes } } },
+                { $group: { _id: null, total: { $sum: '$taxaPlataforma' } } }
+            ]),
+            PagamentoSeguro.aggregate([
+                { $match: { status: 'liberado', dataLiberacao: { $gte: inicioAno } } },
+                { $group: { _id: null, total: { $sum: '$taxaPlataforma' } } }
+            ]),
+            Disputa.countDocuments({ status: { $in: ['aberta', 'em_analise'] } }),
+            Disputa.countDocuments({ status: { $in: ['resolvida_cliente', 'resolvida_profissional'] }, dataResolucao: { $gte: inicioMes } })
+        ]);
+        
+        // Pagamentos recentes
+        const pagamentosRecentes = await PagamentoSeguro.find()
+            .populate('clienteId', 'nome foto avatarUrl')
+            .populate('profissionalId', 'nome foto avatarUrl')
+            .sort({ createdAt: -1 })
+            .limit(10)
+            .exec();
+        
+        // Disputas recentes
+        const disputasRecentes = await Disputa.find()
+            .populate('pagamentoId')
+            .populate('criadorId', 'nome foto avatarUrl')
+            .sort({ createdAt: -1 })
+            .limit(10)
+            .exec();
+        
+        res.json({
+            success: true,
+            dashboard: {
+                estatisticas: {
+                    totalPagamentos,
+                    pagamentosMes,
+                    pagamentosAno,
+                    pagamentosPendentes,
+                    pagamentosLiberados,
+                    pagamentosReembolsados,
+                    receitaMes: totalReceitaMes[0]?.total || 0,
+                    receitaAno: totalReceitaAno[0]?.total || 0,
+                    disputasAbertas,
+                    disputasResolvidasMes
+                },
+                pagamentosRecentes,
+                disputasRecentes
+            }
+        });
+    } catch (error) {
+        console.error('Erro ao buscar dashboard:', error);
         res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
     }
 });

@@ -443,7 +443,15 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 .popup-conteudo button:hover { background-color: var(--btn-secondary-hover); } 
 .oculto { display: none !important; }
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-.modal-content { background-color: var(--bg-secondary); padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); max-width: 400px; width: 90%; } 
+.modal-content { background-color: var(--bg-secondary); padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); max-width: 400px; width: 90%; }
+.modal-grande { max-width: 600px; text-align: left; }
+.modal-grande h2 { text-align: center; margin-bottom: 20px; color: var(--text-primary); }
+.modal-grande .form-group { margin-bottom: 15px; }
+.modal-grande .form-group label { display: block; margin-bottom: 5px; color: var(--text-primary); font-weight: bold; }
+.modal-grande .form-group input,
+.modal-grande .form-group select,
+.modal-grande .form-group textarea { width: 100%; padding: 10px; border: 1px solid var(--border-color); border-radius: 5px; font-size: 14px; background: var(--bg-primary); color: var(--text-primary); }
+.modal-grande .form-group textarea { min-height: 80px; resize: vertical; } 
 .modal-content h3 { margin-bottom: 25px; color: var(--text-primary); } 
 .modal-buttons { display: flex; justify-content: center; gap: 15px; }
 .modal-buttons button { padding: 10px 25px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; transition: background-color 0.2s; }
@@ -993,6 +1001,625 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
 .video-preview {
     width: 100%;
+}
+
+/* 🚨 NOVO: Estilos para Pedidos Urgentes e Propostas */
+.lista-propostas {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.proposta-card {
+    background: var(--bg-primary);
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.proposta-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.proposta-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.proposta-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #007bff;
+}
+
+.proposta-info-profissional {
+    flex: 1;
+}
+
+.proposta-info-profissional strong {
+    display: block;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+
+.proposta-meta {
+    display: flex;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.proposta-detalhes {
+    margin: 10px 0;
+}
+
+.proposta-valor {
+    font-size: 24px;
+    font-weight: bold;
+    color: #28a745;
+    margin-bottom: 5px;
+}
+
+.proposta-tempo {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: 10px;
+}
+
+.proposta-observacoes {
+    color: var(--text-primary);
+    font-size: 14px;
+    margin-top: 10px;
+    padding: 10px;
+    background: var(--bg-secondary);
+    border-radius: 5px;
+}
+
+.btn-aceitar-proposta {
+    width: 100%;
+    padding: 12px;
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 10px;
+}
+
+.btn-aceitar-proposta:hover {
+    background: #218838;
+}
+
+/* 🏢 NOVO: Estilos para Times Locais */
+.time-card-lateral {
+    background: var(--bg-primary);
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 8px;
+    border-left: 3px solid #007bff;
+}
+
+.time-card-lateral strong {
+    display: block;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+
+.time-card-lateral small {
+    color: var(--text-secondary);
+    font-size: 11px;
+}
+
+/* 📋 NOVO: Estilos para Projetos de Time */
+.profissional-item-projeto {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+
+.profissional-item-projeto input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-size: 14px;
+}
+
+.profissional-item-projeto .tipo-profissional-projeto {
+    flex: 2;
+}
+
+.profissional-item-projeto .qtd-profissional-projeto {
+    flex: 0.5;
+    max-width: 80px;
+}
+
+.profissional-item-projeto .valor-profissional-projeto {
+    flex: 1;
+}
+
+.btn-remover-profissional-projeto {
+    background: #dc3545;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+
+.btn-remover-profissional-projeto:hover {
+    background: #c82333;
+}
+
+#profissionais-necessarios-container {
+    margin: 20px 0;
+}
+
+#profissionais-necessarios-container label {
+    display: block;
+    margin-bottom: 10px;
+    font-weight: bold;
+    color: var(--text-primary);
+}
+
+/* 🚨 NOVO: Estilos para Pedidos Urgentes (vista profissional) */
+.pedido-urgente-card {
+    background: var(--bg-primary);
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #ffc107;
+    margin-bottom: 15px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pedido-urgente-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.pedido-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.pedido-header strong {
+    color: var(--text-primary);
+    font-size: 18px;
+}
+
+.badge-categoria {
+    background: #007bff;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    margin-left: 8px;
+}
+
+.tempo-restante {
+    color: #dc3545;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.pedido-descricao {
+    color: var(--text-secondary);
+    margin: 10px 0;
+    font-size: 14px;
+}
+
+.pedido-localizacao {
+    color: var(--text-secondary);
+    font-size: 13px;
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.pedido-cliente {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 10px 0;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.btn-enviar-proposta {
+    width: 100%;
+    padding: 10px;
+    background: #ffc107;
+    color: #333;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 10px;
+}
+
+.btn-enviar-proposta:hover {
+    background: #e0a800;
+}
+
+/* ⚡ NOVO: Estilos para Vagas-Relâmpago */
+.vaga-relampago-card {
+    background: var(--bg-primary);
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #ffc107;
+    margin-bottom: 15px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.vaga-relampago-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.vaga-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.vaga-header strong {
+    color: var(--text-primary);
+    font-size: 18px;
+}
+
+.badge-cargo {
+    background: #ffc107;
+    color: #333;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    margin-left: 8px;
+    font-weight: bold;
+}
+
+.badge-status-aberta {
+    background: #28a745;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+}
+
+.badge-status-em_andamento {
+    background: #007bff;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+}
+
+.badge-status-concluida {
+    background: #6c757d;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+}
+
+.vaga-descricao {
+    color: var(--text-secondary);
+    margin: 10px 0;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.vaga-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 15px 0;
+}
+
+.vaga-info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.vaga-empresa {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 15px 0;
+    padding: 10px;
+    background: var(--bg-secondary);
+    border-radius: 5px;
+}
+
+.btn-candidatar-vaga {
+    width: 100%;
+    padding: 12px;
+    background: #ffc107;
+    color: #333;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 10px;
+}
+
+.btn-candidatar-vaga:hover {
+    background: #e0a800;
+}
+
+.btn-candidatar-vaga:disabled {
+    background: #6c757d;
+    cursor: not-allowed;
+}
+
+.candidato-card {
+    background: var(--bg-primary);
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+    margin-bottom: 15px;
+}
+
+.candidato-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+}
+
+.candidato-info {
+    flex: 1;
+}
+
+.candidato-info strong {
+    display: block;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+
+.candidato-meta {
+    display: flex;
+    gap: 10px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+}
+
+.candidato-acoes {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.btn-aceitar-candidato,
+.btn-rejeitar-candidato {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btn-aceitar-candidato {
+    background: #28a745;
+    color: white;
+}
+
+.btn-aceitar-candidato:hover {
+    background: #218838;
+}
+
+.btn-rejeitar-candidato {
+    background: #dc3545;
+    color: white;
+}
+
+.btn-rejeitar-candidato:hover {
+    background: #c82333;
+}
+
+.btn-ver-candidatos {
+    width: 100%;
+    padding: 10px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-top: 10px;
+}
+
+.btn-ver-candidatos:hover {
+    background: #0056b3;
+}
+
+.badge-aceito {
+    background: #28a745;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 10px;
+}
+
+/* 💰 NOVO: Estilos para Pagamento Seguro */
+.pagamento-card {
+    background: var(--bg-primary);
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+    margin-bottom: 15px;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pagamento-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.pagamento-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.pagamento-info {
+    margin: 15px 0;
+}
+
+.btn-liberar-pagamento,
+.btn-reembolsar-pagamento {
+    transition: background 0.2s, transform 0.1s;
+}
+
+.btn-liberar-pagamento:hover {
+    background: #218838 !important;
+    transform: translateY(-1px);
+}
+
+.btn-reembolsar-pagamento:hover {
+    background: #c82333 !important;
+    transform: translateY(-1px);
+}
+
+/* 🔔 NOVO: Estilos para Notificações */
+.notificacao-card {
+    background: var(--bg-primary);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+    border-left: 3px solid transparent;
+}
+
+.notificacao-card.nao-lida {
+    background: var(--bg-secondary);
+    border-left-color: #007bff;
+}
+
+.notificacao-card:hover {
+    background: var(--bg-secondary);
+}
+
+/* ⚖️ NOVO: Estilos para Disputas */
+.disputa-card {
+    background: var(--bg-primary);
+    padding: 20px;
+    border-radius: 8px;
+    border-left: 4px solid #ffc107;
+    margin-bottom: 15px;
+}
+
+.disputa-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.disputa-info {
+    margin: 15px 0;
+}
+
+.disputa-info p {
+    margin: 8px 0;
+}
+
+.btn-abrir-disputa:hover {
+    background: #e0a800 !important;
+    transform: translateY(-1px);
+}
+
+/* 📈 NOVO: Estilos para Dashboard Administrativo */
+.admin-stat-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.admin-stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+}
+
+.admin-tab-btn {
+    background: none;
+    border: none;
+    padding: 12px 20px;
+    cursor: pointer;
+    font-size: 16px;
+    color: var(--text-secondary);
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+}
+
+.admin-tab-btn:hover {
+    color: var(--primary-color);
+}
+
+.admin-tab-btn.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+    font-weight: bold;
+}
+
+.admin-tab-content {
+    display: none;
+}
+
+.admin-tab-content.active {
+    display: block;
+}
+
+.admin-pagamento-card,
+.admin-disputa-card {
+    background: var(--bg-primary);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    border-left: 4px solid var(--primary-color);
+}
+
+.btn-resolver-disputa:hover {
+    background: #218838 !important;
+    transform: translateY(-1px);
 }
 
 /* 🆕 NOVO: Estilos para detalhes de projeto */

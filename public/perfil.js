@@ -259,6 +259,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (secaoServicos) secaoServicos.style.display = 'block';
             if (mostrarServicosBtn) mostrarServicosBtn.style.display = 'inline-block';
             
+            // 🌟 NOVO: Carregar avaliações verificadas
+            loadAvaliacoesVerificadas(profileId);
+            
             // 🆕 ATUALIZADO: Mostrar Agendador apenas para dono do perfil
             const agendadorContainer = document.getElementById('agendador-container');
             if (agendadorContainer && userType === 'trabalhador' && isOwnProfile) {
@@ -390,6 +393,64 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderPostagens(posts) { /* ... (sem alteração) ... */ }
     function renderMediaAvaliacao(media) { /* ... (sem alteração) ... */ }
     
+    // 🌟 NOVO: Carregar Avaliações Verificadas
+    async function loadAvaliacoesVerificadas(profissionalId) {
+        const secaoAvaliacoesVerificadas = document.getElementById('secao-avaliacoes-verificadas');
+        const listaAvaliacoes = document.getElementById('lista-avaliacoes-verificadas');
+        
+        if (!secaoAvaliacoesVerificadas || !listaAvaliacoes) return;
+        
+        try {
+            const response = await fetch(`/api/avaliacoes-verificadas/${profissionalId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            
+            if (!response.ok) throw new Error('Falha ao buscar avaliações verificadas.');
+            
+            const data = await response.json();
+            const avaliacoes = data.avaliacoes || [];
+            
+            if (avaliacoes.length === 0) {
+                secaoAvaliacoesVerificadas.style.display = 'none';
+                return;
+            }
+            
+            secaoAvaliacoesVerificadas.style.display = 'block';
+            listaAvaliacoes.innerHTML = avaliacoes.map(av => `
+                <div class="avaliacao-verificada-item">
+                    <div class="avaliacao-header">
+                        <div class="avaliacao-cliente">
+                            <img src="${av.clienteId?.avatarUrl || av.clienteId?.foto || 'imagens/default-user.png'}" 
+                                 alt="${av.clienteId?.nome || 'Cliente'}" class="avatar-pequeno">
+                            <div>
+                                <strong>${av.clienteId?.nome || 'Cliente'}</strong>
+                                <span class="badge-verificado-item">
+                                    <i class="fas fa-check-circle"></i> Cliente Verificado
+                                </span>
+                            </div>
+                        </div>
+                        <div class="avaliacao-estrelas">
+                            ${'★'.repeat(av.estrelas)}${'☆'.repeat(5 - av.estrelas)}
+                        </div>
+                    </div>
+                    ${av.comentario ? `<p class="avaliacao-comentario">${av.comentario}</p>` : ''}
+                    <div class="avaliacao-meta">
+                        <small>
+                            <i class="fas fa-calendar"></i> 
+                            ${new Date(av.dataServico).toLocaleDateString('pt-BR')} 
+                            <span style="margin-left: 10px;">
+                                <i class="fas fa-briefcase"></i> ${av.agendamentoId?.servico || 'Serviço'}
+                            </span>
+                        </small>
+                    </div>
+                </div>
+            `).join('');
+        } catch (error) {
+            console.error('Erro ao carregar avaliações verificadas:', error);
+            secaoAvaliacoesVerificadas.style.display = 'none';
+        }
+    }
+
     // (Funções de renderização de serviços, postagens, etc.)
     async function fetchServicos(id) { if (!galeriaServicos) return; try { const response = await fetch(`/api/servicos/${id}`, { headers: { 'Authorization': `Bearer ${token}` } }); if (!response.ok) throw new Error('Falha ao buscar serviços.'); const servicos = await response.json(); renderServicos(servicos); } catch (error) { console.error('Erro ao buscar serviços:', error); galeriaServicos.innerHTML = '<p class="mensagem-vazia">Erro ao carregar serviços.</p>'; } }
     // 🆕 ATUALIZADO: Renderiza projetos com validações por pares

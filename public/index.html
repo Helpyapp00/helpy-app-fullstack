@@ -26,6 +26,13 @@
         </div>
         <input type="text" class="search" placeholder="Buscar serviços ou profissionais...">
         <div class="user-info">
+            <!-- 🔔 NOVO: Ícone de Notificações -->
+            <div id="notificacoes-container" style="position: relative; margin-right: 15px;">
+                <button id="btn-notificacoes" style="background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text-primary); position: relative;">
+                    <i class="fas fa-bell"></i>
+                    <span id="badge-notificacoes" style="position: absolute; top: -5px; right: -5px; background: #dc3545; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 11px; display: none; align-items: center; justify-content: center;">0</span>
+                </button>
+            </div>
             <img id="user-avatar-header" src="imagens/default-user.png" alt="Avatar do Usuário" class="user-avatar-header">
             <span id="user-name-header"></span>
             <button id="profile-button">Meu Perfil</button>
@@ -231,7 +238,654 @@
         </div>
     </div>
 
+    <!-- 🚨 NOVO: Modal Pedido Urgente -->
+    <div id="modal-pedido-urgente" class="modal-overlay hidden">
+        <div class="modal-content modal-grande">
+            <h2><i class="fas fa-bolt"></i> Preciso Agora!</h2>
+            <form id="form-pedido-urgente">
+                <div class="form-group">
+                    <label>Qual serviço você precisa?</label>
+                    <input type="text" id="pedido-servico" placeholder="Ex: Montar guarda-roupa" required>
+                </div>
+                <div class="form-group">
+                    <label>Categoria</label>
+                    <select id="pedido-categoria" required>
+                        <option value="">Selecione...</option>
+                        <option value="montagem">Montagem</option>
+                        <option value="pintura">Pintura</option>
+                        <option value="eletricista">Eletricista</option>
+                        <option value="encanador">Encanador</option>
+                        <option value="jardinagem">Jardinagem</option>
+                        <option value="limpeza">Limpeza</option>
+                        <option value="outros">Outros</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Descrição (opcional)</label>
+                    <textarea id="pedido-descricao" placeholder="Descreva melhor o que precisa..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Endereço</label>
+                    <input type="text" id="pedido-endereco" placeholder="Rua, número, bairro" required>
+                </div>
+                <div class="form-group">
+                    <label>Cidade</label>
+                    <input type="text" id="pedido-cidade" required>
+                </div>
+                <div class="form-group">
+                    <label>Estado</label>
+                    <select id="pedido-estado" required>
+                        <option value="">Selecione...</option>
+                        <option value="AC">AC</option>
+                        <option value="AL">AL</option>
+                        <option value="AP">AP</option>
+                        <option value="AM">AM</option>
+                        <option value="BA">BA</option>
+                        <option value="CE">CE</option>
+                        <option value="DF">DF</option>
+                        <option value="ES">ES</option>
+                        <option value="GO">GO</option>
+                        <option value="MA">MA</option>
+                        <option value="MT">MT</option>
+                        <option value="MS">MS</option>
+                        <option value="MG">MG</option>
+                        <option value="PA">PA</option>
+                        <option value="PB">PB</option>
+                        <option value="PR">PR</option>
+                        <option value="PE">PE</option>
+                        <option value="PI">PI</option>
+                        <option value="RJ">RJ</option>
+                        <option value="RN">RN</option>
+                        <option value="RS">RS</option>
+                        <option value="RO">RO</option>
+                        <option value="RR">RR</option>
+                        <option value="SC">SC</option>
+                        <option value="SP">SP</option>
+                        <option value="SE">SE</option>
+                        <option value="TO">TO</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-paper-plane"></i> Enviar Pedido
+                    </button>
+                    <button type="button" class="btn-secondary btn-close-modal" data-modal="modal-pedido-urgente">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 🚨 NOVO: Modal Ver Propostas -->
+    <div id="modal-propostas" class="modal-overlay hidden">
+        <div class="modal-content modal-grande">
+            <h2><i class="fas fa-hand-holding-usd"></i> Propostas Recebidas</h2>
+            <div id="lista-propostas" class="lista-propostas">
+                <p>Carregando propostas...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🏢 NOVO: Modal Criar Time Local -->
+    <div id="modal-criar-time-local" class="modal-overlay hidden">
+        <div class="modal-content modal-grande">
+            <h2><i class="fas fa-users"></i> Criar Time Local</h2>
+            <form id="form-criar-time-local">
+                <div class="form-group">
+                    <label>Nome do Time</label>
+                    <input type="text" id="time-nome" placeholder="Ex: Time de Pintura JF" required>
+                </div>
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <textarea id="time-descricao" placeholder="Descreva seu time..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Categoria</label>
+                    <select id="time-categoria" required>
+                        <option value="">Selecione...</option>
+                        <option value="construcao">Construção</option>
+                        <option value="pintura">Pintura</option>
+                        <option value="jardinagem">Jardinagem</option>
+                        <option value="limpeza">Limpeza</option>
+                        <option value="montagem">Montagem</option>
+                        <option value="outros">Outros</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Criar Time</button>
+                    <button type="button" class="btn-secondary btn-close-modal" data-modal="modal-criar-time-local">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 🚨 NOVO: Modal Ver Pedidos Urgentes (para profissionais) -->
+    <div id="modal-pedidos-urgentes-profissional" class="modal-overlay hidden">
+        <div class="modal-content modal-grande">
+            <h2><i class="fas fa-bolt"></i> Pedidos Urgentes Disponíveis</h2>
+            <div id="lista-pedidos-urgentes" class="lista-propostas">
+                <p>Carregando pedidos...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🚨 NOVO: Modal Enviar Proposta Rápida -->
+    <div id="modal-enviar-proposta" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2><i class="fas fa-hand-holding-usd"></i> Enviar Proposta Rápida</h2>
+            <form id="form-enviar-proposta">
+                <input type="hidden" id="proposta-pedido-id">
+                <div class="form-group">
+                    <label>Valor (R$)</label>
+                    <input type="number" id="proposta-valor" placeholder="0.00" min="0" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Tempo de Chegada</label>
+                    <select id="proposta-tempo-chegada" required>
+                        <option value="">Selecione...</option>
+                        <option value="Agora">Agora</option>
+                        <option value="15 min">15 minutos</option>
+                        <option value="30 min">30 minutos</option>
+                        <option value="1 hora">1 hora</option>
+                        <option value="2 horas">2 horas</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Observações (opcional)</label>
+                    <textarea id="proposta-observacoes" placeholder="Adicione informações sobre sua proposta..."></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Enviar Proposta</button>
+                    <button type="button" class="btn-secondary btn-close-modal" data-modal="modal-enviar-proposta">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ⚡ NOVO: Modal Criar Vaga-Relâmpago (para empresas) -->
+    <div id="modal-vaga-relampago" class="modal-overlay hidden">
+        <div class="modal-content modal-grande">
+            <h2><i class="fas fa-bolt"></i> Criar Vaga-Relâmpago</h2>
+            <form id="form-vaga-relampago">
+                <div class="form-group">
+                    <label>Título da Vaga</label>
+                    <input type="text" id="vaga-titulo" placeholder="Ex: Preciso de 2 Garçons" required>
+                </div>
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <textarea id="vaga-descricao" placeholder="Descreva a vaga e o que será necessário..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Cargo</label>
+                    <input type="text" id="vaga-cargo" placeholder="Ex: Garçom, Carregador, Vendedor" required>
+                </div>
+                <div class="form-group">
+                    <label>Quantidade de Pessoas</label>
+                    <input type="number" id="vaga-quantidade" placeholder="Ex: 2" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Data do Serviço</label>
+                    <input type="date" id="vaga-data" required>
+                </div>
+                <div class="form-group">
+                    <label>Horário</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="time" id="vaga-hora-inicio" placeholder="Início" required>
+                        <input type="time" id="vaga-hora-fim" placeholder="Fim" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Valor por Pessoa (R$)</label>
+                    <input type="number" id="vaga-valor" placeholder="0.00" min="0" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Forma de Pagamento</label>
+                    <select id="vaga-forma-pagamento" required>
+                        <option value="via_helpy">Via Helpy</option>
+                        <option value="direto">Direto (na hora)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Endereço</label>
+                    <input type="text" id="vaga-endereco" placeholder="Rua, número, bairro" required>
+                </div>
+                <div class="form-group">
+                    <label>Cidade</label>
+                    <input type="text" id="vaga-cidade" required>
+                </div>
+                <div class="form-group">
+                    <label>Estado</label>
+                    <select id="vaga-estado" required>
+                        <option value="">Selecione...</option>
+                        <option value="AC">AC</option>
+                        <option value="AL">AL</option>
+                        <option value="AP">AP</option>
+                        <option value="AM">AM</option>
+                        <option value="BA">BA</option>
+                        <option value="CE">CE</option>
+                        <option value="DF">DF</option>
+                        <option value="ES">ES</option>
+                        <option value="GO">GO</option>
+                        <option value="MA">MA</option>
+                        <option value="MT">MT</option>
+                        <option value="MS">MS</option>
+                        <option value="MG">MG</option>
+                        <option value="PA">PA</option>
+                        <option value="PB">PB</option>
+                        <option value="PR">PR</option>
+                        <option value="PE">PE</option>
+                        <option value="PI">PI</option>
+                        <option value="RJ">RJ</option>
+                        <option value="RN">RN</option>
+                        <option value="RS">RS</option>
+                        <option value="RO">RO</option>
+                        <option value="RR">RR</option>
+                        <option value="SC">SC</option>
+                        <option value="SP">SP</option>
+                        <option value="SE">SE</option>
+                        <option value="TO">TO</option>
+                    </select>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-paper-plane"></i> Publicar Vaga
+                    </button>
+                    <button type="button" class="btn-secondary btn-close-modal" data-modal="modal-vaga-relampago">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ⚡ NOVO: Modal Ver Vagas-Relâmpago (para profissionais) -->
+    <div id="modal-vagas-relampago-profissional" class="modal-overlay hidden">
+        <div class="modal-content modal-grande">
+            <h2><i class="fas fa-briefcase"></i> Vagas-Relâmpago Disponíveis</h2>
+            <div id="lista-vagas-relampago" class="lista-propostas">
+                <p>Carregando vagas...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 💰 NOVO: Modal Pagamento Seguro (Garantia Helpy) -->
+    <div id="modal-pagamento-seguro" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2><i class="fas fa-shield-alt"></i> Pagamento Seguro - Garantia Helpy</h2>
+            <div id="info-pagamento-seguro" style="margin-bottom: 20px; padding: 15px; background: var(--bg-primary); border-radius: 8px;">
+                <p><strong id="servico-titulo-pagamento"></strong></p>
+                <p id="servico-descricao-pagamento" style="font-size: 14px; color: var(--text-secondary);"></p>
+            </div>
+            <form id="form-pagamento-seguro">
+                <input type="hidden" id="pagamento-tipo-servico">
+                <input type="hidden" id="pagamento-servico-id">
+                <input type="hidden" id="pagamento-valor">
+                
+                <div class="form-group">
+                    <label>Valor do Serviço</label>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-size: 24px; font-weight: bold; color: var(--primary-color);">R$</span>
+                        <input type="number" id="pagamento-valor-input" step="0.01" min="0" required readonly style="font-size: 20px; font-weight: bold;">
+                    </div>
+                </div>
+                
+                <div class="form-group" style="background: #e8f5e9; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>Taxa da Plataforma (5%):</span>
+                        <span id="pagamento-taxa" style="font-weight: bold;">R$ 0,00</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                        <span>Valor Total:</span>
+                        <span id="pagamento-total" style="font-weight: bold; font-size: 18px; color: var(--primary-color);">R$ 0,00</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid #c8e6c9;">
+                        <span style="font-size: 12px; color: #666;">Profissional receberá:</span>
+                        <span id="pagamento-valor-liquido" style="font-weight: bold; color: #2e7d32;">R$ 0,00</span>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Método de Pagamento</label>
+                    <select id="pagamento-metodo" required>
+                        <option value="cartao_credito">Cartão de Crédito</option>
+                        <option value="cartao_debito">Cartão de Débito</option>
+                        <option value="pix">PIX</option>
+                        <option value="boleto">Boleto</option>
+                    </select>
+                </div>
+                
+                <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #ffc107;">
+                    <p style="margin: 0; font-size: 14px; color: #856404;">
+                        <i class="fas fa-shield-alt"></i> <strong>Garantia Helpy:</strong> Seu pagamento fica seguro até o serviço ser concluído. 
+                        Se o profissional não aparecer, você recebe 100% do valor de volta.
+                    </p>
+                </div>
+                
+                <div style="background: #d1ecf1; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #007bff;">
+                    <p style="margin: 0; font-size: 14px; color: #004085;">
+                        <i class="fas fa-star"></i> <strong>Bônus:</strong> O profissional receberá XP em dobro por usar a Garantia Helpy!
+                    </p>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-lock"></i> Pagar com Garantia Helpy
+                    </button>
+                    <button type="button" class="btn-secondary btn-close-modal" data-modal="modal-pagamento-seguro">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 💰 NOVO: Modal Liberar Pagamento -->
+    <div id="modal-liberar-pagamento" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2><i class="fas fa-check-circle"></i> Liberar Pagamento</h2>
+            <div id="info-liberar-pagamento" style="margin-bottom: 20px;">
+                <p>Confirme que o serviço foi concluído com sucesso para liberar o pagamento ao profissional.</p>
+                <div style="background: var(--bg-primary); padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span>Valor do Serviço:</span>
+                        <strong id="liberar-valor-servico">R$ 0,00</strong>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span>Taxa da Plataforma:</span>
+                        <span id="liberar-taxa">R$ 0,00</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding-top: 10px; border-top: 2px solid var(--border-color);">
+                        <span><strong>Profissional receberá:</strong></span>
+                        <strong id="liberar-valor-liquido" style="color: var(--primary-color); font-size: 18px;">R$ 0,00</strong>
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button id="btn-confirmar-liberar" class="btn-primary">
+                    <i class="fas fa-check"></i> Sim, Liberar Pagamento
+                </button>
+                <button type="button" class="btn-secondary btn-close-modal" data-modal="modal-liberar-pagamento">
+                    Cancelar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 💰 NOVO: Modal Meus Pagamentos (Cliente) -->
+    <div id="modal-meus-pagamentos" class="modal-overlay hidden">
+        <div class="modal-content modal-grande">
+            <h2><i class="fas fa-wallet"></i> Meus Pagamentos Seguros</h2>
+            <div id="lista-pagamentos-cliente" class="lista-propostas">
+                <p>Carregando pagamentos...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 🔔 NOVO: Modal Notificações -->
+    <div id="modal-notificacoes" class="modal-overlay hidden">
+        <div class="modal-content modal-grande">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2><i class="fas fa-bell"></i> Notificações</h2>
+                <button id="btn-marcar-todas-lidas" class="btn-secondary" style="padding: 8px 15px;">
+                    <i class="fas fa-check-double"></i> Marcar todas como lidas
+                </button>
+            </div>
+            <div id="lista-notificacoes" class="lista-propostas" style="max-height: 500px; overflow-y: auto;">
+                <p>Carregando notificações...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ⚖️ NOVO: Modal Criar Disputa -->
+    <div id="modal-criar-disputa" class="modal-overlay hidden">
+        <div class="modal-content">
+            <h2><i class="fas fa-gavel"></i> Abrir Disputa</h2>
+            <form id="form-criar-disputa">
+                <input type="hidden" id="disputa-pagamento-id">
+                <div class="form-group">
+                    <label>Tipo de Disputa</label>
+                    <select id="disputa-tipo" required>
+                        <option value="">Selecione...</option>
+                        <option value="cliente_nao_liberou">Cliente não liberou o pagamento</option>
+                        <option value="profissional_nao_executou">Profissional não executou o serviço</option>
+                        <option value="servico_nao_conforme">Serviço não conforme com o combinado</option>
+                        <option value="outro">Outro motivo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Motivo</label>
+                    <textarea id="disputa-motivo" placeholder="Descreva detalhadamente o motivo da disputa..." required rows="5"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Evidências (URLs de imagens/comprovantes)</label>
+                    <input type="text" id="disputa-evidencia-1" placeholder="URL da evidência 1 (opcional)">
+                    <input type="text" id="disputa-evidencia-2" placeholder="URL da evidência 2 (opcional)" style="margin-top: 10px;">
+                    <input type="text" id="disputa-evidencia-3" placeholder="URL da evidência 3 (opcional)" style="margin-top: 10px;">
+                </div>
+                <div style="background: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 4px solid #ffc107;">
+                    <p style="margin: 0; font-size: 14px; color: #856404;">
+                        <i class="fas fa-info-circle"></i> <strong>Atenção:</strong> Nossa equipe analisará sua disputa e entrará em contato em até 48 horas.
+                    </p>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-paper-plane"></i> Enviar Disputa
+                    </button>
+                    <button type="button" class="btn-secondary btn-close-modal" data-modal="modal-criar-disputa">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ⚖️ NOVO: Modal Minhas Disputas -->
+    <div id="modal-minhas-disputas" class="modal-overlay hidden">
+        <div class="modal-content modal-grande">
+            <h2><i class="fas fa-gavel"></i> Minhas Disputas</h2>
+            <div id="lista-disputas" class="lista-propostas">
+                <p>Carregando disputas...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📈 NOVO: Dashboard Administrativo -->
+    <div id="modal-dashboard-admin" class="modal-overlay hidden">
+        <div class="modal-content modal-grande">
+            <h2><i class="fas fa-chart-line"></i> Dashboard Administrativo</h2>
+            
+            <!-- Estatísticas Gerais -->
+            <div id="admin-estatisticas" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 30px;">
+                <!-- Cards serão preenchidos dinamicamente -->
+            </div>
+
+            <!-- Abas -->
+            <div style="border-bottom: 2px solid var(--border-color); margin-bottom: 20px;">
+                <button class="admin-tab-btn active" data-tab="pagamentos">Pagamentos</button>
+                <button class="admin-tab-btn" data-tab="disputas">Disputas</button>
+                <button class="admin-tab-btn" data-tab="financeiro">Financeiro</button>
+            </div>
+
+            <!-- Conteúdo das Abas -->
+            <div id="admin-tab-pagamentos" class="admin-tab-content active">
+                <h3>Pagamentos Recentes</h3>
+                <div id="admin-lista-pagamentos" class="lista-propostas">
+                    <p>Carregando...</p>
+                </div>
+            </div>
+
+            <div id="admin-tab-disputas" class="admin-tab-content">
+                <h3>Disputas Abertas</h3>
+                <div id="admin-lista-disputas" class="lista-propostas">
+                    <p>Carregando...</p>
+                </div>
+            </div>
+
+            <div id="admin-tab-financeiro" class="admin-tab-content">
+                <h3>Resumo Financeiro</h3>
+                <div id="admin-resumo-financeiro" style="background: var(--bg-primary); padding: 20px; border-radius: 8px;">
+                    <p>Carregando...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 💰 NOVO: Modal Pagamentos Garantidos (Profissional) -->
+    <div id="modal-pagamentos-garantidos" class="modal-overlay hidden">
+        <div class="modal-content modal-grande">
+            <h2><i class="fas fa-shield-alt"></i> Pagamentos Garantidos</h2>
+            <div id="resumo-pagamentos-profissional" style="background: var(--bg-primary); padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div>
+                        <p style="margin: 0; color: var(--text-secondary); font-size: 14px;">Total Recebido</p>
+                        <p id="total-recebido" style="margin: 5px 0 0 0; font-size: 24px; font-weight: bold; color: #28a745;">R$ 0,00</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0; color: var(--text-secondary); font-size: 14px;">A Receber</p>
+                        <p id="total-a-receber" style="margin: 5px 0 0 0; font-size: 24px; font-weight: bold; color: #ffc107;">R$ 0,00</p>
+                    </div>
+                    <div>
+                        <p style="margin: 0; color: var(--text-secondary); font-size: 14px;">Total de Serviços</p>
+                        <p id="total-servicos" style="margin: 5px 0 0 0; font-size: 24px; font-weight: bold; color: var(--primary-color);">0</p>
+                    </div>
+                </div>
+            </div>
+            <div id="lista-pagamentos-profissional" class="lista-propostas">
+                <p>Carregando pagamentos...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ⚡ NOVO: Modal Ver Candidatos (para empresas) -->
+    <div id="modal-candidatos-vaga" class="modal-overlay hidden">
+        <div class="modal-content modal-grande">
+            <h2><i class="fas fa-users"></i> Candidatos da Vaga</h2>
+            <div id="info-vaga-candidatos" style="margin-bottom: 20px; padding: 15px; background: var(--bg-primary); border-radius: 8px;">
+                <p><strong id="vaga-titulo-candidatos"></strong></p>
+                <p id="vaga-info-candidatos" style="font-size: 14px; color: var(--text-secondary);"></p>
+            </div>
+            <div id="lista-candidatos-vaga" class="lista-propostas">
+                <p>Carregando candidatos...</p>
+            </div>
+            <div id="profissionais-aceitos-vaga" style="margin-top: 20px;">
+                <h3 style="font-size: 16px; margin-bottom: 10px;">Profissionais Aceitos</h3>
+                <div id="lista-aceitos-vaga" class="lista-propostas"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 📋 NOVO: Modal Criar Projeto de Time -->
+    <div id="modal-projeto-time" class="modal-overlay hidden">
+        <div class="modal-content modal-grande">
+            <h2><i class="fas fa-project-diagram"></i> Criar Projeto de Time / Mutirão</h2>
+            <form id="form-projeto-time">
+                <div class="form-group">
+                    <label>Título do Projeto</label>
+                    <input type="text" id="projeto-titulo" placeholder="Ex: Pintura de Prédio" required>
+                </div>
+                <div class="form-group">
+                    <label>Descrição</label>
+                    <textarea id="projeto-descricao" placeholder="Descreva o projeto..." required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Categoria</label>
+                    <select id="projeto-categoria" required>
+                        <option value="">Selecione...</option>
+                        <option value="construcao">Construção</option>
+                        <option value="pintura">Pintura</option>
+                        <option value="jardinagem">Jardinagem</option>
+                        <option value="limpeza">Limpeza</option>
+                        <option value="montagem">Montagem</option>
+                        <option value="outros">Outros</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Data do Serviço</label>
+                    <input type="date" id="projeto-data" required>
+                </div>
+                <div class="form-group">
+                    <label>Horário</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="time" id="projeto-hora-inicio" placeholder="Início" required>
+                        <input type="time" id="projeto-hora-fim" placeholder="Fim" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Endereço</label>
+                    <input type="text" id="projeto-endereco" placeholder="Rua, número, bairro" required>
+                </div>
+                <div class="form-group">
+                    <label>Cidade</label>
+                    <input type="text" id="projeto-cidade" required>
+                </div>
+                <div class="form-group">
+                    <label>Estado</label>
+                    <select id="projeto-estado" required>
+                        <option value="">Selecione...</option>
+                        <option value="AC">AC</option>
+                        <option value="AL">AL</option>
+                        <option value="AP">AP</option>
+                        <option value="AM">AM</option>
+                        <option value="BA">BA</option>
+                        <option value="CE">CE</option>
+                        <option value="DF">DF</option>
+                        <option value="ES">ES</option>
+                        <option value="GO">GO</option>
+                        <option value="MA">MA</option>
+                        <option value="MT">MT</option>
+                        <option value="MS">MS</option>
+                        <option value="MG">MG</option>
+                        <option value="PA">PA</option>
+                        <option value="PB">PB</option>
+                        <option value="PR">PR</option>
+                        <option value="PE">PE</option>
+                        <option value="PI">PI</option>
+                        <option value="RJ">RJ</option>
+                        <option value="RN">RN</option>
+                        <option value="RS">RS</option>
+                        <option value="RO">RO</option>
+                        <option value="RR">RR</option>
+                        <option value="SC">SC</option>
+                        <option value="SP">SP</option>
+                        <option value="SE">SE</option>
+                        <option value="TO">TO</option>
+                    </select>
+                </div>
+                <div id="profissionais-necessarios-container">
+                    <label>Profissionais Necessários</label>
+                    <div id="profissionais-lista-projeto">
+                        <div class="profissional-item-projeto">
+                            <input type="text" placeholder="Tipo (ex: pintor)" class="tipo-profissional-projeto" required>
+                            <input type="number" placeholder="Qtd" class="qtd-profissional-projeto" min="1" value="1" required>
+                            <input type="number" placeholder="R$ por pessoa" class="valor-profissional-projeto" min="0" step="0.01" required>
+                            <button type="button" class="btn-remover-profissional-projeto">&times;</button>
+                        </div>
+                    </div>
+                    <button type="button" id="btn-adicionar-profissional-projeto" class="btn-secondary">
+                        <i class="fas fa-plus"></i> Adicionar Profissional
+                    </button>
+                </div>
+                <div class="form-group">
+                    <label>Valor Total</label>
+                    <input type="number" id="projeto-valor-total" placeholder="0.00" min="0" step="0.01" required>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Criar Projeto</button>
+                    <button type="button" class="btn-secondary btn-close-modal" data-modal="modal-projeto-time">
+                        Cancelar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="/script.js"></script>
+    <script src="/novas-funcionalidades.js"></script>
 </body>
 </html>
 
