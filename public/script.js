@@ -925,6 +925,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Botão cancelar para o modal 'Preciso agora' — limpa o campo e fecha o modal
+    const btnCancelarPreciso = document.getElementById('btn-cancelar-preciso');
+    if (btnCancelarPreciso) {
+        btnCancelarPreciso.addEventListener('click', () => {
+            if (filtroTipoServico) filtroTipoServico.value = '';
+            if (modalPrecisoAgora) modalPrecisoAgora.classList.add('hidden');
+        });
+    }
+
     // ----------------------------------------------------------------------
     // 🆕 NOVO: FUNCIONALIDADES TIMES LOCAIS
     // ----------------------------------------------------------------------

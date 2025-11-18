@@ -268,7 +268,8 @@ const notificacaoSchema = new mongoose.Schema({
             'servico_concluido',
             'disputa_aberta',
             'disputa_resolvida',
-            'avaliacao_recebida'
+            'avaliacao_recebida',
+            'pedido_urgente'
         ], 
         required: true 
     },
@@ -459,7 +460,8 @@ const pedidoUrgenteSchema = new mongoose.Schema({
         default: 'aberto' 
     },
     dataExpiracao: { type: Date }, // Pedidos urgentes expiram rápido
-    notificacoesEnviadas: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }] // Profissionais notificados
+    notificacoesEnviadas: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Profissionais notificados
+    notificacoesCriadas: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Notificacao' }] // IDs das notificações geradas
 }, { timestamps: true });
 
 const AvaliacaoVerificada = mongoose.model('AvaliacaoVerificada', avaliacaoVerificadaSchema);
@@ -2804,18 +2806,39 @@ app.post('/api/pedidos-urgentes', authMiddleware, async (req, res) => {
 
         await novoPedido.save();
 
-        // Busca profissionais online na região e categoria
-        const profissionais = await User.find({
+        // Busca profissionais online na região e categoria (case-insensitive, parcial)
+        const queryProfissionais = {
             tipo: 'trabalhador',
-            atuacao: categoria,
             'localizacao.latitude': { $exists: true },
             'localizacao.longitude': { $exists: true },
             disponivelAgora: true // Campo que indica se está online/disponível
-        }).select('nome foto avatarUrl atuacao cidade estado gamificacao localizacao disponivelAgora').exec();
+        };
 
-        // TODO: Implementar notificações push aqui
-        // Por enquanto, apenas salva os IDs dos profissionais notificados
+        if (categoria) {
+            // Usa regex case-insensitive para evitar falhas por capitalização/acentuação
+            queryProfissionais.atuacao = { $regex: categoria, $options: 'i' };
+        }
+
+        const profissionais = await User.find(queryProfissionais)
+            .select('nome foto avatarUrl atuacao cidade estado gamificacao localizacao disponivelAgora telefone')
+            .exec();
+
+        // Cria notificações no banco para cada profissional encontrado
+        const notificacoesCriadas = [];
+        for (const prof of profissionais) {
+            try {
+                const titulo = 'Pedido urgente próximo a você';
+                const mensagem = `Um cliente solicitou: ${servico} em ${localizacao.cidade} - ${localizacao.estado}. Verifique agora.`;
+                const notif = await criarNotificacao(prof._id, 'pedido_urgente', titulo, mensagem, { pedidoId: novoPedido._id, servico, cidade: localizacao.cidade, estado: localizacao.estado });
+                if (notif) notificacoesCriadas.push(notif._id);
+            } catch (err) {
+                console.error('Erro ao criar notificação para profissional', prof._id, err);
+            }
+        }
+
+        // Salva os IDs dos profissionais e das notificações geradas (se precisar rastrear)
         novoPedido.notificacoesEnviadas = profissionais.map(p => p._id);
+        if (notificacoesCriadas.length > 0) novoPedido.notificacoesCriadas = notificacoesCriadas;
         await novoPedido.save();
 
         res.status(201).json({ 
@@ -4821,11 +4844,21 @@ app.use((err, req, res, next) => {
 // Exporta o app
 module.exports = app;
 
-// Execução local
+// Execução do servidor
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
-  app.listen(PORT, () => {
-    console.log(`🚀 Servidor rodando localmente em http://localhost:${PORT}`);
-    // Não inicializa aqui, o middleware cuida disso
+  const HOST = process.env.HOST || '0.0.0.0';
+  
+  // Inicializa serviços antes de iniciar o servidor
+  initializeServices().then(() => {
+    app.listen(PORT, HOST, () => {
+      console.log(`🚀 Servidor rodando na porta ${PORT}`);
+      if (process.env.DOMINIO) {
+        console.log(`🌐 Domínio: ${process.env.DOMINIO}`);
+      }
+    });
+  }).catch((error) => {
+    console.error('❌ Erro ao inicializar serviços:', error);
+    process.exit(1);
   });
 }
