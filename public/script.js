@@ -807,8 +807,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ----------------------------------------------------------------------
-    // 🆕 NOVO: FUNCIONALIDADES "PRECISO AGORA!"
+    // 🆕 NOVO: FUNCIONALIDADES "PRECISO AGORA!" - Profissionais Próximos
     // ----------------------------------------------------------------------
+    // Disponível para todos os usuários (clientes e profissionais podem precisar de outros profissionais)
     const btnPrecisoAgora = document.getElementById('btn-preciso-agora');
     const modalPrecisoAgora = document.getElementById('modal-preciso-agora');
     const profissionaisProximos = document.getElementById('profissionais-proximos');
@@ -925,14 +926,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Botão cancelar para o modal 'Preciso agora' — limpa o campo e fecha o modal
-    const btnCancelarPreciso = document.getElementById('btn-cancelar-preciso');
-    if (btnCancelarPreciso) {
-        btnCancelarPreciso.addEventListener('click', () => {
-            if (filtroTipoServico) filtroTipoServico.value = '';
-            if (modalPrecisoAgora) modalPrecisoAgora.classList.add('hidden');
-        });
-    }
 
     // ----------------------------------------------------------------------
     // 🆕 NOVO: FUNCIONALIDADES TIMES LOCAIS

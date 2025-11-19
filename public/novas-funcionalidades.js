@@ -8,16 +8,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // PEDIDOS URGENTES ("Preciso Agora!")
     // ============================================
     
-    const btnPrecisoAgora = document.getElementById('btn-preciso-agora');
     const modalPedidoUrgente = document.getElementById('modal-pedido-urgente');
     const formPedidoUrgente = document.getElementById('form-pedido-urgente');
+    const btnProcurarClientes = document.getElementById('btn-procurar-clientes');
+    const modalPrecisoAgora = document.getElementById('modal-preciso-agora');
 
-    if (btnPrecisoAgora && userType === 'cliente') {
-        btnPrecisoAgora.addEventListener('click', () => {
-            modalPedidoUrgente?.classList.remove('hidden');
+    // Botão "Procurar Clientes" dentro do modal de profissionais próximos
+    // Disponível para todos os usuários (profissionais também podem precisar de outros profissionais)
+    if (btnProcurarClientes) {
+        btnProcurarClientes.addEventListener('click', () => {
+            // Fecha o modal de profissionais próximos
+            if (modalPrecisoAgora) {
+                modalPrecisoAgora.classList.add('hidden');
+            }
+            // Abre o modal de pedido urgente
+            if (modalPedidoUrgente) {
+                modalPedidoUrgente.classList.remove('hidden');
+            }
         });
-    } else if (btnPrecisoAgora) {
-        btnPrecisoAgora.style.display = 'none';
     }
 
     if (formPedidoUrgente) {

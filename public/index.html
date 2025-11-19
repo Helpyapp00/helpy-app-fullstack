@@ -164,27 +164,40 @@
         </div>
     </div>
 
-    <!-- 🆕 NOVO: Modal "Preciso agora!" -->
+    <!-- 🆕 NOVO: Modal "Preciso agora!" - Profissionais Próximos -->
     <div id="modal-preciso-agora" class="modal-overlay hidden">
         <div class="modal-content modal-large">
             <div class="modal-header">
-                <h3><i class="fas fa-bolt"></i> Profissionais Próximos</h3>
+                <h3><i class="fas fa-briefcase"></i> Profissionais Próximos</h3>
                 <button class="btn-close-modal" data-modal="modal-preciso-agora">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="filtro-servico">
-                    <input type="text" id="filtro-tipo-servico" placeholder="Tipo de serviço (ex: encanador, eletricista)">
-                    <div style="display: flex; gap: 8px; align-items: center;">
+                <div style="margin-bottom: 20px; padding: 15px; background: var(--bg-secondary); border-radius: 8px; border-left: 4px solid var(--primary-color);">
+                    <p style="margin: 0 0 10px 0; font-weight: 600; color: var(--text-primary);">
+                        <i class="fas fa-info-circle"></i> Precisa de um serviço urgente?
+                    </p>
+                    <button id="btn-procurar-clientes" class="btn-primary" style="width: 100%;">
+                        <i class="fas fa-bolt"></i> Criar Pedido Urgente
+                    </button>
+                </div>
+                
+                <div class="filtro-servico" style="margin-bottom: 15px;">
+                    <label style="display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary);">
+                        <i class="fas fa-search"></i> Buscar Profissionais
+                    </label>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="text" id="filtro-tipo-servico" placeholder="Tipo de serviço (ex: encanador, eletricista)" style="flex: 1;">
                         <button id="btn-buscar-proximos" class="btn-primary">Buscar</button>
-                        <button id="btn-cancelar-preciso" type="button" class="btn-secondary">Cancelar</button>
                     </div>
                 </div>
-                <div class="filtro-selo-qualidade">
-                    <label>
+                
+                <div class="filtro-selo-qualidade" style="margin-bottom: 15px;">
+                    <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
                         <input type="checkbox" id="filtro-selo-qualidade"> 
-                        Apenas com Selo de Qualidade Helpy 🛡️
+                        <span>Apenas com Selo de Qualidade Helpy 🛡️</span>
                     </label>
                 </div>
+                
                 <div id="profissionais-proximos" class="profissionais-lista">
                     <!-- Profissionais serão carregados aqui -->
                 </div>
@@ -244,79 +257,104 @@
     <!-- 🚨 NOVO: Modal Pedido Urgente -->
     <div id="modal-pedido-urgente" class="modal-overlay hidden">
         <div class="modal-content modal-grande">
-            <h2><i class="fas fa-bolt"></i> Preciso Agora!</h2>
-            <form id="form-pedido-urgente">
-                <div class="form-group">
-                    <label>Qual serviço você precisa?</label>
-                    <input type="text" id="pedido-servico" placeholder="Ex: Montar guarda-roupa" required>
+            <div class="modal-header">
+                <h3><i class="fas fa-bolt"></i> Preciso Agora!</h3>
+                <button class="btn-close-modal" data-modal="modal-pedido-urgente">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 20px; padding: 15px; background: var(--bg-secondary); border-radius: 8px; border-left: 4px solid #ffc107;">
+                    <p style="margin: 0; color: var(--text-primary);">
+                        <i class="fas fa-info-circle"></i> 
+                        <strong>Profissionais online serão notificados</strong> e você receberá propostas em minutos!
+                    </p>
                 </div>
-                <div class="form-group">
-                    <label>Categoria</label>
-                    <select id="pedido-categoria" required>
-                        <option value="">Selecione...</option>
-                        <option value="montagem">Montagem</option>
-                        <option value="pintura">Pintura</option>
-                        <option value="eletricista">Eletricista</option>
-                        <option value="encanador">Encanador</option>
-                        <option value="jardinagem">Jardinagem</option>
-                        <option value="limpeza">Limpeza</option>
-                        <option value="outros">Outros</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Descrição (opcional)</label>
-                    <textarea id="pedido-descricao" placeholder="Descreva melhor o que precisa..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Endereço</label>
-                    <input type="text" id="pedido-endereco" placeholder="Rua, número, bairro" required>
-                </div>
-                <div class="form-group">
-                    <label>Cidade</label>
-                    <input type="text" id="pedido-cidade" required>
-                </div>
-                <div class="form-group">
-                    <label>Estado</label>
-                    <select id="pedido-estado" required>
-                        <option value="">Selecione...</option>
-                        <option value="AC">AC</option>
-                        <option value="AL">AL</option>
-                        <option value="AP">AP</option>
-                        <option value="AM">AM</option>
-                        <option value="BA">BA</option>
-                        <option value="CE">CE</option>
-                        <option value="DF">DF</option>
-                        <option value="ES">ES</option>
-                        <option value="GO">GO</option>
-                        <option value="MA">MA</option>
-                        <option value="MT">MT</option>
-                        <option value="MS">MS</option>
-                        <option value="MG">MG</option>
-                        <option value="PA">PA</option>
-                        <option value="PB">PB</option>
-                        <option value="PR">PR</option>
-                        <option value="PE">PE</option>
-                        <option value="PI">PI</option>
-                        <option value="RJ">RJ</option>
-                        <option value="RN">RN</option>
-                        <option value="RS">RS</option>
-                        <option value="RO">RO</option>
-                        <option value="RR">RR</option>
-                        <option value="SC">SC</option>
-                        <option value="SP">SP</option>
-                        <option value="SE">SE</option>
-                        <option value="TO">TO</option>
-                    </select>
-                </div>
-                <div class="form-actions">
-                    <button type="submit" class="btn-primary">
-                        <i class="fas fa-paper-plane"></i> Enviar Pedido
-                    </button>
-                    <button type="button" class="btn-secondary btn-close-modal" data-modal="modal-pedido-urgente">
-                        Cancelar
-                    </button>
-                </div>
-            </form>
+                
+                <form id="form-pedido-urgente">
+                    <div class="form-group">
+                        <label><i class="fas fa-tools"></i> Qual serviço você precisa?</label>
+                        <input type="text" id="pedido-servico" placeholder="Ex: Montar guarda-roupa" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-tags"></i> Categoria</label>
+                        <select id="pedido-categoria" required>
+                            <option value="">Selecione...</option>
+                            <option value="montagem">Montagem</option>
+                            <option value="pintura">Pintura</option>
+                            <option value="eletricista">Eletricista</option>
+                            <option value="encanador">Encanador</option>
+                            <option value="jardinagem">Jardinagem</option>
+                            <option value="limpeza">Limpeza</option>
+                            <option value="outros">Outros</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label><i class="fas fa-align-left"></i> Descrição (opcional)</label>
+                        <textarea id="pedido-descricao" placeholder="Descreva melhor o que precisa..." rows="3"></textarea>
+                    </div>
+                    
+                    <div style="border-top: 2px solid var(--border-color); padding-top: 20px; margin-top: 20px;">
+                        <h4 style="margin-bottom: 15px; color: var(--text-primary);">
+                            <i class="fas fa-map-marker-alt"></i> Localização
+                        </h4>
+                        
+                        <div class="form-group">
+                            <label>Endereço</label>
+                            <input type="text" id="pedido-endereco" placeholder="Rua, número, bairro" required>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px;">
+                            <div class="form-group">
+                                <label>Cidade</label>
+                                <input type="text" id="pedido-cidade" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Estado</label>
+                                <select id="pedido-estado" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="AC">AC</option>
+                                    <option value="AL">AL</option>
+                                    <option value="AP">AP</option>
+                                    <option value="AM">AM</option>
+                                    <option value="BA">BA</option>
+                                    <option value="CE">CE</option>
+                                    <option value="DF">DF</option>
+                                    <option value="ES">ES</option>
+                                    <option value="GO">GO</option>
+                                    <option value="MA">MA</option>
+                                    <option value="MT">MT</option>
+                                    <option value="MS">MS</option>
+                                    <option value="MG">MG</option>
+                                    <option value="PA">PA</option>
+                                    <option value="PB">PB</option>
+                                    <option value="PR">PR</option>
+                                    <option value="PE">PE</option>
+                                    <option value="PI">PI</option>
+                                    <option value="RJ">RJ</option>
+                                    <option value="RN">RN</option>
+                                    <option value="RS">RS</option>
+                                    <option value="RO">RO</option>
+                                    <option value="RR">RR</option>
+                                    <option value="SC">SC</option>
+                                    <option value="SP">SP</option>
+                                    <option value="SE">SE</option>
+                                    <option value="TO">TO</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions" style="margin-top: 25px; display: flex; gap: 10px; justify-content: flex-end;">
+                        <button type="button" class="btn-secondary btn-close-modal" data-modal="modal-pedido-urgente">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-paper-plane"></i> Enviar Pedido
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
