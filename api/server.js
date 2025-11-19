@@ -2921,6 +2921,31 @@ app.post('/api/pedidos-urgentes/:pedidoId/proposta', authMiddleware, async (req,
         });
 
         await pedido.save();
+
+        // Cria notificação para o cliente sobre a nova proposta
+        try {
+            const cliente = await User.findById(pedido.clienteId);
+            if (cliente) {
+                const titulo = 'Nova proposta recebida!';
+                const mensagem = `${profissional.nome} enviou uma proposta de R$ ${valor.toFixed(2)} para seu pedido: ${pedido.servico}`;
+                await criarNotificacao(
+                    pedido.clienteId,
+                    'proposta_pedido_urgente',
+                    titulo,
+                    mensagem,
+                    { 
+                        pedidoId: pedido._id,
+                        propostaId: pedido.propostas[pedido.propostas.length - 1]._id,
+                        profissionalId: profissionalId,
+                        servico: pedido.servico
+                    },
+                    `#modal-propostas`
+                );
+            }
+        } catch (notifError) {
+            console.error('Erro ao criar notificação de proposta:', notifError);
+            // Não falha a operação principal se a notificação falhar
+        }
         
         res.json({ success: true, message: 'Proposta enviada com sucesso!' });
     } catch (error) {

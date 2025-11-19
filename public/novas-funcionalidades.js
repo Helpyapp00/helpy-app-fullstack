@@ -1423,6 +1423,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Carregar notificações periodicamente
     async function carregarNotificacoes() {
+        if (!badgeNotificacoes && !listaNotificacoes) return;
+        
         try {
             const response = await fetch('/api/notificacoes?limit=50', {
                 headers: {
@@ -1430,21 +1432,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
 
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
             const data = await response.json();
             
             if (data.success) {
                 // Atualiza badge
-                if (data.totalNaoLidas > 0) {
-                    badgeNotificacoes.textContent = data.totalNaoLidas > 99 ? '99+' : data.totalNaoLidas;
-                    badgeNotificacoes.style.display = 'flex';
-                } else {
-                    badgeNotificacoes.style.display = 'none';
+                if (badgeNotificacoes) {
+                    if (data.totalNaoLidas > 0) {
+                        badgeNotificacoes.textContent = data.totalNaoLidas > 99 ? '99+' : data.totalNaoLidas;
+                        badgeNotificacoes.style.display = 'flex';
+                    } else {
+                        badgeNotificacoes.style.display = 'none';
+                    }
                 }
 
                 // Se modal está aberto, atualiza lista
-                if (!modalNotificacoes?.classList.contains('hidden') && listaNotificacoes) {
-                    if (data.notificacoes.length === 0) {
-                        listaNotificacoes.innerHTML = '<p>Nenhuma notificação.</p>';
+                if (listaNotificacoes && modalNotificacoes && !modalNotificacoes.classList.contains('hidden')) {
+                    if (!data.notificacoes || data.notificacoes.length === 0) {
+                        listaNotificacoes.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhuma notificação.</p>';
                     } else {
                         listaNotificacoes.innerHTML = data.notificacoes.map(notif => {
                             const dataFormatada = new Date(notif.createdAt).toLocaleString('pt-BR');
@@ -1455,6 +1463,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 'disputa_aberta': '⚖️',
                                 'disputa_resolvida': '⚖️',
                                 'proposta_aceita': '🎉',
+                                'proposta_pedido_urgente': '💼',
+                                'pedido_urgente': '⚡',
                                 'servico_concluido': '✨',
                                 'avaliacao_recebida': '⭐'
                             };
@@ -1464,28 +1474,48 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <div style="display: flex; gap: 15px; align-items: flex-start;">
                                         <div style="font-size: 24px;">${iconMap[notif.tipo] || '🔔'}</div>
                                         <div style="flex: 1;">
-                                            <strong>${notif.titulo}</strong>
-                                            <p style="margin: 5px 0; color: var(--text-secondary);">${notif.mensagem}</p>
+                                            <strong>${notif.titulo || 'Notificação'}</strong>
+                                            <p style="margin: 5px 0; color: var(--text-secondary);">${notif.mensagem || ''}</p>
                                             <small style="color: var(--text-secondary);">${dataFormatada}</small>
                                         </div>
-                                        ${!notif.lida ? '<span style="background: #007bff; width: 8px; height: 8px; border-radius: 50%; display: inline-block;"></span>' : ''}
+                                        ${!notif.lida ? '<span style="background: #007bff; width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-top: 5px;"></span>' : ''}
                                     </div>
                                 </div>
                             `;
                         }).join('');
 
-                        // Adiciona listeners para marcar como lida ao clicar
+                        // Adiciona listeners para marcar como lida ao clicar e abrir ações relacionadas
                         document.querySelectorAll('.notificacao-card').forEach(card => {
                             card.addEventListener('click', async () => {
                                 const notifId = card.dataset.notifId;
-                                await marcarNotificacaoLida(notifId);
+                                if (notifId) {
+                                    await marcarNotificacaoLida(notifId);
+                                    
+                                    // Se for notificação de proposta de pedido urgente, abre o modal de propostas
+                                    const notif = data.notificacoes.find(n => n._id === notifId);
+                                    if (notif && notif.tipo === 'proposta_pedido_urgente' && notif.dadosAdicionais?.pedidoId) {
+                                        modalNotificacoes?.classList.add('hidden');
+                                        await carregarPropostas(notif.dadosAdicionais.pedidoId);
+                                    }
+                                }
                             });
                         });
                     }
                 }
+            } else {
+                console.error('Erro na resposta de notificações:', data.message);
+                if (listaNotificacoes) {
+                    listaNotificacoes.innerHTML = '<p style="color: var(--error-color);">Erro ao carregar notificações.</p>';
+                }
             }
         } catch (error) {
             console.error('Erro ao carregar notificações:', error);
+            if (listaNotificacoes) {
+                listaNotificacoes.innerHTML = '<p style="color: var(--error-color);">Erro ao carregar notificações. Tente novamente.</p>';
+            }
+            if (badgeNotificacoes) {
+                badgeNotificacoes.style.display = 'none';
+            }
         }
     }
 
