@@ -406,9 +406,32 @@
     <!-- 🚨 NOVO: Modal Ver Pedidos Urgentes (para profissionais) -->
     <div id="modal-pedidos-urgentes-profissional" class="modal-overlay hidden">
         <div class="modal-content modal-grande">
-            <h2><i class="fas fa-bolt"></i> Pedidos Urgentes Disponíveis</h2>
-            <div id="lista-pedidos-urgentes" class="lista-propostas">
-                <p>Carregando pedidos...</p>
+            <div class="modal-header">
+                <h3><i class="fas fa-bolt"></i> Pedidos Urgentes Disponíveis</h3>
+                <button class="btn-close-modal" data-modal="modal-pedidos-urgentes-profissional">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 8px; flex: 1;">
+                        <i class="fas fa-filter"></i>
+                        <select id="filtro-categoria-pedidos" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--border-color);">
+                            <option value="">Todas as categorias</option>
+                            <option value="montagem">Montagem</option>
+                            <option value="pintura">Pintura</option>
+                            <option value="eletricista">Eletricista</option>
+                            <option value="encanador">Encanador</option>
+                            <option value="jardinagem">Jardinagem</option>
+                            <option value="limpeza">Limpeza</option>
+                            <option value="outros">Outros</option>
+                        </select>
+                    </label>
+                    <button id="btn-filtrar-pedidos" class="btn-primary">
+                        <i class="fas fa-search"></i> Filtrar
+                    </button>
+                </div>
+                <div id="lista-pedidos-urgentes" class="lista-propostas">
+                    <p>Carregando pedidos...</p>
+                </div>
             </div>
         </div>
     </div>

@@ -300,28 +300,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalEnviarProposta = document.getElementById('modal-enviar-proposta');
     const formEnviarProposta = document.getElementById('form-enviar-proposta');
 
-    // Adicionar botão na lateral se for profissional
-    if (userType === 'trabalhador' && !btnVerPedidosUrgentes) {
-        const acoesRapidas = document.querySelector('.filtro-acoes-rapidas');
-        if (acoesRapidas) {
-            const btnNovo = document.createElement('button');
-            btnNovo.id = 'btn-ver-pedidos-urgentes';
-            btnNovo.className = 'btn-preciso-agora-lateral';
-            btnNovo.innerHTML = '<i class="fas fa-list"></i> Ver Pedidos Urgentes';
-            acoesRapidas.appendChild(btnNovo);
-            
-            btnNovo.addEventListener('click', async () => {
-                await carregarPedidosUrgentes();
-                modalPedidosUrgentesProfissional?.classList.remove('hidden');
-            });
-        }
-    }
-
-    async function carregarPedidosUrgentes() {
+    async function carregarPedidosUrgentes(categoria = null) {
         if (!listaPedidosUrgentes) return;
 
         try {
-            const response = await fetch('/api/pedidos-urgentes', {
+            let url = '/api/pedidos-urgentes';
+            if (categoria) {
+                url += `?categoria=${encodeURIComponent(categoria)}`;
+            }
+
+            const response = await fetch(url, {
                 headers: {
                     'Authorization': `Bearer ${token}`
                 }
@@ -331,7 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (data.success) {
                 if (data.pedidos.length === 0) {
-                    listaPedidosUrgentes.innerHTML = '<p>Nenhum pedido urgente disponível no momento.</p>';
+                    listaPedidosUrgentes.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhum pedido urgente disponível no momento.</p>';
                     return;
                 }
 
@@ -377,9 +365,41 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Erro ao carregar pedidos urgentes:', error);
-            listaPedidosUrgentes.innerHTML = '<p>Erro ao carregar pedidos urgentes.</p>';
+            listaPedidosUrgentes.innerHTML = '<p style="color: var(--error-color);">Erro ao carregar pedidos urgentes. Tente novamente.</p>';
         }
     }
+
+    // Event listener para o botão de filtrar
+    const btnFiltrarPedidos = document.getElementById('btn-filtrar-pedidos');
+    const filtroCategoriaPedidos = document.getElementById('filtro-categoria-pedidos');
+    
+    if (btnFiltrarPedidos && filtroCategoriaPedidos) {
+        btnFiltrarPedidos.addEventListener('click', async () => {
+            const categoria = filtroCategoriaPedidos.value || null;
+            await carregarPedidosUrgentes(categoria);
+        });
+    }
+
+    // Adicionar botão na lateral se for profissional (após a função estar definida)
+    if (userType === 'trabalhador' && !btnVerPedidosUrgentes) {
+        const acoesRapidas = document.querySelector('.filtro-acoes-rapidas');
+        if (acoesRapidas) {
+            const btnNovo = document.createElement('button');
+            btnNovo.id = 'btn-ver-pedidos-urgentes';
+            btnNovo.className = 'btn-preciso-agora-lateral';
+            btnNovo.innerHTML = '<i class="fas fa-bolt"></i> Ver Pedidos Urgentes';
+            btnNovo.style.marginTop = '10px';
+            acoesRapidas.appendChild(btnNovo);
+            
+            btnNovo.addEventListener('click', async () => {
+                await carregarPedidosUrgentes();
+                modalPedidosUrgentesProfissional?.classList.remove('hidden');
+            });
+        }
+    }
+
+    // Torna a função acessível globalmente
+    window.carregarPedidosUrgentes = carregarPedidosUrgentes;
 
     if (formEnviarProposta) {
         formEnviarProposta.addEventListener('submit', async (e) => {

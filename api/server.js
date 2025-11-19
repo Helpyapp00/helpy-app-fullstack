@@ -3001,10 +3001,10 @@ app.get('/api/pedidos-urgentes', authMiddleware, async (req, res) => {
             dataExpiracao: { $gt: new Date() } // Apenas pedidos não expirados
         };
 
+        // Filtra por categoria apenas se especificado explicitamente
+        // Não filtra automaticamente pela atuação do profissional (permite ver todos os pedidos)
         if (categoria) {
             query.categoria = categoria;
-        } else if (profissional.atuacao) {
-            query.categoria = profissional.atuacao;
         }
 
         const pedidos = await PedidoUrgente.find(query)
