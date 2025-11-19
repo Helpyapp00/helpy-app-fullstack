@@ -437,6 +437,7 @@ const pedidoUrgenteSchema = new mongoose.Schema({
     clienteId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     servico: { type: String, required: true }, // Tipo de serviço necessário
     descricao: { type: String },
+    foto: { type: String }, // URL da foto do serviço
     localizacao: {
         endereco: { type: String, required: true },
         cidade: { type: String, required: true },
@@ -2786,10 +2787,36 @@ app.get('/api/projetos-time', async (req, res) => {
 
 // 🚨 NOVO: Rotas de Pedidos Urgentes ("Preciso Agora!")
 // Criar Pedido Urgente
-app.post('/api/pedidos-urgentes', authMiddleware, async (req, res) => {
+app.post('/api/pedidos-urgentes', authMiddleware, upload.single('foto'), async (req, res) => {
     try {
         const { servico, descricao, localizacao, categoria } = req.body;
         const clienteId = req.user.id;
+
+        // Processa a foto se foi enviada
+        let fotoUrl = null;
+        if (req.file && s3Client) {
+            try {
+                const sharp = getSharp();
+                if (sharp) {
+                    const imageBuffer = await sharp(req.file.buffer)
+                        .resize(800, 600, { fit: 'cover' })
+                        .toFormat('jpeg', { quality: 90 })
+                        .toBuffer();
+                    
+                    const key = `pedidos-urgentes/${clienteId}/${Date.now()}_${path.basename(req.file.originalname)}`;
+                    const uploadCommand = new PutObjectCommand({
+                        Bucket: bucketName,
+                        Key: key,
+                        Body: imageBuffer,
+                        ContentType: 'image/jpeg'
+                    });
+                    await s3Client.send(uploadCommand);
+                    fotoUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+                }
+            } catch (fotoError) {
+                console.error('Erro ao processar foto do pedido urgente:', fotoError);
+            }
+        }
 
         // Define expiração em 1 hora
         const dataExpiracao = new Date();
@@ -2799,7 +2826,8 @@ app.post('/api/pedidos-urgentes', authMiddleware, async (req, res) => {
             clienteId,
             servico,
             descricao,
-            localizacao,
+            foto: fotoUrl,
+            localizacao: typeof localizacao === 'string' ? JSON.parse(localizacao) : localizacao,
             categoria,
             dataExpiracao
         });
@@ -3008,7 +3036,7 @@ app.get('/api/pedidos-urgentes', authMiddleware, async (req, res) => {
         }
 
         const pedidos = await PedidoUrgente.find(query)
-            .populate('clienteId', 'nome foto avatarUrl cidade estado')
+            .populate('clienteId', '_id nome foto avatarUrl cidade estado')
             .sort({ createdAt: -1 })
             .exec();
 

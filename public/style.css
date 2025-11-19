@@ -1246,6 +1246,56 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     color: var(--text-primary);
 }
 
+.pedido-cliente-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.avatar-pequeno-pedido {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--border-color);
+}
+
+.nome-cliente-clickable {
+    font-weight: 600;
+    color: var(--primary-color);
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.nome-cliente-clickable:hover {
+    color: var(--primary-color-dark, #0056b3);
+    text-decoration: underline;
+}
+
+.clickable-avatar {
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+.clickable-avatar:hover {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
+.pedido-foto-servico {
+    margin: 10px 0;
+}
+
+.pedido-foto-servico img {
+    width: 100%;
+    max-height: 300px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+
 .btn-enviar-proposta {
     width: 100%;
     padding: 10px;

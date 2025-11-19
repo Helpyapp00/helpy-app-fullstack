@@ -28,6 +28,39 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Preview de foto do pedido urgente
+    const inputFotoPedido = document.getElementById('pedido-foto');
+    const btnSelecionarFotoPedido = document.getElementById('btn-selecionar-foto-pedido');
+    const previewFotoPedido = document.getElementById('preview-foto-pedido');
+    const imgPreviewPedido = document.getElementById('img-preview-pedido');
+    const btnRemoverFotoPedido = document.getElementById('btn-remover-foto-pedido');
+
+    if (btnSelecionarFotoPedido && inputFotoPedido) {
+        btnSelecionarFotoPedido.addEventListener('click', () => {
+            inputFotoPedido.click();
+        });
+
+        inputFotoPedido.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    imgPreviewPedido.src = event.target.result;
+                    previewFotoPedido.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    if (btnRemoverFotoPedido) {
+        btnRemoverFotoPedido.addEventListener('click', () => {
+            if (inputFotoPedido) inputFotoPedido.value = '';
+            if (previewFotoPedido) previewFotoPedido.style.display = 'none';
+            if (imgPreviewPedido) imgPreviewPedido.src = '';
+        });
+    }
+
     if (formPedidoUrgente) {
         formPedidoUrgente.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -38,24 +71,30 @@ document.addEventListener('DOMContentLoaded', () => {
             const endereco = document.getElementById('pedido-endereco').value;
             const cidade = document.getElementById('pedido-cidade').value;
             const estado = document.getElementById('pedido-estado').value;
+            const fotoFile = inputFotoPedido?.files[0];
 
             try {
+                // Usa FormData para enviar arquivo
+                const formData = new FormData();
+                formData.append('servico', servico);
+                formData.append('categoria', categoria);
+                formData.append('descricao', descricao);
+                formData.append('localizacao', JSON.stringify({
+                    endereco,
+                    cidade,
+                    estado
+                }));
+                if (fotoFile) {
+                    formData.append('foto', fotoFile);
+                }
+
                 const response = await fetch('/api/pedidos-urgentes', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
+                        // Não definir Content-Type, o browser define automaticamente com boundary para FormData
                     },
-                    body: JSON.stringify({
-                        servico,
-                        categoria,
-                        descricao,
-                        localizacao: {
-                            endereco,
-                            cidade,
-                            estado
-                        }
-                    })
+                    body: formData
                 });
 
                 const data = await response.json();
@@ -63,6 +102,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (data.success) {
                     alert(`Pedido criado! ${data.profissionaisNotificados} profissionais foram notificados.`);
                     formPedidoUrgente.reset();
+                    if (previewFotoPedido) previewFotoPedido.style.display = 'none';
+                    if (imgPreviewPedido) imgPreviewPedido.src = '';
                     modalPedidoUrgente?.classList.add('hidden');
                     
                     // Abre modal de propostas após 3 segundos
@@ -325,27 +366,53 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 listaPedidosUrgentes.innerHTML = data.pedidos.map(pedido => {
                     const cliente = pedido.clienteId;
+                    // Pega o ID do cliente (pode ser objeto populado ou string)
+                    let clienteId = typeof cliente === 'object' && cliente !== null 
+                        ? (cliente._id || cliente.id) 
+                        : cliente;
+                    // Converte para string se necessário
+                    clienteId = clienteId ? String(clienteId) : '';
                     const tempoRestante = Math.max(0, Math.ceil((new Date(pedido.dataExpiracao) - new Date()) / 60000));
                     
                     return `
                         <div class="pedido-urgente-card">
+                            <div class="pedido-cliente-header">
+                                <img src="${cliente?.avatarUrl || cliente?.foto || 'imagens/default-user.png'}" 
+                                     alt="${cliente?.nome || 'Cliente'}" 
+                                     class="avatar-pequeno-pedido clickable-avatar"
+                                     data-cliente-id="${clienteId}"
+                                     style="cursor: pointer;">
+                                <div style="flex: 1;">
+                                    <div class="nome-cliente-clickable" 
+                                         data-cliente-id="${clienteId}"
+                                         style="font-weight: 600; color: var(--primary-color); cursor: pointer; transition: color 0.2s;">
+                                        ${cliente?.nome || 'Cliente'}
+                                    </div>
+                                    <div style="font-size: 12px; color: var(--text-secondary);">${pedido.localizacao.cidade} - ${pedido.localizacao.estado}</div>
+                                </div>
+                                <span class="tempo-restante">⏱️ ${tempoRestante} min</span>
+                            </div>
+                            
+                            ${pedido.foto ? `
+                                <div class="pedido-foto-servico">
+                                    <img src="${pedido.foto}" alt="Foto do serviço" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 8px; margin: 10px 0;">
+                                </div>
+                            ` : ''}
+                            
                             <div class="pedido-header">
                                 <div>
                                     <strong>${pedido.servico}</strong>
                                     <span class="badge-categoria">${pedido.categoria}</span>
                                 </div>
-                                <span class="tempo-restante">⏱️ ${tempoRestante} min</span>
                             </div>
+                            
                             ${pedido.descricao ? `<p class="pedido-descricao">${pedido.descricao}</p>` : ''}
+                            
                             <div class="pedido-localizacao">
                                 <i class="fas fa-map-marker-alt"></i> 
-                                ${pedido.localizacao.endereco}, ${pedido.localizacao.cidade} - ${pedido.localizacao.estado}
+                                ${pedido.localizacao.endereco}
                             </div>
-                            <div class="pedido-cliente">
-                                <img src="${cliente?.avatarUrl || cliente?.foto || 'imagens/default-user.png'}" 
-                                     alt="${cliente?.nome || 'Cliente'}" class="avatar-pequeno">
-                                <span>${cliente?.nome || 'Cliente'}</span>
-                            </div>
+                            
                             <button class="btn-enviar-proposta" data-pedido-id="${pedido._id}">
                                 <i class="fas fa-paper-plane"></i> Enviar Proposta
                             </button>
@@ -360,6 +427,17 @@ document.addEventListener('DOMContentLoaded', () => {
                         document.getElementById('proposta-pedido-id').value = pedidoId;
                         modalEnviarProposta?.classList.remove('hidden');
                         modalPedidosUrgentesProfissional?.classList.add('hidden');
+                    });
+                });
+
+                // Adicionar listeners para nome e avatar clicáveis (abrir perfil)
+                document.querySelectorAll('.nome-cliente-clickable, .clickable-avatar').forEach(element => {
+                    element.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Evita que o clique se propague
+                        const clienteId = element.dataset.clienteId;
+                        if (clienteId) {
+                            window.location.href = `perfil.html?id=${clienteId}`;
+                        }
                     });
                 });
             }
