@@ -1838,8 +1838,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Carrega notificações a cada 30 segundos
-    setInterval(carregarNotificacoes, 30000);
-    carregarNotificacoes(); // Carrega imediatamente
+    // Salva o intervalo em uma variável global para poder cancelá-lo no logout
+    window.notificacoesInterval = setInterval(() => {
+        const currentToken = localStorage.getItem('jwtToken');
+        if (!currentToken) {
+            // Se não há token, para o intervalo
+            if (window.notificacoesInterval) {
+                clearInterval(window.notificacoesInterval);
+                window.notificacoesInterval = null;
+            }
+            return;
+        }
+        carregarNotificacoes();
+    }, 30000);
+    
+    // Carrega imediatamente se o token existir
+    const currentToken = localStorage.getItem('jwtToken');
+    if (currentToken) {
+        carregarNotificacoes();
+    }
 
     // ============================================
     // SISTEMA DE DISPUTAS

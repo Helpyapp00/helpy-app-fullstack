@@ -173,13 +173,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchPosts(cidade = null) {
         if (!postsContainer) return;
+        
+        // Verifica se ainda há token antes de fazer requisição
+        const currentToken = localStorage.getItem('jwtToken');
+        if (!currentToken) {
+            return; // Não faz requisição se não há token
+        }
+        
         let url = '/api/posts';
         if (cidade) {
             url += `?cidade=${encodeURIComponent(cidade)}`;
         }
         try {
             const response = await fetch(url, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: { 'Authorization': `Bearer ${currentToken}` }
             });
             if (!response.ok) {
                 throw new Error('Não foi possível carregar as postagens.');
@@ -788,6 +795,33 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Função para fazer logout de forma segura (disponível globalmente)
+    window.fazerLogout = function() {
+        // Para todos os intervalos ativos
+        if (window.notificacoesInterval) {
+            clearInterval(window.notificacoesInterval);
+            window.notificacoesInterval = null;
+        }
+        
+        // Cancela requisições pendentes (se houver AbortController)
+        if (window.abortControllers) {
+            window.abortControllers.forEach(controller => {
+                try {
+                    controller.abort();
+                } catch (e) {
+                    // Ignora erros ao abortar
+                }
+            });
+            window.abortControllers = [];
+        }
+        
+        // Limpa localStorage
+        localStorage.clear();
+        
+        // Redireciona imediatamente
+        window.location.href = '/login';
+    };
+
     if (logoutButton) {
         logoutButton.addEventListener('click', (e) => {
             e.preventDefault();
@@ -796,8 +830,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (confirmLogoutYesBtn) {
         confirmLogoutYesBtn.addEventListener('click', () => {
-            localStorage.clear();
-            window.location.href = '/login';
+            window.fazerLogout();
         });
     }
     if (confirmLogoutNoBtn) {
@@ -1115,7 +1148,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- INICIALIZAÇÃO ---
-    if (!token || !userId) {
+    // Verifica token novamente (pode ter sido removido durante o carregamento)
+    const currentTokenCheck = localStorage.getItem('jwtToken');
+    const currentUserIdCheck = localStorage.getItem('userId');
+    
+    if (!currentTokenCheck || !currentUserIdCheck) {
         if (!window.location.pathname.endsWith('/login') && !window.location.pathname.endsWith('/cadastro')) {
              window.location.href = '/login';
         }

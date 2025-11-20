@@ -1013,7 +1013,20 @@ document.addEventListener('DOMContentLoaded', () => {
     if (feedButton) { feedButton.addEventListener('click', (e) => { e.preventDefault(); window.location.href = '/'; }); }
     if (profileButton) { profileButton.addEventListener('click', (e) => { e.preventDefault(); window.location.href = `/perfil?id=${loggedInUserId}`; }); }
     if (logoutButton) { logoutButton.addEventListener('click', (e) => { e.preventDefault(); logoutConfirmModal && logoutConfirmModal.classList.remove('hidden'); }); }
-    if (confirmLogoutYesBtn) { confirmLogoutYesBtn.addEventListener('click', () => { localStorage.clear(); window.location.href = '/login'; }); }
+    if (confirmLogoutYesBtn) { 
+        confirmLogoutYesBtn.addEventListener('click', () => { 
+            if (typeof window.fazerLogout === 'function') {
+                window.fazerLogout();
+            } else {
+                // Fallback se a função não estiver disponível
+                if (window.notificacoesInterval) {
+                    clearInterval(window.notificacoesInterval);
+                }
+                localStorage.clear();
+                window.location.href = '/login';
+            }
+        }); 
+    }
     if (confirmLogoutNoBtn) { confirmLogoutNoBtn.addEventListener('click', () => { logoutConfirmModal && logoutConfirmModal.classList.add('hidden'); }); }
     
     // --- INICIALIZAÇÃO DA PÁGINA ---

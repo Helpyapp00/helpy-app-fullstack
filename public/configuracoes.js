@@ -112,8 +112,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (confirmLogoutYesBtn) {
         confirmLogoutYesBtn.addEventListener('click', () => {
-            localStorage.clear();
-            window.location.href = '/login';
+            if (typeof window.fazerLogout === 'function') {
+                window.fazerLogout();
+            } else {
+                // Fallback se a função não estiver disponível
+                if (window.notificacoesInterval) {
+                    clearInterval(window.notificacoesInterval);
+                }
+                localStorage.clear();
+                window.location.href = '/login';
+            }
         });
     }
     if (confirmLogoutNoBtn) {
