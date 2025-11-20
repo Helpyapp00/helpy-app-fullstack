@@ -369,7 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
             el.addEventListener('click', (e) => {
                 const targetUserId = e.currentTarget.dataset.userid;
                 if (targetUserId) {
-                    window.location.href = `perfil.html?id=${targetUserId}`;
+                    window.location.href = `/perfil?id=${targetUserId}`;
                 }
             });
         });
@@ -784,7 +784,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- NAVEGAÇÃO DO HEADER ---
     if (profileButton) {
         profileButton.addEventListener('click', () => {
-            window.location.href = `perfil.html?id=${userId}`;
+            window.location.href = `/perfil?id=${userId}`;
         });
     }
 
@@ -797,7 +797,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (confirmLogoutYesBtn) {
         confirmLogoutYesBtn.addEventListener('click', () => {
             localStorage.clear();
-            window.location.href = 'login.html';
+            window.location.href = '/login';
         });
     }
     if (confirmLogoutNoBtn) {
@@ -1116,8 +1116,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INICIALIZAÇÃO ---
     if (!token || !userId) {
-        if (!window.location.pathname.endsWith('login.html') && !window.location.pathname.endsWith('cadastro.html')) {
-             window.location.href = 'login.html';
+        if (!window.location.pathname.endsWith('/login') && !window.location.pathname.endsWith('/cadastro')) {
+             window.location.href = '/login';
         }
     } else {
         if (postsContainer) {

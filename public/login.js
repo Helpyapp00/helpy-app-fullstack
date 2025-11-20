@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     document.documentElement.classList.toggle('dark-mode', data.userTheme === 'dark');
                 }
                 
-                window.location.href = 'index.html'; // Redireciona para o feed
+                window.location.href = '/'; // Redireciona para o feed
             } else {
                 showMessage(data.message || 'Erro ao fazer login. Verifique suas credenciais.', 'error');
             }

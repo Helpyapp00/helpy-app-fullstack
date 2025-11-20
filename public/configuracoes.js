@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Checagem de segurança
     if (!loggedInUserId || !token) {
         alert('Você precisa estar logado para acessar esta página.');
-        window.location.href = 'login.html';
+        window.location.href = '/login';
         return;
     }
 
@@ -85,14 +85,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (feedButton) {
         feedButton.addEventListener('click', (e) => {
             e.preventDefault();
-            window.location.href = 'index.html';
+            window.location.href = '/';
         });
     }
 
     if (profileButton) {
         profileButton.addEventListener('click', (e) => {
             e.preventDefault();
-            window.location.href = `perfil.html?id=${loggedInUserId}`;
+            window.location.href = `/perfil?id=${loggedInUserId}`;
         });
     }
 
@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (confirmLogoutYesBtn) {
         confirmLogoutYesBtn.addEventListener('click', () => {
             localStorage.clear();
-            window.location.href = 'login.html';
+            window.location.href = '/login';
         });
     }
     if (confirmLogoutNoBtn) {

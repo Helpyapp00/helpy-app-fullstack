@@ -589,7 +589,45 @@ app.use((req, res, next) => {
     next();
 });
 
-// Servir arquivos estáticos
+// Rotas para servir páginas HTML sem mostrar o nome do arquivo na URL
+// IMPORTANTE: Estas rotas devem vir ANTES do express.static para ter prioridade
+
+// Rota raiz - serve index.html
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/index.html'));
+});
+
+// Rota de perfil - serve perfil.html
+app.get('/perfil', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/perfil.html'));
+});
+
+// Rota de cadastro - serve cadastro.html
+app.get('/cadastro', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/cadastro.html'));
+});
+
+// Rota de login - serve login.html
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/login.html'));
+});
+
+// Rota de esqueci senha - serve esqueci-senha.html
+app.get('/esqueci-senha', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/esqueci-senha.html'));
+});
+
+// Rota de configurações de privacidade - serve configuracoes-privacidade.html
+app.get('/configuracoes-privacidade', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/configuracoes-privacidade.html'));
+});
+
+// Rota de configurações de conta - serve configuracoes-conta.html
+app.get('/configuracoes-conta', (req, res) => {
+    res.sendFile(path.join(__dirname, '../public/configuracoes-conta.html'));
+});
+
+// Servir arquivos estáticos (CSS, JS, imagens, etc.)
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Inicialização dos serviços

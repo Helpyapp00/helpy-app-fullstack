@@ -312,7 +312,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 localStorage.setItem('userPhotoUrl', cadastroData.userPhotoUrl);
                 
                 setTimeout(() => {
-                    window.location.href = 'index.html';
+                    window.location.href = '/';
                 }, 2000);
             } else {
                 throw new Error(cadastroData.message || 'Houve um erro ao criar a conta.');
