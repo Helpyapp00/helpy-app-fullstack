@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const userNameHeader = document.getElementById('user-name-header');
     const profileButton = document.getElementById('profile-button');
     const logoutButton = document.getElementById('logout-button');
+    const searchInput = document.querySelector('.search');
     
     // --- Modais ---
     const logoutConfirmModal = document.getElementById('logout-confirm-modal');
@@ -837,6 +838,24 @@ document.addEventListener('DOMContentLoaded', () => {
         confirmLogoutNoBtn.addEventListener('click', () => {
             logoutConfirmModal && logoutConfirmModal.classList.add('hidden');
         });
+    }
+
+    // ----------------------------------------------------------------------
+    // FUNCIONALIDADE DE BUSCA (desabilitada para evitar erros)
+    // ----------------------------------------------------------------------
+    if (searchInput) {
+        // Desabilita busca - campo apenas visual por enquanto
+        searchInput.addEventListener('focus', (e) => {
+            e.target.blur();
+        });
+        searchInput.addEventListener('keydown', (e) => {
+            e.preventDefault();
+            return false;
+        });
+        searchInput.style.cursor = 'not-allowed';
+        searchInput.style.opacity = '0.6';
+        searchInput.setAttribute('readonly', 'readonly');
+        searchInput.setAttribute('title', 'Funcionalidade de busca em desenvolvimento');
     }
 
     // ----------------------------------------------------------------------

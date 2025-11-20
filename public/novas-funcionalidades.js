@@ -2260,10 +2260,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const acoesRapidas = document.querySelector('.filtro-acoes-rapidas');
     if (acoesRapidas && !document.getElementById('btn-dashboard-admin')) {
         // Verifica se é admin (em produção, isso viria do backend)
+        // Verifica token antes de fazer requisição
+        const currentToken = localStorage.getItem('jwtToken');
+        if (!currentToken) {
+            return; // Não faz requisição se não há token
+        }
+        
         fetch('/api/usuario/me', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        }).then(res => res.json()).then(userData => {
-            if (userData.isAdmin) {
+            headers: { 'Authorization': `Bearer ${currentToken}` }
+        }).then(res => {
+            // Se receber 401, não tenta fazer parse do JSON
+            if (res.status === 401) {
+                throw new Error('Token inválido');
+            }
+            return res.json();
+        }).then(userData => {
+            if (userData && userData.isAdmin) {
                 const btnAdmin = document.createElement('button');
                 btnAdmin.id = 'btn-dashboard-admin';
                 btnAdmin.className = 'btn-preciso-agora-lateral';
@@ -2277,8 +2289,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     modalDashboardAdmin?.classList.remove('hidden');
                 });
             }
-        }).catch(() => {
-            // Se não conseguir verificar, não adiciona o botão
+        }).catch((error) => {
+            // Se não conseguir verificar (token inválido, erro de rede, etc), não adiciona o botão
+            // Não loga erro para não poluir o console com 401 esperados
+            if (error.message !== 'Token inválido') {
+                console.debug('Não foi possível verificar status de admin:', error.message);
+            }
         });
     }
 });
