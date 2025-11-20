@@ -479,6 +479,133 @@ document.addEventListener('DOMContentLoaded', () => {
     // Torna a função acessível globalmente
     window.carregarPedidosUrgentes = carregarPedidosUrgentes;
 
+    // ============================================
+    // MEUS PEDIDOS URGENTES (para clientes)
+    // ============================================
+    const btnMeusPedidosUrgentes = document.getElementById('btn-meus-pedidos-urgentes');
+    const modalMeusPedidosUrgentes = document.getElementById('modal-meus-pedidos-urgentes');
+    const listaMeusPedidosUrgentes = document.getElementById('lista-meus-pedidos-urgentes');
+    const btnFiltrarMeusPedidos = document.getElementById('btn-filtrar-meus-pedidos');
+    const filtroStatusMeusPedidos = document.getElementById('filtro-status-meus-pedidos');
+
+    async function carregarMeusPedidosUrgentes(status = null) {
+        if (!listaMeusPedidosUrgentes) return;
+
+        try {
+            let url = '/api/pedidos-urgentes/meus';
+            if (status) {
+                url += `?status=${encodeURIComponent(status)}`;
+            }
+
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                if (!data.pedidos || data.pedidos.length === 0) {
+                    listaMeusPedidosUrgentes.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-secondary);">Você ainda não criou nenhum pedido urgente.</p>';
+                    return;
+                }
+
+                listaMeusPedidosUrgentes.innerHTML = data.pedidos.map(pedido => {
+                    const tempoRestante = Math.max(0, Math.ceil((new Date(pedido.dataExpiracao) - new Date()) / 60000));
+                    const numPropostas = pedido.propostas?.length || 0;
+                    const statusBadge = {
+                        'aberto': '<span class="badge-status badge-aberto">Aberto</span>',
+                        'aceito': '<span class="badge-status badge-aceito">Aceito</span>',
+                        'concluido': '<span class="badge-status badge-concluido">Concluído</span>',
+                        'cancelado': '<span class="badge-status badge-cancelado">Cancelado</span>'
+                    }[pedido.status] || '';
+
+                    return `
+                        <div class="pedido-urgente-card" style="margin-bottom: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <div>
+                                    <strong style="font-size: 18px;">${pedido.servico}</strong>
+                                    <span class="badge-categoria">${pedido.categoria}</span>
+                                    ${statusBadge}
+                                </div>
+                                ${pedido.status === 'aberto' ? `<span class="tempo-restante">⏱️ ${tempoRestante} min</span>` : ''}
+                            </div>
+                            
+                            ${pedido.foto ? `
+                                <div class="pedido-foto-servico">
+                                    <img src="${pedido.foto}" alt="Foto do serviço" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 8px; margin: 10px 0;">
+                                </div>
+                            ` : ''}
+                            
+                            ${pedido.descricao ? `<p class="pedido-descricao">${pedido.descricao}</p>` : ''}
+                            
+                            <div class="pedido-localizacao">
+                                <i class="fas fa-map-marker-alt"></i> 
+                                ${pedido.localizacao.endereco}, ${pedido.localizacao.cidade} - ${pedido.localizacao.estado}
+                            </div>
+
+                            <div style="margin-top: 15px; padding: 15px; background: var(--bg-secondary); border-radius: 8px;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                    <strong><i class="fas fa-hand-holding-usd"></i> Propostas Recebidas: ${numPropostas}</strong>
+                                    ${pedido.status === 'aberto' && numPropostas > 0 ? `
+                                        <button class="btn-ver-propostas" data-pedido-id="${pedido._id}" style="padding: 8px 15px; background: var(--primary-color); color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                            <i class="fas fa-eye"></i> Ver Propostas
+                                        </button>
+                                    ` : ''}
+                                </div>
+                                ${numPropostas === 0 && pedido.status === 'aberto' ? 
+                                    '<p style="color: var(--text-secondary); font-size: 14px;">Aguardando propostas de profissionais...</p>' : 
+                                    ''
+                                }
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                // Adicionar listeners para ver propostas
+                document.querySelectorAll('.btn-ver-propostas').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const pedidoId = btn.dataset.pedidoId;
+                        modalMeusPedidosUrgentes?.classList.add('hidden');
+                        await carregarPropostas(pedidoId);
+                    });
+                });
+            } else {
+                listaMeusPedidosUrgentes.innerHTML = '<p style="color: var(--error-color);">Erro ao carregar seus pedidos.</p>';
+            }
+        } catch (error) {
+            console.error('Erro ao carregar meus pedidos urgentes:', error);
+            listaMeusPedidosUrgentes.innerHTML = '<p style="color: var(--error-color);">Erro ao carregar seus pedidos. Tente novamente.</p>';
+        }
+    }
+
+    // Event listener para filtrar meus pedidos
+    if (btnFiltrarMeusPedidos && filtroStatusMeusPedidos) {
+        btnFiltrarMeusPedidos.addEventListener('click', async () => {
+            const status = filtroStatusMeusPedidos.value || null;
+            await carregarMeusPedidosUrgentes(status);
+        });
+    }
+
+    // Adicionar botão na lateral se for cliente (após a função estar definida)
+    if (userType === 'cliente' && !btnMeusPedidosUrgentes) {
+        const acoesRapidas = document.querySelector('.filtro-acoes-rapidas');
+        if (acoesRapidas) {
+            const btnNovo = document.createElement('button');
+            btnNovo.id = 'btn-meus-pedidos-urgentes';
+            btnNovo.className = 'btn-preciso-agora-lateral';
+            btnNovo.innerHTML = '<i class="fas fa-list"></i> Meus Pedidos Urgentes';
+            btnNovo.style.marginTop = '10px';
+            acoesRapidas.appendChild(btnNovo);
+            
+            btnNovo.addEventListener('click', async () => {
+                await carregarMeusPedidosUrgentes();
+                modalMeusPedidosUrgentes?.classList.remove('hidden');
+            });
+        }
+    }
+
     if (formEnviarProposta) {
         formEnviarProposta.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -1451,10 +1578,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Se modal está aberto, atualiza lista
                 if (listaNotificacoes && modalNotificacoes && !modalNotificacoes.classList.contains('hidden')) {
-                    if (!data.notificacoes || data.notificacoes.length === 0) {
+                    const notificacoes = data.notificacoes || [];
+                    if (notificacoes.length === 0) {
                         listaNotificacoes.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhuma notificação.</p>';
                     } else {
-                        listaNotificacoes.innerHTML = data.notificacoes.map(notif => {
+                        listaNotificacoes.innerHTML = notificacoes.map(notif => {
                             const dataFormatada = new Date(notif.createdAt).toLocaleString('pt-BR');
                             const iconMap = {
                                 'pagamento_garantido': '💰',
@@ -1492,7 +1620,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     await marcarNotificacaoLida(notifId);
                                     
                                     // Se for notificação de proposta de pedido urgente, abre o modal de propostas
-                                    const notif = data.notificacoes.find(n => n._id === notifId);
+                                    const notif = notificacoes.find(n => n._id === notifId);
                                     if (notif && notif.tipo === 'proposta_pedido_urgente' && notif.dadosAdicionais?.pedidoId) {
                                         modalNotificacoes?.classList.add('hidden');
                                         await carregarPropostas(notif.dadosAdicionais.pedidoId);
@@ -1535,8 +1663,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnNotificacoes) {
         btnNotificacoes.addEventListener('click', async () => {
-            await carregarNotificacoes();
+            // Garante que a lista seja carregada antes de abrir o modal
+            if (listaNotificacoes) {
+                listaNotificacoes.innerHTML = '<p style="text-align: center; padding: 20px;">Carregando notificações...</p>';
+            }
             modalNotificacoes?.classList.remove('hidden');
+            await carregarNotificacoes();
         });
     }
 

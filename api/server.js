@@ -3086,6 +3086,37 @@ app.get('/api/pedidos-urgentes', authMiddleware, async (req, res) => {
     }
 });
 
+// Listar Pedidos Urgentes do Cliente (seus próprios pedidos)
+app.get('/api/pedidos-urgentes/meus', authMiddleware, async (req, res) => {
+    try {
+        const clienteId = req.user.id;
+        const { status } = req.query;
+
+        const cliente = await User.findById(clienteId);
+        if (!cliente) {
+            return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
+        }
+
+        let query = { clienteId };
+        
+        // Filtra por status se especificado
+        if (status) {
+            query.status = status;
+        }
+
+        const pedidos = await PedidoUrgente.find(query)
+            .populate('clienteId', '_id nome foto avatarUrl cidade estado')
+            .populate('propostas.profissionalId', '_id nome foto avatarUrl atuacao cidade estado gamificacao mediaAvaliacao totalAvaliacoes')
+            .sort({ createdAt: -1 })
+            .exec();
+
+        res.json({ success: true, pedidos });
+    } catch (error) {
+        console.error('Erro ao buscar pedidos urgentes do cliente:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
 // ⚡ NOVO: Rotas de Vagas-Relâmpago (para empresas)
 // Criar Vaga-Relâmpago
 app.post('/api/vagas-relampago', authMiddleware, async (req, res) => {

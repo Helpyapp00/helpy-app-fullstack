@@ -1207,6 +1207,35 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     font-size: 18px;
 }
 
+.badge-status {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+    margin-left: 8px;
+}
+
+.badge-aberto {
+    background: #ffc107;
+    color: #000;
+}
+
+.badge-aceito {
+    background: #28a745;
+    color: #fff;
+}
+
+.badge-concluido {
+    background: #007bff;
+    color: #fff;
+}
+
+.badge-cancelado {
+    background: #dc3545;
+    color: #fff;
+}
+
 .badge-categoria {
     background: #007bff;
     color: white;
@@ -1214,6 +1243,21 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     border-radius: 12px;
     font-size: 11px;
     margin-left: 8px;
+}
+
+.btn-ver-propostas {
+    padding: 8px 15px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.btn-ver-propostas:hover {
+    background: #0056b3;
 }
 
 .tempo-restante {

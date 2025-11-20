@@ -450,6 +450,36 @@
         </div>
     </div>
 
+    <!-- 🚨 NOVO: Modal Meus Pedidos Urgentes (para clientes) -->
+    <div id="modal-meus-pedidos-urgentes" class="modal-overlay hidden">
+        <div class="modal-content modal-grande">
+            <div class="modal-header">
+                <h3><i class="fas fa-bolt"></i> Meus Pedidos Urgentes</h3>
+                <button class="btn-close-modal" data-modal="modal-meus-pedidos-urgentes">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+                    <label style="display: flex; align-items: center; gap: 8px; flex: 1;">
+                        <i class="fas fa-filter"></i>
+                        <select id="filtro-status-meus-pedidos" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--border-color);">
+                            <option value="">Todos os status</option>
+                            <option value="aberto">Abertos</option>
+                            <option value="aceito">Aceitos</option>
+                            <option value="concluido">Concluídos</option>
+                            <option value="cancelado">Cancelados</option>
+                        </select>
+                    </label>
+                    <button id="btn-filtrar-meus-pedidos" class="btn-primary">
+                        <i class="fas fa-search"></i> Filtrar
+                    </button>
+                </div>
+                <div id="lista-meus-pedidos-urgentes" class="lista-propostas">
+                    <p>Carregando seus pedidos...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- 🚨 NOVO: Modal Enviar Proposta Rápida -->
     <div id="modal-enviar-proposta" class="modal-overlay hidden">
         <div class="modal-content">
