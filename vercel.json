@@ -38,6 +38,6 @@
       "maxDuration": 30
     }
   },
-  "installCommand": "npm install",
+  "installCommand": "npm install --prefer-offline --no-audit",
   "buildCommand": "npm run vercel-build"
 }    
