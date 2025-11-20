@@ -119,7 +119,7 @@
     
     <!-- Estilo para ocultar body até verificação de autenticação -->
     <style>
-        body {
+        body:not(.auth-verified) {
             display: none !important;
             visibility: hidden !important;
         }
@@ -142,6 +142,26 @@
                                  href.indexOf('/cadastro') !== -1 ||
                                  href.indexOf('/esqueci-senha') !== -1;
                 
+                // Função para mostrar o body
+                function showBody() {
+                    // Tenta adicionar a classe imediatamente
+                    if (document.body) {
+                        document.body.classList.add('auth-verified');
+                    } else {
+                        // Se body ainda não existe, espera um pouco e tenta novamente
+                        setTimeout(function() {
+                            if (document.body) {
+                                document.body.classList.add('auth-verified');
+                            } else {
+                                // Última tentativa após DOMContentLoaded
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    document.body.classList.add('auth-verified');
+                                });
+                            }
+                        }, 10);
+                    }
+                }
+                
                 if (!isLoginPage) {
                     var token = localStorage.getItem('jwtToken');
                     var userId = localStorage.getItem('userId');
@@ -155,32 +175,59 @@
                         return;
                     }
                     
-                    // Se autenticado, mostra o body
+                    // Se autenticado, mostra o body imediatamente
+                    showBody();
+                    
+                    // Fallback adicional
                     document.addEventListener('DOMContentLoaded', function() {
                         document.body.classList.add('auth-verified');
                     });
-                    
-                    // Fallback caso DOMContentLoaded já tenha executado
-                    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-                        document.body.classList.add('auth-verified');
-                    }
                 } else {
                     // Se estiver na página de login, mostra o body imediatamente
+                    showBody();
                     document.addEventListener('DOMContentLoaded', function() {
                         document.body.classList.add('auth-verified');
                     });
-                    if (document.readyState === 'complete' || document.readyState === 'interactive') {
-                        document.body.classList.add('auth-verified');
-                    }
                 }
             } catch (e) {
                 console.error('Erro na verificação:', e);
-                window.location.replace('/login');
+                // Em caso de erro, tenta mostrar o body mesmo assim
+                if (document.body) {
+                    document.body.classList.add('auth-verified');
+                }
             }
         })();
     </script>
 </head>
 <body>
+    <!-- Script para mostrar body imediatamente se autenticado -->
+    <script>
+        (function() {
+            try {
+                var pathname = window.location.pathname || '';
+                var isLoginPage = pathname === '/login' || pathname === '/cadastro' || pathname === '/esqueci-senha';
+                
+                if (!isLoginPage) {
+                    var token = localStorage.getItem('jwtToken');
+                    var userId = localStorage.getItem('userId');
+                    var hasValidToken = token && token !== 'null' && token !== 'undefined' && token !== '' && token.length > 10;
+                    var hasValidUserId = userId && userId !== 'null' && userId !== 'undefined' && userId !== '' && userId.length > 5;
+                    
+                    if (hasValidToken && hasValidUserId) {
+                        // Mostra o body imediatamente
+                        document.body.classList.add('auth-verified');
+                    }
+                } else {
+                    // Se estiver na página de login, mostra o body imediatamente
+                    document.body.classList.add('auth-verified');
+                }
+            } catch (e) {
+                // Em caso de erro, mostra o body mesmo assim para evitar tela branca
+                document.body.classList.add('auth-verified');
+            }
+        })();
+    </script>
+    
     <!-- 🛑 NOVO: Script de Tema (Deve vir ANTES de todo o conteúdo) -->
     <script>
         (function() {

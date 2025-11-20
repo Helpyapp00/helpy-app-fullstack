@@ -1247,6 +1247,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- INICIALIZAÇÃO ---
     // Se chegou até aqui, o usuário está autenticado (verificação já foi feita no início)
     try {
+        // Garante que o body está visível
+        if (document.body) {
+            document.body.classList.add('auth-verified');
+        }
+        
         // Carrega conteúdo apenas se os elementos existirem
         if (postsContainer) {
             loadHeaderInfo();
@@ -1257,6 +1262,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     } catch (error) {
         console.error('Erro na inicialização:', error);
+        // Em caso de erro, tenta mostrar o body mesmo assim
+        if (document.body) {
+            document.body.classList.add('auth-verified');
+        }
     }
 });
 

@@ -2122,21 +2122,42 @@ app.post('/api/servico', authMiddleware, upload.array('images', 5), async (req, 
         let imageUrls = [];
         if (files && files.length > 0 && s3Client) {
             const sharp = getSharp();
-            if (!sharp) {
-                console.warn('Sharp não disponível, pulando processamento de imagens');
-            } else {
-                await Promise.all(files.map(async (file) => {
-                    try {
-                        const imageBuffer = await sharp(file.buffer).resize(800, 600, { fit: 'cover' }).toFormat('jpeg').toBuffer();
-                        const key = `servicos/${userId}/${Date.now()}_${path.basename(file.originalname)}`;
-                        const uploadCommand = new PutObjectCommand({ Bucket: bucketName, Key: key, Body: imageBuffer, ContentType: 'image/jpeg' });
-                        await s3Client.send(uploadCommand);
-                        imageUrls.push(`https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`);
-                    } catch (error) {
-                        console.error('Erro ao processar imagem:', error);
+            await Promise.all(files.map(async (file) => {
+                try {
+                    let imageBuffer;
+                    
+                    if (sharp) {
+                        // Processa a imagem com Sharp
+                        imageBuffer = await sharp(file.buffer)
+                            .resize(800, 600, { 
+                                fit: 'cover',
+                                withoutEnlargement: true
+                            })
+                            .jpeg({ 
+                                quality: 90,
+                                progressive: true
+                            })
+                            .toBuffer();
+                    } else {
+                        // Se Sharp não estiver disponível, usa o buffer original
+                        imageBuffer = file.buffer;
+                        console.warn('Sharp não disponível, usando imagem original sem redimensionamento');
                     }
-                }));
-            }
+                    
+                    const key = `servicos/${userId}/${Date.now()}_${path.basename(file.originalname || 'imagem')}`;
+                    const uploadCommand = new PutObjectCommand({ 
+                        Bucket: bucketName, 
+                        Key: key, 
+                        Body: imageBuffer, 
+                        ContentType: sharp ? 'image/jpeg' : (file.mimetype || 'image/jpeg')
+                    });
+                    await s3Client.send(uploadCommand);
+                    imageUrls.push(`https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`);
+                } catch (error) {
+                    console.error('Erro ao processar imagem:', error);
+                    // Continua processando outras imagens mesmo se uma falhar
+                }
+            }));
         }
 
         // Processa tecnologias (pode vir como string separada por vírgula ou array)
@@ -2865,24 +2886,39 @@ app.post('/api/pedidos-urgentes', authMiddleware, upload.single('foto'), async (
         if (req.file && s3Client) {
             try {
                 const sharp = getSharp();
+                let imageBuffer;
+                
                 if (sharp) {
-                    const imageBuffer = await sharp(req.file.buffer)
-                        .resize(800, 600, { fit: 'cover' })
-                        .toFormat('jpeg', { quality: 90 })
+                    // Processa a imagem com Sharp
+                    imageBuffer = await sharp(req.file.buffer)
+                        .resize(800, 600, { 
+                            fit: 'cover',
+                            withoutEnlargement: true
+                        })
+                        .jpeg({ 
+                            quality: 90,
+                            progressive: true
+                        })
                         .toBuffer();
-                    
-                    const key = `pedidos-urgentes/${clienteId}/${Date.now()}_${path.basename(req.file.originalname)}`;
-                    const uploadCommand = new PutObjectCommand({
-                        Bucket: bucketName,
-                        Key: key,
-                        Body: imageBuffer,
-                        ContentType: 'image/jpeg'
-                    });
-                    await s3Client.send(uploadCommand);
-                    fotoUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+                } else {
+                    // Se Sharp não estiver disponível, usa o buffer original
+                    imageBuffer = req.file.buffer;
+                    console.warn('Sharp não disponível, usando imagem original sem redimensionamento');
                 }
+                
+                // Faz upload para S3 (com ou sem Sharp)
+                const key = `pedidos-urgentes/${clienteId}/${Date.now()}_${path.basename(req.file.originalname || 'foto')}`;
+                const uploadCommand = new PutObjectCommand({
+                    Bucket: bucketName,
+                    Key: key,
+                    Body: imageBuffer,
+                    ContentType: sharp ? 'image/jpeg' : req.file.mimetype || 'image/jpeg'
+                });
+                await s3Client.send(uploadCommand);
+                fotoUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
             } catch (fotoError) {
                 console.error('Erro ao processar foto do pedido urgente:', fotoError);
+                // Não bloqueia a criação do pedido se a foto falhar
             }
         }
 
