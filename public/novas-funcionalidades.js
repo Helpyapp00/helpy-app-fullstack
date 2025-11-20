@@ -148,33 +148,66 @@ document.addEventListener('DOMContentLoaded', () => {
                     const prof = proposta.profissionalId;
                     const nivel = prof.gamificacao?.nivel || 1;
                     const mediaAvaliacao = prof.mediaAvaliacao || 0;
+                    const profId = prof._id || prof.id;
+                    // Melhora qualidade da imagem adicionando timestamp para evitar cache
+                    const avatarUrl = prof.avatarUrl || prof.foto || 'imagens/default-user.png';
+                    const avatarUrlComTimestamp = avatarUrl + (avatarUrl.includes('?') ? '&' : '?') + '_t=' + Date.now();
                     
                     return `
                         <div class="proposta-card">
                             <div class="proposta-header">
-                                <img src="${prof.avatarUrl || prof.foto || 'imagens/default-user.png'}" 
-                                     alt="${prof.nome}" class="proposta-avatar">
-                                <div class="proposta-info-profissional">
-                                    <strong>${prof.nome}</strong>
-                                    <div class="proposta-meta">
-                                        <span>Nível ${nivel}</span>
-                                        ${mediaAvaliacao > 0 ? `<span>⭐ ${mediaAvaliacao.toFixed(1)}</span>` : ''}
-                                        <span>${prof.cidade || ''} - ${prof.estado || ''}</span>
+                                <img src="${avatarUrlComTimestamp}" 
+                                     alt="${prof.nome}" 
+                                     class="proposta-avatar"
+                                     style="width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 3px solid var(--primary-color);"
+                                     loading="eager"
+                                     decoding="sync">
+                                <div class="proposta-info-profissional" style="flex: 1; margin-left: 15px;">
+                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                                        <strong class="nome-profissional-clickable" 
+                                                data-prof-id="${profId}"
+                                                style="font-size: 18px; color: var(--primary-color); cursor: pointer; transition: all 0.2s; text-decoration: none;"
+                                                onmouseover="this.style.textDecoration='underline'; this.style.color='#0056b3';"
+                                                onmouseout="this.style.textDecoration='none'; this.style.color='var(--primary-color);'">
+                                            ${prof.nome}
+                                        </strong>
+                                        <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">
+                                            Nível ${nivel}
+                                        </span>
+                                    </div>
+                                    <div class="proposta-meta" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                                        ${mediaAvaliacao > 0 ? `<span style="color: #ffc107;"><i class="fas fa-star"></i> ${mediaAvaliacao.toFixed(1)}</span>` : ''}
+                                        <span style="color: var(--text-secondary);"><i class="fas fa-map-marker-alt"></i> ${prof.cidade || ''} - ${prof.estado || ''}</span>
                                     </div>
                                 </div>
                             </div>
                             <div class="proposta-detalhes">
-                                <div class="proposta-valor">
+                                <div class="proposta-valor" style="font-size: 24px; color: #28a745; font-weight: bold; margin: 15px 0;">
                                     <strong>R$ ${parseFloat(proposta.valor).toFixed(2)}</strong>
                                 </div>
-                                <div class="proposta-tempo">
-                                    <i class="fas fa-clock"></i> ${proposta.tempoChegada}
+                                <div class="proposta-tempo" style="margin-bottom: 10px;">
+                                    <i class="fas fa-clock"></i> <strong>${proposta.tempoChegada}</strong>
                                 </div>
-                                ${proposta.observacoes ? `<p class="proposta-observacoes">${proposta.observacoes}</p>` : ''}
+                                ${proposta.observacoes ? `<p class="proposta-observacoes" style="background: var(--bg-secondary); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 3px solid var(--primary-color);">${proposta.observacoes}</p>` : ''}
                             </div>
-                            <button class="btn-aceitar-proposta" data-proposta-id="${proposta._id}" data-pedido-id="${pedidoId}">
-                                Aceitar Proposta
-                            </button>
+                            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                                <button class="btn-aceitar-proposta" 
+                                        data-proposta-id="${proposta._id}" 
+                                        data-pedido-id="${pedidoId}"
+                                        style="flex: 1; padding: 12px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;"
+                                        onmouseover="this.style.background='#218838'; this.style.transform='translateY(-2px)';"
+                                        onmouseout="this.style.background='#28a745'; this.style.transform='translateY(0)';">
+                                    <i class="fas fa-check"></i> Aceitar Proposta
+                                </button>
+                                <button class="btn-rejeitar-proposta" 
+                                        data-proposta-id="${proposta._id}" 
+                                        data-pedido-id="${pedidoId}"
+                                        style="flex: 1; padding: 12px; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;"
+                                        onmouseover="this.style.background='#c82333'; this.style.transform='translateY(-2px)';"
+                                        onmouseout="this.style.background='#dc3545'; this.style.transform='translateY(0)';">
+                                    <i class="fas fa-times"></i> Rejeitar
+                                </button>
+                            </div>
                         </div>
                     `;
                 }).join('');
@@ -188,11 +221,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (!confirm('Tem certeza que deseja aceitar esta proposta?')) return;
 
                         try {
+                            const currentToken = localStorage.getItem('jwtToken');
                             const response = await fetch(`/api/pedidos-urgentes/${pedidoId}/aceitar-proposta`, {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${token}`
+                                    'Authorization': `Bearer ${currentToken}`
                                 },
                                 body: JSON.stringify({ propostaId })
                             });
@@ -202,12 +236,66 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (data.success) {
                                 alert('Proposta aceita! O profissional foi notificado.');
                                 modalPropostas.classList.add('hidden');
+                                // Recarrega notificações para atualizar badge
+                                if (typeof carregarNotificacoes === 'function') {
+                                    await carregarNotificacoes();
+                                }
                             } else {
                                 alert(data.message || 'Erro ao aceitar proposta.');
                             }
                         } catch (error) {
                             console.error('Erro ao aceitar proposta:', error);
                             alert('Erro ao aceitar proposta.');
+                        }
+                    });
+                });
+
+                // Adicionar listeners para rejeitar propostas
+                document.querySelectorAll('.btn-rejeitar-proposta').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const propostaId = btn.dataset.propostaId;
+                        const pedidoId = btn.dataset.pedidoId;
+                        
+                        if (!confirm('Tem certeza que deseja rejeitar esta proposta?')) return;
+
+                        try {
+                            const currentToken = localStorage.getItem('jwtToken');
+                            const response = await fetch(`/api/pedidos-urgentes/${pedidoId}/rejeitar-proposta`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${currentToken}`
+                                },
+                                body: JSON.stringify({ propostaId })
+                            });
+
+                            const data = await response.json();
+                            
+                            if (data.success) {
+                                alert('Proposta rejeitada. O profissional foi notificado.');
+                                // Recarrega as propostas para remover a rejeitada
+                                await carregarPropostas(pedidoId);
+                                // Recarrega notificações para atualizar badge
+                                if (typeof carregarNotificacoes === 'function') {
+                                    await carregarNotificacoes();
+                                }
+                            } else {
+                                alert(data.message || 'Erro ao rejeitar proposta.');
+                            }
+                        } catch (error) {
+                            console.error('Erro ao rejeitar proposta:', error);
+                            alert('Erro ao rejeitar proposta.');
+                        }
+                    });
+                });
+
+                // Adicionar listeners para nome clicável (abrir perfil)
+                document.querySelectorAll('.nome-profissional-clickable').forEach(element => {
+                    element.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const profId = element.dataset.profId;
+                        if (profId) {
+                            window.location.href = `/perfil?id=${profId}`;
                         }
                     });
                 });
@@ -549,8 +637,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                                     <strong><i class="fas fa-hand-holding-usd"></i> Propostas Recebidas: ${numPropostas}</strong>
                                     ${pedido.status === 'aberto' && numPropostas > 0 ? `
-                                        <button class="btn-ver-propostas" data-pedido-id="${pedido._id}" style="padding: 8px 15px; background: var(--primary-color); color: white; border: none; border-radius: 4px; cursor: pointer;">
-                                            <i class="fas fa-eye"></i> Ver Propostas
+                                        <button class="btn-ver-propostas" 
+                                                data-pedido-id="${pedido._id}" 
+                                                style="padding: 12px 20px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 15px; box-shadow: 0 4px 6px rgba(40, 167, 69, 0.3); transition: all 0.2s; display: flex; align-items: center; gap: 8px;"
+                                                onmouseover="this.style.background='#218838'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(40, 167, 69, 0.4)';"
+                                                onmouseout="this.style.background='#28a745'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(40, 167, 69, 0.3)';">
+                                            <i class="fas fa-hand-holding-usd" style="font-size: 16px;"></i> Ver ${numPropostas} Proposta${numPropostas > 1 ? 's' : ''}
                                         </button>
                                     ` : ''}
                                 </div>
@@ -633,6 +725,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (data.success) {
                     alert('Proposta enviada com sucesso! O cliente será notificado.');
+                    // Recarrega notificações para atualizar badge (caso o cliente tenha respondido)
+                    if (typeof carregarNotificacoes === 'function') {
+                        await carregarNotificacoes();
+                    }
                     formEnviarProposta.reset();
                     modalEnviarProposta?.classList.add('hidden');
                 } else {
@@ -1614,6 +1710,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 'disputa_aberta': '⚖️',
                                 'disputa_resolvida': '⚖️',
                                 'proposta_aceita': '🎉',
+                                'proposta_rejeitada': '❌',
                                 'proposta_pedido_urgente': '💼',
                                 'pedido_urgente': '⚡',
                                 'servico_concluido': '✨',

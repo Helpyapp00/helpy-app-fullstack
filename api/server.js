@@ -3063,6 +3063,29 @@ app.post('/api/pedidos-urgentes/:pedidoId/aceitar-proposta', authMiddleware, asy
         });
 
         await agendamento.save();
+
+        // Notifica o profissional sobre a proposta aceita
+        try {
+            const profissional = await User.findById(proposta.profissionalId);
+            if (profissional) {
+                const cliente = await User.findById(clienteId);
+                const titulo = 'Proposta aceita! 🎉';
+                const mensagem = `${cliente?.nome || 'Cliente'} aceitou sua proposta de R$ ${proposta.valor.toFixed(2)} para o serviço: ${pedido.servico}`;
+                await criarNotificacao(
+                    proposta.profissionalId,
+                    'proposta_aceita',
+                    titulo,
+                    mensagem,
+                    { 
+                        pedidoId: pedido._id,
+                        propostaId: proposta._id,
+                        agendamentoId: agendamento._id
+                    }
+                );
+            }
+        } catch (notifError) {
+            console.error('Erro ao criar notificação de proposta aceita:', notifError);
+        }
         
         res.json({ 
             success: true, 
@@ -3072,6 +3095,66 @@ app.post('/api/pedidos-urgentes/:pedidoId/aceitar-proposta', authMiddleware, asy
         });
     } catch (error) {
         console.error('Erro ao aceitar proposta:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Rejeitar Proposta de Pedido Urgente
+app.post('/api/pedidos-urgentes/:pedidoId/rejeitar-proposta', authMiddleware, async (req, res) => {
+    try {
+        const { pedidoId } = req.params;
+        const { propostaId } = req.body;
+        const clienteId = req.user.id;
+
+        const pedido = await PedidoUrgente.findById(pedidoId);
+        if (!pedido) {
+            return res.status(404).json({ success: false, message: 'Pedido não encontrado.' });
+        }
+
+        if (pedido.clienteId.toString() !== clienteId) {
+            return res.status(403).json({ success: false, message: 'Apenas o cliente pode rejeitar propostas.' });
+        }
+
+        const proposta = pedido.propostas.id(propostaId);
+        if (!proposta) {
+            return res.status(404).json({ success: false, message: 'Proposta não encontrada.' });
+        }
+
+        if (proposta.status === 'aceita') {
+            return res.status(400).json({ success: false, message: 'Não é possível rejeitar uma proposta já aceita.' });
+        }
+
+        proposta.status = 'rejeitada';
+        await pedido.save();
+
+        // Notifica o profissional sobre a proposta rejeitada
+        try {
+            const profissional = await User.findById(proposta.profissionalId);
+            if (profissional) {
+                const cliente = await User.findById(clienteId);
+                const titulo = 'Proposta não selecionada';
+                const mensagem = `${cliente?.nome || 'Cliente'} não selecionou sua proposta de R$ ${proposta.valor.toFixed(2)} para o serviço: ${pedido.servico}. Continue enviando propostas para outros pedidos!`;
+                await criarNotificacao(
+                    proposta.profissionalId,
+                    'proposta_rejeitada',
+                    titulo,
+                    mensagem,
+                    { 
+                        pedidoId: pedido._id,
+                        propostaId: proposta._id
+                    }
+                );
+            }
+        } catch (notifError) {
+            console.error('Erro ao criar notificação de proposta rejeitada:', notifError);
+        }
+        
+        res.json({ 
+            success: true, 
+            message: 'Proposta rejeitada. O profissional foi notificado.'
+        });
+    } catch (error) {
+        console.error('Erro ao rejeitar proposta:', error);
         res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
     }
 });
