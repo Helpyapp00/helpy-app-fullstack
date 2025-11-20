@@ -1552,14 +1552,37 @@ document.addEventListener('DOMContentLoaded', () => {
     async function carregarNotificacoes() {
         if (!badgeNotificacoes && !listaNotificacoes) return;
         
+        // Verifica se o token existe
+        const currentToken = localStorage.getItem('jwtToken');
+        if (!currentToken) {
+            console.warn('Token não encontrado. Usuário precisa fazer login novamente.');
+            if (badgeNotificacoes) badgeNotificacoes.style.display = 'none';
+            if (listaNotificacoes && modalNotificacoes && !modalNotificacoes.classList.contains('hidden')) {
+                listaNotificacoes.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--error-color);">Sessão expirada. Por favor, faça login novamente.</p>';
+            }
+            return;
+        }
+        
         try {
             const response = await fetch('/api/notificacoes?limit=50', {
                 headers: {
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${currentToken}`
                 }
             });
 
             if (!response.ok) {
+                if (response.status === 401) {
+                    // Token inválido ou expirado
+                    console.warn('Token inválido ou expirado. Limpando sessão.');
+                    localStorage.removeItem('jwtToken');
+                    localStorage.removeItem('userId');
+                    localStorage.removeItem('userType');
+                    if (badgeNotificacoes) badgeNotificacoes.style.display = 'none';
+                    if (listaNotificacoes && modalNotificacoes && !modalNotificacoes.classList.contains('hidden')) {
+                        listaNotificacoes.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--error-color);">Sessão expirada. Por favor, faça login novamente.</p>';
+                    }
+                    return;
+                }
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
@@ -1648,14 +1671,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function marcarNotificacaoLida(notifId) {
+        const currentToken = localStorage.getItem('jwtToken');
+        if (!currentToken) {
+            console.warn('Token não encontrado ao marcar notificação como lida.');
+            return;
+        }
+        
         try {
-            await fetch(`/api/notificacoes/${notifId}/lida`, {
+            const response = await fetch(`/api/notificacoes/${notifId}/lida`, {
                 method: 'PUT',
                 headers: {
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${currentToken}`
                 }
             });
-            await carregarNotificacoes();
+            
+            if (response.status === 401) {
+                console.warn('Token inválido ao marcar notificação como lida.');
+                return;
+            }
+            
+            if (response.ok) {
+                await carregarNotificacoes();
+            }
         } catch (error) {
             console.error('Erro ao marcar notificação como lida:', error);
         }
@@ -1674,16 +1711,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnMarcarTodasLidas) {
         btnMarcarTodasLidas.addEventListener('click', async () => {
+            const currentToken = localStorage.getItem('jwtToken');
+            if (!currentToken) {
+                alert('Sessão expirada. Por favor, faça login novamente.');
+                return;
+            }
+            
             try {
-                await fetch('/api/notificacoes/marcar-todas-lidas', {
+                const response = await fetch('/api/notificacoes/marcar-todas-lidas', {
                     method: 'PUT',
                     headers: {
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${currentToken}`
                     }
                 });
-                await carregarNotificacoes();
+                
+                if (response.status === 401) {
+                    alert('Sessão expirada. Por favor, faça login novamente.');
+                    return;
+                }
+                
+                if (response.ok) {
+                    await carregarNotificacoes();
+                }
             } catch (error) {
                 console.error('Erro ao marcar todas como lidas:', error);
+                alert('Erro ao marcar notificações como lidas.');
             }
         });
     }
