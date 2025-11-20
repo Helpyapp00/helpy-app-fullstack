@@ -594,44 +594,80 @@ app.use((req, res, next) => {
 
 // Rota raiz - serve index.html
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/index.html'));
+    try {
+        res.sendFile(path.join(__dirname, '../public/index.html'));
+    } catch (error) {
+        console.error('Erro ao servir index.html:', error);
+        res.status(500).send('Erro ao carregar página');
+    }
 });
 
 // Rota de perfil - serve perfil.html
 app.get('/perfil', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/perfil.html'));
+    try {
+        res.sendFile(path.join(__dirname, '../public/perfil.html'));
+    } catch (error) {
+        console.error('Erro ao servir perfil.html:', error);
+        res.status(500).send('Erro ao carregar página');
+    }
 });
 
 // Rota de cadastro - serve cadastro.html
 app.get('/cadastro', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/cadastro.html'));
+    try {
+        res.sendFile(path.join(__dirname, '../public/cadastro.html'));
+    } catch (error) {
+        console.error('Erro ao servir cadastro.html:', error);
+        res.status(500).send('Erro ao carregar página');
+    }
 });
 
 // Rota de login - serve login.html
 app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/login.html'));
+    try {
+        res.sendFile(path.join(__dirname, '../public/login.html'));
+    } catch (error) {
+        console.error('Erro ao servir login.html:', error);
+        res.status(500).send('Erro ao carregar página de login');
+    }
 });
 
 // Rota de esqueci senha - serve esqueci-senha.html
 app.get('/esqueci-senha', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/esqueci-senha.html'));
+    try {
+        res.sendFile(path.join(__dirname, '../public/esqueci-senha.html'));
+    } catch (error) {
+        console.error('Erro ao servir esqueci-senha.html:', error);
+        res.status(500).send('Erro ao carregar página');
+    }
 });
 
 // Rota de configurações de privacidade - serve configuracoes-privacidade.html
 app.get('/configuracoes-privacidade', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/configuracoes-privacidade.html'));
+    try {
+        res.sendFile(path.join(__dirname, '../public/configuracoes-privacidade.html'));
+    } catch (error) {
+        console.error('Erro ao servir configuracoes-privacidade.html:', error);
+        res.status(500).send('Erro ao carregar página');
+    }
 });
 
 // Rota de configurações de conta - serve configuracoes-conta.html
 app.get('/configuracoes-conta', (req, res) => {
-    res.sendFile(path.join(__dirname, '../public/configuracoes-conta.html'));
+    try {
+        res.sendFile(path.join(__dirname, '../public/configuracoes-conta.html'));
+    } catch (error) {
+        console.error('Erro ao servir configuracoes-conta.html:', error);
+        res.status(500).send('Erro ao carregar página');
+    }
 });
 
 // Servir arquivos estáticos (CSS, JS, imagens, etc.)
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Inicialização dos serviços
-app.use(async (req, res, next) => { 
+// Inicialização dos serviços (apenas para rotas de API)
+// Não bloqueia rotas de HTML estático
+app.use('/api', async (req, res, next) => { 
     try { 
         await initializeServices(); 
         next(); 

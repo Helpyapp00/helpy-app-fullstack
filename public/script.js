@@ -843,19 +843,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------------------------
     // FUNCIONALIDADE DE BUSCA (desabilitada para evitar erros)
     // ----------------------------------------------------------------------
-    if (searchInput) {
-        // Desabilita busca - campo apenas visual por enquanto
-        searchInput.addEventListener('focus', (e) => {
-            e.target.blur();
-        });
-        searchInput.addEventListener('keydown', (e) => {
-            e.preventDefault();
-            return false;
-        });
-        searchInput.style.cursor = 'not-allowed';
-        searchInput.style.opacity = '0.6';
-        searchInput.setAttribute('readonly', 'readonly');
-        searchInput.setAttribute('title', 'Funcionalidade de busca em desenvolvimento');
+    try {
+        if (searchInput) {
+            // Desabilita busca - campo apenas visual por enquanto
+            searchInput.addEventListener('focus', (e) => {
+                if (e && e.target) {
+                    e.target.blur();
+                }
+            });
+            searchInput.addEventListener('keydown', (e) => {
+                if (e) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+            searchInput.style.cursor = 'not-allowed';
+            searchInput.style.opacity = '0.6';
+            searchInput.setAttribute('readonly', 'readonly');
+            searchInput.setAttribute('title', 'Funcionalidade de busca em desenvolvimento');
+        }
+    } catch (error) {
+        // Ignora erros se o campo não existir
+        console.debug('Campo de busca não encontrado ou erro ao configurá-lo:', error.message);
     }
 
     // ----------------------------------------------------------------------
@@ -1167,15 +1176,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- INICIALIZAÇÃO ---
-    // Verifica token novamente (pode ter sido removido durante o carregamento)
-    const currentTokenCheck = localStorage.getItem('jwtToken');
-    const currentUserIdCheck = localStorage.getItem('userId');
-    
-    if (!currentTokenCheck || !currentUserIdCheck) {
-        if (!window.location.pathname.endsWith('/login') && !window.location.pathname.endsWith('/cadastro')) {
-             window.location.href = '/login';
+    try {
+        // Verifica se está em página de login/cadastro
+        const pathname = window.location.pathname;
+        const isLoginPage = pathname === '/login' || 
+                           pathname === '/cadastro' ||
+                           pathname.endsWith('/login') || 
+                           pathname.endsWith('/cadastro') ||
+                           pathname.includes('login.html') ||
+                           pathname.includes('cadastro.html');
+        
+        // Se estiver na página de login/cadastro, não faz nada (deixa a página carregar normalmente)
+        if (isLoginPage) {
+            return; // Sai da função, não executa o resto do código
         }
-    } else {
+        
+        // Verifica token apenas se NÃO estiver na página de login/cadastro
+        const currentTokenCheck = localStorage.getItem('jwtToken');
+        const currentUserIdCheck = localStorage.getItem('userId');
+        
+        if (!currentTokenCheck || !currentUserIdCheck) {
+            // Redireciona para login apenas se não estiver já lá
+            window.location.href = '/login';
+            return; // Para a execução aqui
+        }
+        
+        // Usuário autenticado - carrega conteúdo apenas se os elementos existirem
         if (postsContainer) {
             loadHeaderInfo();
             fetchPosts(); 
@@ -1183,6 +1209,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (timesContainer) {
             carregarTimesLocais();
         }
+    } catch (error) {
+        console.error('Erro na inicialização:', error);
+        // Em caso de erro, não redireciona para evitar loops
+        // Apenas loga o erro
     }
 });
 
