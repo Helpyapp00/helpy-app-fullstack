@@ -3,41 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Helpy - Feed</title>
     <link rel="icon" href="/public/icons/helpy.ico" type="image/x-icon">
     
     <!-- 🔒 VERIFICAÇÃO DE AUTENTICAÇÃO - DEVE SER A PRIMEIRA COISA -->
     <script>
-        // Executa IMEDIATAMENTE, antes de qualquer coisa - SEM IIFE para garantir execução
-        // Verifica se está em página de login/cadastro
-        var pathname = window.location.pathname || '';
-        var href = window.location.href || '';
-        var isLoginPage = pathname === '/login' || 
-                         pathname === '/cadastro' ||
-                         pathname.endsWith('/login') || 
-                         pathname.endsWith('/cadastro') ||
-                         href.indexOf('/login') !== -1 ||
-                         href.indexOf('/cadastro') !== -1;
-        
-        // Se NÃO estiver na página de login/cadastro, verifica autenticação
-        if (!isLoginPage) {
-            var token = localStorage.getItem('jwtToken');
-            var userId = localStorage.getItem('userId');
-            
-            // Verifica se token e userId são válidos
-            var hasValidToken = token && token !== 'null' && token !== 'undefined' && token !== '';
-            var hasValidUserId = userId && userId !== 'null' && userId !== 'undefined' && userId !== '';
-            
-            // Se não estiver autenticado, redireciona IMEDIATAMENTE
-            if (!hasValidToken || !hasValidUserId) {
-                // Limpa dados inválidos
-                if (!hasValidToken) localStorage.removeItem('jwtToken');
-                if (!hasValidUserId) localStorage.removeItem('userId');
+        // Executa IMEDIATAMENTE, antes de qualquer coisa
+        (function() {
+            try {
+                // Verifica se está em página de login/cadastro
+                var pathname = window.location.pathname || '';
+                var href = window.location.href || '';
+                var isLoginPage = pathname === '/login' || 
+                                 pathname === '/cadastro' ||
+                                 pathname === '/esqueci-senha' ||
+                                 pathname.endsWith('/login') || 
+                                 pathname.endsWith('/cadastro') ||
+                                 pathname.endsWith('/esqueci-senha') ||
+                                 href.indexOf('/login') !== -1 ||
+                                 href.indexOf('/cadastro') !== -1 ||
+                                 href.indexOf('/esqueci-senha') !== -1;
                 
-                // Redireciona imediatamente - SEM return para garantir execução
-                window.location.replace('/login');
+                // Se NÃO estiver na página de login/cadastro, verifica autenticação
+                if (!isLoginPage) {
+                    var token = localStorage.getItem('jwtToken');
+                    var userId = localStorage.getItem('userId');
+                    
+                    // Verifica se token e userId são válidos (mais rigoroso)
+                    var hasValidToken = token && 
+                                       token !== 'null' && 
+                                       token !== 'undefined' && 
+                                       token !== '' &&
+                                       token.length > 10; // Token JWT geralmente tem mais de 10 caracteres
+                    
+                    var hasValidUserId = userId && 
+                                        userId !== 'null' && 
+                                        userId !== 'undefined' && 
+                                        userId !== '' &&
+                                        userId.length > 5; // ObjectId do MongoDB tem 24 caracteres
+                    
+                    // Se não estiver autenticado, redireciona IMEDIATAMENTE
+                    if (!hasValidToken || !hasValidUserId) {
+                        // Limpa TODOS os dados de autenticação
+                        localStorage.removeItem('jwtToken');
+                        localStorage.removeItem('userId');
+                        localStorage.removeItem('userType');
+                        localStorage.removeItem('userName');
+                        localStorage.removeItem('userPhotoUrl');
+                        
+                        // Múltiplas tentativas de redirecionamento para garantir
+                        window.location.replace('/login');
+                        
+                        // Fallback caso replace não funcione
+                        setTimeout(function() {
+                            if (window.location.pathname !== '/login' && window.location.pathname !== '/cadastro') {
+                                window.location.href = '/login';
+                            }
+                        }, 100);
+                        
+                        // Segundo fallback
+                        setTimeout(function() {
+                            if (window.location.pathname !== '/login' && window.location.pathname !== '/cadastro') {
+                                window.location = '/login';
+                            }
+                        }, 500);
+                        
+                        return; // Para a execução
+                    }
+                }
+            } catch (e) {
+                // Em caso de erro, tenta redirecionar para login
+                console.error('Erro na verificação de autenticação:', e);
+                try {
+                    window.location.replace('/login');
+                } catch (e2) {
+                    window.location.href = '/login';
+                }
             }
-        }
+        })();
+    </script>
+    
+    <!-- Script adicional para garantir redirecionamento ANTES do body carregar -->
+    <script>
+        // Executa ANTES do body ser renderizado
+        (function() {
+            var pathname = window.location.pathname || '';
+            var href = window.location.href || '';
+            var isLoginPage = pathname === '/login' || 
+                             pathname === '/cadastro' ||
+                             pathname === '/esqueci-senha' ||
+                             href.indexOf('/login') !== -1 ||
+                             href.indexOf('/cadastro') !== -1 ||
+                             href.indexOf('/esqueci-senha') !== -1;
+            
+            if (!isLoginPage) {
+                var token = localStorage.getItem('jwtToken');
+                var userId = localStorage.getItem('userId');
+                
+                var hasValidToken = token && token !== 'null' && token !== 'undefined' && token !== '' && token.length > 10;
+                var hasValidUserId = userId && userId !== 'null' && userId !== 'undefined' && userId !== '' && userId.length > 5;
+                
+                if (!hasValidToken || !hasValidUserId) {
+                    localStorage.clear();
+                    window.location.replace('/login');
+                }
+            }
+        })();
     </script>
     
     <link rel="stylesheet" href="/style.css">
@@ -1027,6 +1101,27 @@
         </div>
     </div>
 
+    <!-- Script para verificar novamente antes de carregar scripts -->
+    <script>
+        // Verificação final antes de carregar scripts
+        (function() {
+            var pathname = window.location.pathname || '';
+            var isLoginPage = pathname === '/login' || pathname === '/cadastro' || pathname === '/esqueci-senha';
+            
+            if (!isLoginPage) {
+                var token = localStorage.getItem('jwtToken');
+                var userId = localStorage.getItem('userId');
+                var hasValidToken = token && token !== 'null' && token !== 'undefined' && token !== '' && token.length > 10;
+                var hasValidUserId = userId && userId !== 'null' && userId !== 'undefined' && userId !== '' && userId.length > 5;
+                
+                if (!hasValidToken || !hasValidUserId) {
+                    localStorage.clear();
+                    window.location.replace('/login');
+                    return;
+                }
+            }
+        })();
+    </script>
     <!-- Scripts são carregados normalmente - a verificação já foi feita no head e será feita novamente nos scripts -->
     <script src="/script.js"></script>
     <script src="/novas-funcionalidades.js"></script>

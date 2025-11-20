@@ -3,12 +3,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // Verifica se está em página de login/cadastro ANTES de fazer qualquer coisa
     try {
         const pathname = window.location.pathname || '';
+        const href = window.location.href || '';
         const isLoginPage = pathname === '/login' || 
                            pathname === '/cadastro' ||
+                           pathname === '/esqueci-senha' ||
                            pathname.endsWith('/login') || 
                            pathname.endsWith('/cadastro') ||
+                           pathname.endsWith('/esqueci-senha') ||
                            pathname.includes('login.html') ||
-                           pathname.includes('cadastro.html');
+                           pathname.includes('cadastro.html') ||
+                           href.indexOf('/login') !== -1 ||
+                           href.indexOf('/cadastro') !== -1;
         
         // Se estiver na página de login/cadastro, NÃO executa nada deste script
         if (isLoginPage) {
@@ -20,21 +25,49 @@ document.addEventListener('DOMContentLoaded', () => {
         const token = localStorage.getItem('jwtToken');
         const userType = localStorage.getItem('userType');
         
+        // Verificação mais rigorosa
+        const hasValidToken = token && 
+                             token !== 'null' && 
+                             token !== 'undefined' && 
+                             token !== '' &&
+                             token.length > 10;
+        
+        const hasValidUserId = userId && 
+                              userId !== 'null' && 
+                              userId !== 'undefined' && 
+                              userId !== '' &&
+                              userId.length > 5;
+        
         // Se não estiver autenticado, redireciona IMEDIATAMENTE
-        if (!token || !userId || token === 'null' || userId === 'null' || token === 'undefined' || userId === 'undefined') {
-            // Limpa qualquer dado inválido
-            if (token === 'null' || token === 'undefined') localStorage.removeItem('jwtToken');
-            if (userId === 'null' || userId === 'undefined') localStorage.removeItem('userId');
+        if (!hasValidToken || !hasValidUserId) {
+            // Limpa TODOS os dados de autenticação
+            localStorage.removeItem('jwtToken');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userType');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userPhotoUrl');
             
             // Redireciona imediatamente
             window.location.replace('/login');
+            
+            // Fallback caso replace não funcione
+            setTimeout(() => {
+                if (window.location.pathname !== '/login' && window.location.pathname !== '/cadastro') {
+                    window.location.href = '/login';
+                }
+            }, 100);
+            
             return; // Para a execução aqui
         }
     } catch (error) {
         // Em caso de erro, tenta redirecionar para login
         console.error('Erro na verificação de autenticação:', error);
-        if (!window.location.pathname.includes('login') && !window.location.pathname.includes('cadastro')) {
-            window.location.replace('/login');
+        try {
+            if (!window.location.pathname.includes('login') && !window.location.pathname.includes('cadastro')) {
+                window.location.replace('/login');
+            }
+        } catch (e) {
+            window.location.href = '/login';
         }
         return;
     }

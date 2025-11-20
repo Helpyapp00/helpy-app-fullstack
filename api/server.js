@@ -583,12 +583,6 @@ app.use(cors({
     credentials: true
 }));
 
-// Middleware para garantir que todas as respostas sejam JSON
-app.use((req, res, next) => {
-    res.header('Content-Type', 'application/json; charset=utf-8');
-    next();
-});
-
 // Rotas para servir páginas HTML sem mostrar o nome do arquivo na URL
 // IMPORTANTE: Estas rotas devem vir ANTES do express.static para ter prioridade
 
