@@ -1,28 +1,37 @@
 document.addEventListener('DOMContentLoaded', () => {
     // VERIFICAÇÃO INICIAL DE AUTENTICAÇÃO - DEVE SER A PRIMEIRA COISA
     // Verifica se está em página de login/cadastro ANTES de fazer qualquer coisa
-    const pathname = window.location.pathname;
-    const isLoginPage = pathname === '/login' || 
-                       pathname === '/cadastro' ||
-                       pathname.endsWith('/login') || 
-                       pathname.endsWith('/cadastro') ||
-                       pathname.includes('login.html') ||
-                       pathname.includes('cadastro.html');
-    
-    // Se estiver na página de login/cadastro, NÃO executa nada deste script
-    if (isLoginPage) {
-        return; // Sai imediatamente, não executa nenhum código abaixo
-    }
-    
-    // Verifica autenticação ANTES de continuar
-    const userId = localStorage.getItem('userId');
-    const token = localStorage.getItem('jwtToken');
-    const userType = localStorage.getItem('userType');
-    
-    // Se não estiver autenticado, redireciona IMEDIATAMENTE
-    if (!token || !userId) {
-        window.location.replace('/login'); // Usa replace para evitar histórico
-        return; // Para a execução aqui
+    try {
+        const pathname = window.location.pathname || '';
+        const isLoginPage = pathname === '/login' || 
+                           pathname === '/cadastro' ||
+                           pathname.endsWith('/login') || 
+                           pathname.endsWith('/cadastro') ||
+                           pathname.includes('login.html') ||
+                           pathname.includes('cadastro.html');
+        
+        // Se estiver na página de login/cadastro, NÃO executa nada deste script
+        if (isLoginPage) {
+            return; // Sai imediatamente, não executa nenhum código abaixo
+        }
+        
+        // Verifica autenticação ANTES de continuar
+        const userId = localStorage.getItem('userId');
+        const token = localStorage.getItem('jwtToken');
+        const userType = localStorage.getItem('userType');
+        
+        // Se não estiver autenticado, redireciona IMEDIATAMENTE
+        if (!token || !userId) {
+            window.location.replace('/login'); // Usa replace para evitar histórico
+            return; // Para a execução aqui
+        }
+    } catch (error) {
+        // Em caso de erro, tenta redirecionar para login
+        console.error('Erro na verificação de autenticação:', error);
+        if (!window.location.pathname.includes('login') && !window.location.pathname.includes('cadastro')) {
+            window.location.replace('/login');
+        }
+        return;
     }
 
     // --- Elementos do Header ---
