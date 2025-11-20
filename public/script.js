@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Se estiver na página de login/cadastro, NÃO executa nada deste script
         if (isLoginPage) {
+            console.debug('[Helpy][Feed] Em página de login/cadastro, script do feed não será executado.');
             return; // Sai imediatamente, não executa nenhum código abaixo
         }
         
@@ -43,6 +44,13 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Se não estiver autenticado, redireciona IMEDIATAMENTE
         if (!hasValidToken || !hasValidUserId) {
+            console.warn('[Helpy][Feed] Usuário não autenticado ao carregar feed. Redirecionando para /login.', {
+                hasValidToken,
+                hasValidUserId,
+                rawUserId: userId,
+                rawToken: token ? `${token.slice(0, 10)}...` : null
+            });
+
             // Limpa TODOS os dados de autenticação
             localStorage.removeItem('jwtToken');
             localStorage.removeItem('userId');
@@ -62,6 +70,12 @@ document.addEventListener('DOMContentLoaded', () => {
             
             return; // Para a execução aqui
         }
+
+        console.debug('[Helpy][Feed] Script do feed inicializado com sucesso.', {
+            userId,
+            userType,
+            hasValidToken
+        });
     } catch (error) {
         // Em caso de erro, tenta redirecionar para login
         console.error('Erro na verificação de autenticação:', error);
@@ -250,6 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Verifica se ainda há token antes de fazer requisição
         const currentToken = localStorage.getItem('jwtToken');
         if (!currentToken) {
+            console.warn('[Helpy][Feed] fetchPosts chamado sem token. Nenhuma requisição será feita.');
             return; // Não faz requisição se não há token
         }
         
@@ -258,13 +273,16 @@ document.addEventListener('DOMContentLoaded', () => {
             url += `?cidade=${encodeURIComponent(cidade)}`;
         }
         try {
+            console.debug('[Helpy][Feed] Buscando posts do feed...', { url });
             const response = await fetch(url, {
                 headers: { 'Authorization': `Bearer ${currentToken}` }
             });
+            console.debug('[Helpy][Feed] Resposta de /api/posts recebida.', { status: response.status });
             if (!response.ok) {
                 throw new Error('Não foi possível carregar as postagens.');
             }
             const posts = await response.json();
+            console.debug('[Helpy][Feed] Posts carregados:', { quantidade: Array.isArray(posts) ? posts.length : 'desconhecida' });
             renderPosts(posts);
         } catch (error) {
             console.error('Erro ao buscar postagens:', error);
