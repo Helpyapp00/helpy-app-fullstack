@@ -1,92 +1,39 @@
 document.addEventListener('DOMContentLoaded', () => {
     // 🛑 CORREÇÃO: Variáveis globais do escopo para serem acessíveis em todas as funções
-    let userId, token, userType;
-    
-    // VERIFICAÇÃO INICIAL DE AUTENTICAÇÃO - DEVE SER A PRIMEIRA COISA
-    // Verifica se está em página de login/cadastro ANTES de fazer qualquer coisa
-    try {
-        const pathname = window.location.pathname || '';
-        const href = window.location.href || '';
-        const isLoginPage = pathname === '/login' || 
-                           pathname === '/cadastro' ||
-                           pathname === '/esqueci-senha' ||
-                           pathname.endsWith('/login') || 
-                           pathname.endsWith('/cadastro') ||
-                           pathname.endsWith('/esqueci-senha') ||
-                           pathname.includes('login.html') ||
-                           pathname.includes('cadastro.html') ||
-                           href.indexOf('/login') !== -1 ||
-                           href.indexOf('/cadastro') !== -1;
-        
-        // Se estiver na página de login/cadastro, NÃO executa nada deste script
-        if (isLoginPage) {
-            console.debug('[Helpy][Feed] Em página de login/cadastro, script do feed não será executado.');
-            return; // Sai imediatamente, não executa nenhum código abaixo
-        }
-        
-        // Verifica autenticação ANTES de continuar
-        userId = localStorage.getItem('userId');
-        token = localStorage.getItem('jwtToken');
-        userType = localStorage.getItem('userType');
-        
-        // Verificação mais rigorosa
-        const hasValidToken = token && 
-                             token !== 'null' && 
-                             token !== 'undefined' && 
-                             token !== '' &&
-                             token.length > 10;
-        
-        const hasValidUserId = userId && 
-                              userId !== 'null' && 
-                              userId !== 'undefined' && 
-                              userId !== '' &&
-                              userId.length > 5;
-        
-        // Se não estiver autenticado, redireciona IMEDIATAMENTE
-        if (!hasValidToken || !hasValidUserId) {
-            console.warn('[Helpy][Feed] Usuário não autenticado ao carregar feed. Redirecionando para /login.', {
-                hasValidToken,
-                hasValidUserId,
-                rawUserId: userId,
-                rawToken: token ? `${token.slice(0, 10)}...` : null
-            });
+    // Como o index.html já faz TODA a verificação de autenticação e redireciona,
+    // aqui no script do feed vamos apenas ler os valores do localStorage
+    // e, se não tiver dados válidos, não chamamos a API.
+    let userId = localStorage.getItem('userId');
+    let token = localStorage.getItem('jwtToken');
+    let userType = localStorage.getItem('userType');
 
-            // Limpa TODOS os dados de autenticação
-            localStorage.removeItem('jwtToken');
-            localStorage.removeItem('userId');
-            localStorage.removeItem('userType');
-            localStorage.removeItem('userName');
-            localStorage.removeItem('userPhotoUrl');
-            
-            // Redireciona imediatamente
-            window.location.replace('/login');
-            
-            // Fallback caso replace não funcione
-            setTimeout(() => {
-                if (window.location.pathname !== '/login' && window.location.pathname !== '/cadastro') {
-                    window.location.href = '/login';
-                }
-            }, 100);
-            
-            return; // Para a execução aqui
-        }
+    const hasValidToken = token && 
+                          token !== 'null' && 
+                          token !== 'undefined' && 
+                          token !== '' &&
+                          token.length > 10;
 
+    const hasValidUserId = userId && 
+                           userId !== 'null' && 
+                           userId !== 'undefined' && 
+                           userId !== '' &&
+                           userId.length > 5;
+
+    if (!hasValidToken || !hasValidUserId) {
+        console.warn('[Helpy][Feed] Script do feed carregado, mas sem userId/token válidos. Nenhum dado do feed será buscado.', {
+            hasValidToken,
+            hasValidUserId,
+            rawUserId: userId,
+            rawToken: token ? `${token.slice(0, 10)}...` : null
+        });
+        // Não redireciona aqui; quem cuida disso é o index.html
+        // Apenas evita chamadas de API mais abaixo.
+    } else {
         console.debug('[Helpy][Feed] Script do feed inicializado com sucesso.', {
             userId,
             userType,
             hasValidToken
         });
-    } catch (error) {
-        // Em caso de erro, tenta redirecionar para login
-        console.error('Erro na verificação de autenticação:', error);
-        try {
-            if (!window.location.pathname.includes('login') && !window.location.pathname.includes('cadastro')) {
-                window.location.replace('/login');
-            }
-        } catch (e) {
-            window.location.href = '/login';
-        }
-        return;
     }
 
     // --- Elementos do Header ---
