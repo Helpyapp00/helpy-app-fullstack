@@ -6,40 +6,38 @@
     <title>Helpy - Feed</title>
     <link rel="icon" href="/public/icons/helpy.ico" type="image/x-icon">
     
-    <!-- 🔒 VERIFICAÇÃO DE AUTENTICAÇÃO - DEVE SER A PRIMEIRA COISA, ANTES DE QUALQUER CSS -->
+    <!-- 🔒 VERIFICAÇÃO DE AUTENTICAÇÃO - DEVE SER A PRIMEIRA COISA -->
     <script>
-        // Executa IMEDIATAMENTE, antes de qualquer coisa - BLOQUEIA o carregamento se não autenticado
-        (function() {
-            // Verifica se está em página de login/cadastro
-            const pathname = window.location.pathname || window.location.href || '';
-            const isLoginPage = pathname === '/login' || 
-                               pathname === '/cadastro' ||
-                               pathname.endsWith('/login') || 
-                               pathname.endsWith('/cadastro') ||
-                               pathname.includes('login.html') ||
-                               pathname.includes('cadastro.html') ||
-                               window.location.href.includes('/login') ||
-                               window.location.href.includes('/cadastro');
+        // Executa IMEDIATAMENTE, antes de qualquer coisa - SEM IIFE para garantir execução
+        // Verifica se está em página de login/cadastro
+        var pathname = window.location.pathname || '';
+        var href = window.location.href || '';
+        var isLoginPage = pathname === '/login' || 
+                         pathname === '/cadastro' ||
+                         pathname.endsWith('/login') || 
+                         pathname.endsWith('/cadastro') ||
+                         href.indexOf('/login') !== -1 ||
+                         href.indexOf('/cadastro') !== -1;
+        
+        // Se NÃO estiver na página de login/cadastro, verifica autenticação
+        if (!isLoginPage) {
+            var token = localStorage.getItem('jwtToken');
+            var userId = localStorage.getItem('userId');
             
-            // Se NÃO estiver na página de login/cadastro, verifica autenticação
-            if (!isLoginPage) {
-                const token = localStorage.getItem('jwtToken');
-                const userId = localStorage.getItem('userId');
+            // Verifica se token e userId são válidos
+            var hasValidToken = token && token !== 'null' && token !== 'undefined' && token !== '';
+            var hasValidUserId = userId && userId !== 'null' && userId !== 'undefined' && userId !== '';
+            
+            // Se não estiver autenticado, redireciona IMEDIATAMENTE
+            if (!hasValidToken || !hasValidUserId) {
+                // Limpa dados inválidos
+                if (!hasValidToken) localStorage.removeItem('jwtToken');
+                if (!hasValidUserId) localStorage.removeItem('userId');
                 
-                // Se não estiver autenticado, redireciona IMEDIATAMENTE e PARA tudo
-                if (!token || !userId) {
-                    // Usa replace para não adicionar ao histórico
-                    window.location.replace('/login');
-                    // Tenta parar qualquer processamento adicional
-                    if (window.stop) {
-                        window.stop();
-                    }
-                    // Retorna false para tentar parar execução
-                    return false;
-                }
+                // Redireciona imediatamente - SEM return para garantir execução
+                window.location.replace('/login');
             }
-            return true;
-        })();
+        }
     </script>
     
     <link rel="stylesheet" href="/style.css">
@@ -1029,36 +1027,9 @@
         </div>
     </div>
 
-    <!-- Scripts só são carregados se o usuário estiver autenticado -->
-    <script>
-        // Verifica novamente antes de carregar scripts
-        (function() {
-            const pathname = window.location.pathname || '';
-            const isLoginPage = pathname === '/login' || 
-                               pathname === '/cadastro' ||
-                               pathname.endsWith('/login') || 
-                               pathname.endsWith('/cadastro');
-            
-            if (!isLoginPage) {
-                const token = localStorage.getItem('jwtToken');
-                const userId = localStorage.getItem('userId');
-                
-                if (token && userId) {
-                    // Usuário autenticado - carrega scripts
-                    const script1 = document.createElement('script');
-                    script1.src = '/script.js';
-                    document.body.appendChild(script1);
-                    
-                    const script2 = document.createElement('script');
-                    script2.src = '/novas-funcionalidades.js';
-                    document.body.appendChild(script2);
-                } else {
-                    // Não autenticado - não carrega scripts, apenas redireciona
-                    window.location.replace('/login');
-                }
-            }
-        })();
-    </script>
+    <!-- Scripts são carregados normalmente - a verificação já foi feita no head e será feita novamente nos scripts -->
+    <script src="/script.js"></script>
+    <script src="/novas-funcionalidades.js"></script>
 </body>
 </html>
 

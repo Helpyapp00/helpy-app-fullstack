@@ -21,8 +21,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const userType = localStorage.getItem('userType');
         
         // Se não estiver autenticado, redireciona IMEDIATAMENTE
-        if (!token || !userId) {
-            window.location.replace('/login'); // Usa replace para evitar histórico
+        if (!token || !userId || token === 'null' || userId === 'null' || token === 'undefined' || userId === 'undefined') {
+            // Limpa qualquer dado inválido
+            if (token === 'null' || token === 'undefined') localStorage.removeItem('jwtToken');
+            if (userId === 'null' || userId === 'undefined') localStorage.removeItem('userId');
+            
+            // Redireciona imediatamente
+            window.location.replace('/login');
             return; // Para a execução aqui
         }
     } catch (error) {
