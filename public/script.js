@@ -1,4 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // 🛑 CORREÇÃO: Variáveis globais do escopo para serem acessíveis em todas as funções
+    let userId, token, userType;
+    
     // VERIFICAÇÃO INICIAL DE AUTENTICAÇÃO - DEVE SER A PRIMEIRA COISA
     // Verifica se está em página de login/cadastro ANTES de fazer qualquer coisa
     try {
@@ -21,9 +24,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Verifica autenticação ANTES de continuar
-        const userId = localStorage.getItem('userId');
-        const token = localStorage.getItem('jwtToken');
-        const userType = localStorage.getItem('userType');
+        userId = localStorage.getItem('userId');
+        token = localStorage.getItem('jwtToken');
+        userType = localStorage.getItem('userType');
         
         // Verificação mais rigorosa
         const hasValidToken = token && 
@@ -316,7 +319,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
-            const isLiked = post.likes.includes(userId);
+            const isLiked = post.likes && Array.isArray(post.likes) && userId && post.likes.includes(userId);
             
             // 🛑 ATUALIZAÇÃO: Renderização dos Comentários e Respostas
             let commentsHTML = (post.comments || []).map(comment => {
@@ -328,7 +331,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }).join('');
 
                 const commentPhoto = comment.userId.foto || comment.userId.avatarUrl || 'imagens/default-user.png';
-                const isCommentLiked = comment.likes && comment.likes.includes(userId);
+                const isCommentLiked = comment.likes && Array.isArray(comment.likes) && userId && comment.likes.includes(userId);
                 const replyCount = comment.replies?.length || 0;
                 
                 return `
@@ -412,7 +415,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderReply(reply, commentId, isPostOwner) {
         if (!reply.userId) return '';
         const replyPhoto = reply.userId.foto || reply.userId.avatarUrl || 'imagens/default-user.png';
-        const isReplyLiked = reply.likes && reply.likes.includes(userId);
+        const isReplyLiked = reply.likes && Array.isArray(reply.likes) && userId && reply.likes.includes(userId);
 
         return `
         <div class="reply" data-reply-id="${reply._id}">
@@ -1068,7 +1071,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Carregar times locais
     async function carregarTimesLocais() {
-        if (!timesContainer) return;
+        if (!timesContainer || !userId || !token) return;
         
         try {
             const user = await fetch(`/api/usuario/${userId}`, {
