@@ -19,6 +19,31 @@
             }
         })();
     </script>
+    
+    <!-- 🔒 VERIFICAÇÃO DE AUTENTICAÇÃO ANTES DE CARREGAR A PÁGINA -->
+    <script>
+        (function() {
+            // Verifica se está em página de login/cadastro
+            const pathname = window.location.pathname;
+            const isLoginPage = pathname === '/login' || 
+                               pathname === '/cadastro' ||
+                               pathname.endsWith('/login') || 
+                               pathname.endsWith('/cadastro') ||
+                               pathname.includes('login.html') ||
+                               pathname.includes('cadastro.html');
+            
+            // Se NÃO estiver na página de login/cadastro, verifica autenticação
+            if (!isLoginPage) {
+                const token = localStorage.getItem('jwtToken');
+                const userId = localStorage.getItem('userId');
+                
+                // Se não estiver autenticado, redireciona IMEDIATAMENTE
+                if (!token || !userId) {
+                    window.location.replace('/login');
+                }
+            }
+        })();
+    </script>
 
     <header>
         <div class="logo-box">

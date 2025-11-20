@@ -1,7 +1,29 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // VERIFICAÇÃO INICIAL DE AUTENTICAÇÃO - DEVE SER A PRIMEIRA COISA
+    // Verifica se está em página de login/cadastro ANTES de fazer qualquer coisa
+    const pathname = window.location.pathname;
+    const isLoginPage = pathname === '/login' || 
+                       pathname === '/cadastro' ||
+                       pathname.endsWith('/login') || 
+                       pathname.endsWith('/cadastro') ||
+                       pathname.includes('login.html') ||
+                       pathname.includes('cadastro.html');
+    
+    // Se estiver na página de login/cadastro, NÃO executa nada deste script
+    if (isLoginPage) {
+        return; // Sai imediatamente, não executa nenhum código abaixo
+    }
+    
+    // Verifica autenticação ANTES de continuar
     const userId = localStorage.getItem('userId');
     const token = localStorage.getItem('jwtToken');
     const userType = localStorage.getItem('userType');
+    
+    // Se não estiver autenticado, redireciona IMEDIATAMENTE
+    if (!token || !userId) {
+        window.location.replace('/login'); // Usa replace para evitar histórico
+        return; // Para a execução aqui
+    }
 
     // --- Elementos do Header ---
     const userAvatarHeader = document.getElementById('user-avatar-header');
@@ -1176,32 +1198,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- INICIALIZAÇÃO ---
+    // Se chegou até aqui, o usuário está autenticado (verificação já foi feita no início)
     try {
-        // Verifica se está em página de login/cadastro
-        const pathname = window.location.pathname;
-        const isLoginPage = pathname === '/login' || 
-                           pathname === '/cadastro' ||
-                           pathname.endsWith('/login') || 
-                           pathname.endsWith('/cadastro') ||
-                           pathname.includes('login.html') ||
-                           pathname.includes('cadastro.html');
-        
-        // Se estiver na página de login/cadastro, não faz nada (deixa a página carregar normalmente)
-        if (isLoginPage) {
-            return; // Sai da função, não executa o resto do código
-        }
-        
-        // Verifica token apenas se NÃO estiver na página de login/cadastro
-        const currentTokenCheck = localStorage.getItem('jwtToken');
-        const currentUserIdCheck = localStorage.getItem('userId');
-        
-        if (!currentTokenCheck || !currentUserIdCheck) {
-            // Redireciona para login apenas se não estiver já lá
-            window.location.href = '/login';
-            return; // Para a execução aqui
-        }
-        
-        // Usuário autenticado - carrega conteúdo apenas se os elementos existirem
+        // Carrega conteúdo apenas se os elementos existirem
         if (postsContainer) {
             loadHeaderInfo();
             fetchPosts(); 
@@ -1211,8 +1210,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     } catch (error) {
         console.error('Erro na inicialização:', error);
-        // Em caso de erro, não redireciona para evitar loops
-        // Apenas loga o erro
     }
 });
 

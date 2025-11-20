@@ -1,8 +1,27 @@
 // 🚨 NOVO: Funcionalidades para Pedidos Urgentes, Times Locais e Projetos de Time
 document.addEventListener('DOMContentLoaded', () => {
+    // VERIFICAÇÃO INICIAL - Se estiver em página de login/cadastro, não executa nada
+    const pathname = window.location.pathname;
+    const isLoginPage = pathname === '/login' || 
+                       pathname === '/cadastro' ||
+                       pathname.endsWith('/login') || 
+                       pathname.endsWith('/cadastro') ||
+                       pathname.includes('login.html') ||
+                       pathname.includes('cadastro.html');
+    
+    if (isLoginPage) {
+        return; // Sai imediatamente se estiver na página de login/cadastro
+    }
+    
+    // Verifica autenticação
     const token = localStorage.getItem('jwtToken');
     const userId = localStorage.getItem('userId');
     const userType = localStorage.getItem('userType');
+    
+    // Se não estiver autenticado, não executa nada
+    if (!token || !userId) {
+        return; // Sai sem fazer nada, o script.js já vai redirecionar
+    }
 
     // ============================================
     // PEDIDOS URGENTES ("Preciso Agora!")
