@@ -116,6 +116,69 @@
     
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" xintegrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Estilo para ocultar body até verificação de autenticação -->
+    <style>
+        body {
+            display: none !important;
+            visibility: hidden !important;
+        }
+        body.auth-verified {
+            display: block !important;
+            visibility: visible !important;
+        }
+    </style>
+    
+    <!-- Script para mostrar body apenas se autenticado -->
+    <script>
+        (function() {
+            try {
+                var pathname = window.location.pathname || '';
+                var href = window.location.href || '';
+                var isLoginPage = pathname === '/login' || 
+                                 pathname === '/cadastro' ||
+                                 pathname === '/esqueci-senha' ||
+                                 href.indexOf('/login') !== -1 ||
+                                 href.indexOf('/cadastro') !== -1 ||
+                                 href.indexOf('/esqueci-senha') !== -1;
+                
+                if (!isLoginPage) {
+                    var token = localStorage.getItem('jwtToken');
+                    var userId = localStorage.getItem('userId');
+                    
+                    var hasValidToken = token && token !== 'null' && token !== 'undefined' && token !== '' && token.length > 10;
+                    var hasValidUserId = userId && userId !== 'null' && userId !== 'undefined' && userId !== '' && userId.length > 5;
+                    
+                    if (!hasValidToken || !hasValidUserId) {
+                        localStorage.clear();
+                        window.location.replace('/login');
+                        return;
+                    }
+                    
+                    // Se autenticado, mostra o body
+                    document.addEventListener('DOMContentLoaded', function() {
+                        document.body.classList.add('auth-verified');
+                    });
+                    
+                    // Fallback caso DOMContentLoaded já tenha executado
+                    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                        document.body.classList.add('auth-verified');
+                    }
+                } else {
+                    // Se estiver na página de login, mostra o body imediatamente
+                    document.addEventListener('DOMContentLoaded', function() {
+                        document.body.classList.add('auth-verified');
+                    });
+                    if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                        document.body.classList.add('auth-verified');
+                    }
+                }
+            } catch (e) {
+                console.error('Erro na verificação:', e);
+                window.location.replace('/login');
+            }
+        })();
+    </script>
 </head>
 <body>
     <!-- 🛑 NOVO: Script de Tema (Deve vir ANTES de todo o conteúdo) -->
