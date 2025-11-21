@@ -4,6 +4,40 @@
       "source": "/api/(.*)",
       "destination": "/api/server.js"
     },
+
+    // 🔒 Rotas amigáveis de páginas HTML (sempre apontando para o arquivo .html correto)
+    {
+      "source": "/login",
+      "destination": "/public/login.html"
+    },
+    {
+      "source": "/cadastro",
+      "destination": "/public/cadastro.html"
+    },
+    {
+      "source": "/esqueci-senha",
+      "destination": "/public/esqueci-senha.html"
+    },
+    {
+      "source": "/perfil",
+      "destination": "/public/perfil.html"
+    },
+    {
+      "source": "/configuracoes-conta",
+      "destination": "/public/configuracoes-conta.html"
+    },
+    {
+      "source": "/configuracoes-privacidade",
+      "destination": "/public/configuracoes-privacidade.html"
+    },
+
+    // Rota raiz -> feed
+    {
+      "source": "/",
+      "destination": "/public/index.html"
+    },
+
+    // Qualquer outro caminho estático cai direto dentro de /public
     {
       "source": "/(.*)",
       "destination": "/public/$1"
