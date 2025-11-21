@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!loggedInUserId || !token) {
         alert('Você precisa estar logado para acessar esta página.');
-        window.location.href = '/login';
+        window.location.href = 'login.html';
         return;
     }
     
@@ -1010,23 +1010,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fotoPerfil) { fotoPerfil.style.cursor = 'pointer'; fotoPerfil.addEventListener('click', () => { if (fotoPerfil.src && imageModal && modalImage) { modalImage.src = fotoPerfil.src; imageModal.classList.add('visible'); } }); }
     if (closeImageModalBtn) { closeImageModalBtn.addEventListener('click', () => { imageModal.classList.remove('visible'); }); }
     if (imageModal) { imageModal.addEventListener('click', (e) => { if (e.target.id === 'image-modal' || e.target.classList.contains('image-modal-overlay')) { imageModal.classList.remove('visible'); } }); }
-    if (feedButton) { feedButton.addEventListener('click', (e) => { e.preventDefault(); window.location.href = '/'; }); }
-    if (profileButton) { profileButton.addEventListener('click', (e) => { e.preventDefault(); window.location.href = `/perfil?id=${loggedInUserId}`; }); }
+    if (feedButton) { feedButton.addEventListener('click', (e) => { e.preventDefault(); window.location.href = 'index.html'; }); }
+    if (profileButton) { profileButton.addEventListener('click', (e) => { e.preventDefault(); window.location.href = `perfil.html?id=${loggedInUserId}`; }); }
     if (logoutButton) { logoutButton.addEventListener('click', (e) => { e.preventDefault(); logoutConfirmModal && logoutConfirmModal.classList.remove('hidden'); }); }
-    if (confirmLogoutYesBtn) { 
-        confirmLogoutYesBtn.addEventListener('click', () => { 
-            if (typeof window.fazerLogout === 'function') {
-                window.fazerLogout();
-            } else {
-                // Fallback se a função não estiver disponível
-                if (window.notificacoesInterval) {
-                    clearInterval(window.notificacoesInterval);
-                }
-                localStorage.clear();
-                window.location.href = '/login';
-            }
-        }); 
-    }
+    if (confirmLogoutYesBtn) { confirmLogoutYesBtn.addEventListener('click', () => { localStorage.clear(); window.location.href = 'login.html'; }); }
     if (confirmLogoutNoBtn) { confirmLogoutNoBtn.addEventListener('click', () => { logoutConfirmModal && logoutConfirmModal.classList.add('hidden'); }); }
     
     // --- INICIALIZAÇÃO DA PÁGINA ---

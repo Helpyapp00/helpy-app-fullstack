@@ -1,27 +1,8 @@
 // 🚨 NOVO: Funcionalidades para Pedidos Urgentes, Times Locais e Projetos de Time
 document.addEventListener('DOMContentLoaded', () => {
-    // VERIFICAÇÃO INICIAL - Se estiver em página de login/cadastro, não executa nada
-    const pathname = window.location.pathname;
-    const isLoginPage = pathname === '/login' || 
-                       pathname === '/cadastro' ||
-                       pathname.endsWith('/login') || 
-                       pathname.endsWith('/cadastro') ||
-                       pathname.includes('login.html') ||
-                       pathname.includes('cadastro.html');
-    
-    if (isLoginPage) {
-        return; // Sai imediatamente se estiver na página de login/cadastro
-    }
-    
-    // Verifica autenticação
     const token = localStorage.getItem('jwtToken');
     const userId = localStorage.getItem('userId');
     const userType = localStorage.getItem('userType');
-    
-    // Se não estiver autenticado, não executa nada
-    if (!token || !userId) {
-        return; // Sai sem fazer nada, o script.js já vai redirecionar
-    }
 
     // ============================================
     // PEDIDOS URGENTES ("Preciso Agora!")
@@ -167,66 +148,33 @@ document.addEventListener('DOMContentLoaded', () => {
                     const prof = proposta.profissionalId;
                     const nivel = prof.gamificacao?.nivel || 1;
                     const mediaAvaliacao = prof.mediaAvaliacao || 0;
-                    const profId = prof._id || prof.id;
-                    // Melhora qualidade da imagem adicionando timestamp para evitar cache
-                    const avatarUrl = prof.avatarUrl || prof.foto || 'imagens/default-user.png';
-                    const avatarUrlComTimestamp = avatarUrl + (avatarUrl.includes('?') ? '&' : '?') + '_t=' + Date.now();
                     
                     return `
                         <div class="proposta-card">
                             <div class="proposta-header">
-                                <img src="${avatarUrlComTimestamp}" 
-                                     alt="${prof.nome}" 
-                                     class="proposta-avatar"
-                                     style="width: 80px; height: 80px; object-fit: cover; border-radius: 50%; border: 3px solid var(--primary-color);"
-                                     loading="eager"
-                                     decoding="sync">
-                                <div class="proposta-info-profissional" style="flex: 1; margin-left: 15px;">
-                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
-                                        <strong class="nome-profissional-clickable" 
-                                                data-prof-id="${profId}"
-                                                style="font-size: 18px; color: var(--primary-color); cursor: pointer; transition: all 0.2s; text-decoration: none;"
-                                                onmouseover="this.style.textDecoration='underline'; this.style.color='#0056b3';"
-                                                onmouseout="this.style.textDecoration='none'; this.style.color='var(--primary-color);'">
-                                            ${prof.nome}
-                                        </strong>
-                                        <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600;">
-                                            Nível ${nivel}
-                                        </span>
-                                    </div>
-                                    <div class="proposta-meta" style="display: flex; gap: 12px; flex-wrap: wrap;">
-                                        ${mediaAvaliacao > 0 ? `<span style="color: #ffc107;"><i class="fas fa-star"></i> ${mediaAvaliacao.toFixed(1)}</span>` : ''}
-                                        <span style="color: var(--text-secondary);"><i class="fas fa-map-marker-alt"></i> ${prof.cidade || ''} - ${prof.estado || ''}</span>
+                                <img src="${prof.avatarUrl || prof.foto || 'imagens/default-user.png'}" 
+                                     alt="${prof.nome}" class="proposta-avatar">
+                                <div class="proposta-info-profissional">
+                                    <strong>${prof.nome}</strong>
+                                    <div class="proposta-meta">
+                                        <span>Nível ${nivel}</span>
+                                        ${mediaAvaliacao > 0 ? `<span>⭐ ${mediaAvaliacao.toFixed(1)}</span>` : ''}
+                                        <span>${prof.cidade || ''} - ${prof.estado || ''}</span>
                                     </div>
                                 </div>
                             </div>
                             <div class="proposta-detalhes">
-                                <div class="proposta-valor" style="font-size: 24px; color: #28a745; font-weight: bold; margin: 15px 0;">
+                                <div class="proposta-valor">
                                     <strong>R$ ${parseFloat(proposta.valor).toFixed(2)}</strong>
                                 </div>
-                                <div class="proposta-tempo" style="margin-bottom: 10px;">
-                                    <i class="fas fa-clock"></i> <strong>${proposta.tempoChegada}</strong>
+                                <div class="proposta-tempo">
+                                    <i class="fas fa-clock"></i> ${proposta.tempoChegada}
                                 </div>
-                                ${proposta.observacoes ? `<p class="proposta-observacoes" style="background: var(--bg-secondary); padding: 12px; border-radius: 8px; margin: 10px 0; border-left: 3px solid var(--primary-color);">${proposta.observacoes}</p>` : ''}
+                                ${proposta.observacoes ? `<p class="proposta-observacoes">${proposta.observacoes}</p>` : ''}
                             </div>
-                            <div style="display: flex; gap: 10px; margin-top: 15px;">
-                                <button class="btn-aceitar-proposta" 
-                                        data-proposta-id="${proposta._id}" 
-                                        data-pedido-id="${pedidoId}"
-                                        style="flex: 1; padding: 12px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;"
-                                        onmouseover="this.style.background='#218838'; this.style.transform='translateY(-2px)';"
-                                        onmouseout="this.style.background='#28a745'; this.style.transform='translateY(0)';">
-                                    <i class="fas fa-check"></i> Aceitar Proposta
-                                </button>
-                                <button class="btn-rejeitar-proposta" 
-                                        data-proposta-id="${proposta._id}" 
-                                        data-pedido-id="${pedidoId}"
-                                        style="flex: 1; padding: 12px; background: #dc3545; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.2s;"
-                                        onmouseover="this.style.background='#c82333'; this.style.transform='translateY(-2px)';"
-                                        onmouseout="this.style.background='#dc3545'; this.style.transform='translateY(0)';">
-                                    <i class="fas fa-times"></i> Rejeitar
-                                </button>
-                            </div>
+                            <button class="btn-aceitar-proposta" data-proposta-id="${proposta._id}" data-pedido-id="${pedidoId}">
+                                Aceitar Proposta
+                            </button>
                         </div>
                     `;
                 }).join('');
@@ -240,12 +188,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (!confirm('Tem certeza que deseja aceitar esta proposta?')) return;
 
                         try {
-                            const currentToken = localStorage.getItem('jwtToken');
                             const response = await fetch(`/api/pedidos-urgentes/${pedidoId}/aceitar-proposta`, {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${currentToken}`
+                                    'Authorization': `Bearer ${token}`
                                 },
                                 body: JSON.stringify({ propostaId })
                             });
@@ -255,66 +202,12 @@ document.addEventListener('DOMContentLoaded', () => {
                             if (data.success) {
                                 alert('Proposta aceita! O profissional foi notificado.');
                                 modalPropostas.classList.add('hidden');
-                                // Recarrega notificações para atualizar badge
-                                if (typeof carregarNotificacoes === 'function') {
-                                    await carregarNotificacoes();
-                                }
                             } else {
                                 alert(data.message || 'Erro ao aceitar proposta.');
                             }
                         } catch (error) {
                             console.error('Erro ao aceitar proposta:', error);
                             alert('Erro ao aceitar proposta.');
-                        }
-                    });
-                });
-
-                // Adicionar listeners para rejeitar propostas
-                document.querySelectorAll('.btn-rejeitar-proposta').forEach(btn => {
-                    btn.addEventListener('click', async () => {
-                        const propostaId = btn.dataset.propostaId;
-                        const pedidoId = btn.dataset.pedidoId;
-                        
-                        if (!confirm('Tem certeza que deseja rejeitar esta proposta?')) return;
-
-                        try {
-                            const currentToken = localStorage.getItem('jwtToken');
-                            const response = await fetch(`/api/pedidos-urgentes/${pedidoId}/rejeitar-proposta`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${currentToken}`
-                                },
-                                body: JSON.stringify({ propostaId })
-                            });
-
-                            const data = await response.json();
-                            
-                            if (data.success) {
-                                alert('Proposta rejeitada. O profissional foi notificado.');
-                                // Recarrega as propostas para remover a rejeitada
-                                await carregarPropostas(pedidoId);
-                                // Recarrega notificações para atualizar badge
-                                if (typeof carregarNotificacoes === 'function') {
-                                    await carregarNotificacoes();
-                                }
-                            } else {
-                                alert(data.message || 'Erro ao rejeitar proposta.');
-                            }
-                        } catch (error) {
-                            console.error('Erro ao rejeitar proposta:', error);
-                            alert('Erro ao rejeitar proposta.');
-                        }
-                    });
-                });
-
-                // Adicionar listeners para nome clicável (abrir perfil)
-                document.querySelectorAll('.nome-profissional-clickable').forEach(element => {
-                    element.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        const profId = element.dataset.profId;
-                        if (profId) {
-                            window.location.href = `/perfil?id=${profId}`;
                         }
                     });
                 });
@@ -543,7 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         e.stopPropagation(); // Evita que o clique se propague
                         const clienteId = element.dataset.clienteId;
                         if (clienteId) {
-                            window.location.href = `/perfil?id=${clienteId}`;
+                            window.location.href = `perfil.html?id=${clienteId}`;
                         }
                     });
                 });
@@ -656,12 +549,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                                     <strong><i class="fas fa-hand-holding-usd"></i> Propostas Recebidas: ${numPropostas}</strong>
                                     ${pedido.status === 'aberto' && numPropostas > 0 ? `
-                                        <button class="btn-ver-propostas" 
-                                                data-pedido-id="${pedido._id}" 
-                                                style="padding: 12px 20px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 15px; box-shadow: 0 4px 6px rgba(40, 167, 69, 0.3); transition: all 0.2s; display: flex; align-items: center; gap: 8px;"
-                                                onmouseover="this.style.background='#218838'; this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 12px rgba(40, 167, 69, 0.4)';"
-                                                onmouseout="this.style.background='#28a745'; this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 6px rgba(40, 167, 69, 0.3)';">
-                                            <i class="fas fa-hand-holding-usd" style="font-size: 16px;"></i> Ver ${numPropostas} Proposta${numPropostas > 1 ? 's' : ''}
+                                        <button class="btn-ver-propostas" data-pedido-id="${pedido._id}" style="padding: 8px 15px; background: var(--primary-color); color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                            <i class="fas fa-eye"></i> Ver Propostas
                                         </button>
                                     ` : ''}
                                 </div>
@@ -744,10 +633,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 if (data.success) {
                     alert('Proposta enviada com sucesso! O cliente será notificado.');
-                    // Recarrega notificações para atualizar badge (caso o cliente tenha respondido)
-                    if (typeof carregarNotificacoes === 'function') {
-                        await carregarNotificacoes();
-                    }
                     formEnviarProposta.reset();
                     modalEnviarProposta?.classList.add('hidden');
                 } else {
@@ -1667,37 +1552,14 @@ document.addEventListener('DOMContentLoaded', () => {
     async function carregarNotificacoes() {
         if (!badgeNotificacoes && !listaNotificacoes) return;
         
-        // Verifica se o token existe
-        const currentToken = localStorage.getItem('jwtToken');
-        if (!currentToken) {
-            console.warn('Token não encontrado. Usuário precisa fazer login novamente.');
-            if (badgeNotificacoes) badgeNotificacoes.style.display = 'none';
-            if (listaNotificacoes && modalNotificacoes && !modalNotificacoes.classList.contains('hidden')) {
-                listaNotificacoes.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--error-color);">Sessão expirada. Por favor, faça login novamente.</p>';
-            }
-            return;
-        }
-        
         try {
             const response = await fetch('/api/notificacoes?limit=50', {
                 headers: {
-                    'Authorization': `Bearer ${currentToken}`
+                    'Authorization': `Bearer ${token}`
                 }
             });
 
             if (!response.ok) {
-                if (response.status === 401) {
-                    // Token inválido ou expirado
-                    console.warn('Token inválido ou expirado. Limpando sessão.');
-                    localStorage.removeItem('jwtToken');
-                    localStorage.removeItem('userId');
-                    localStorage.removeItem('userType');
-                    if (badgeNotificacoes) badgeNotificacoes.style.display = 'none';
-                    if (listaNotificacoes && modalNotificacoes && !modalNotificacoes.classList.contains('hidden')) {
-                        listaNotificacoes.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--error-color);">Sessão expirada. Por favor, faça login novamente.</p>';
-                    }
-                    return;
-                }
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
@@ -1729,7 +1591,6 @@ document.addEventListener('DOMContentLoaded', () => {
                                 'disputa_aberta': '⚖️',
                                 'disputa_resolvida': '⚖️',
                                 'proposta_aceita': '🎉',
-                                'proposta_rejeitada': '❌',
                                 'proposta_pedido_urgente': '💼',
                                 'pedido_urgente': '⚡',
                                 'servico_concluido': '✨',
@@ -1787,28 +1648,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function marcarNotificacaoLida(notifId) {
-        const currentToken = localStorage.getItem('jwtToken');
-        if (!currentToken) {
-            console.warn('Token não encontrado ao marcar notificação como lida.');
-            return;
-        }
-        
         try {
-            const response = await fetch(`/api/notificacoes/${notifId}/lida`, {
+            await fetch(`/api/notificacoes/${notifId}/lida`, {
                 method: 'PUT',
                 headers: {
-                    'Authorization': `Bearer ${currentToken}`
+                    'Authorization': `Bearer ${token}`
                 }
             });
-            
-            if (response.status === 401) {
-                console.warn('Token inválido ao marcar notificação como lida.');
-                return;
-            }
-            
-            if (response.ok) {
-                await carregarNotificacoes();
-            }
+            await carregarNotificacoes();
         } catch (error) {
             console.error('Erro ao marcar notificação como lida:', error);
         }
@@ -1827,55 +1674,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnMarcarTodasLidas) {
         btnMarcarTodasLidas.addEventListener('click', async () => {
-            const currentToken = localStorage.getItem('jwtToken');
-            if (!currentToken) {
-                alert('Sessão expirada. Por favor, faça login novamente.');
-                return;
-            }
-            
             try {
-                const response = await fetch('/api/notificacoes/marcar-todas-lidas', {
+                await fetch('/api/notificacoes/marcar-todas-lidas', {
                     method: 'PUT',
                     headers: {
-                        'Authorization': `Bearer ${currentToken}`
+                        'Authorization': `Bearer ${token}`
                     }
                 });
-                
-                if (response.status === 401) {
-                    alert('Sessão expirada. Por favor, faça login novamente.');
-                    return;
-                }
-                
-                if (response.ok) {
-                    await carregarNotificacoes();
-                }
+                await carregarNotificacoes();
             } catch (error) {
                 console.error('Erro ao marcar todas como lidas:', error);
-                alert('Erro ao marcar notificações como lidas.');
             }
         });
     }
 
     // Carrega notificações a cada 30 segundos
-    // Salva o intervalo em uma variável global para poder cancelá-lo no logout
-    window.notificacoesInterval = setInterval(() => {
-        const currentToken = localStorage.getItem('jwtToken');
-        if (!currentToken) {
-            // Se não há token, para o intervalo
-            if (window.notificacoesInterval) {
-                clearInterval(window.notificacoesInterval);
-                window.notificacoesInterval = null;
-            }
-            return;
-        }
-        carregarNotificacoes();
-    }, 30000);
-    
-    // Carrega imediatamente se o token existir
-    const currentToken = localStorage.getItem('jwtToken');
-    if (currentToken) {
-        carregarNotificacoes();
-    }
+    setInterval(carregarNotificacoes, 30000);
+    carregarNotificacoes(); // Carrega imediatamente
 
     // ============================================
     // SISTEMA DE DISPUTAS
@@ -2279,22 +2094,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const acoesRapidas = document.querySelector('.filtro-acoes-rapidas');
     if (acoesRapidas && !document.getElementById('btn-dashboard-admin')) {
         // Verifica se é admin (em produção, isso viria do backend)
-        // Verifica token antes de fazer requisição
-        const currentToken = localStorage.getItem('jwtToken');
-        if (!currentToken) {
-            return; // Não faz requisição se não há token
-        }
-        
         fetch('/api/usuario/me', {
-            headers: { 'Authorization': `Bearer ${currentToken}` }
-        }).then(res => {
-            // Se receber 401, não tenta fazer parse do JSON
-            if (res.status === 401) {
-                throw new Error('Token inválido');
-            }
-            return res.json();
-        }).then(userData => {
-            if (userData && userData.isAdmin) {
+            headers: { 'Authorization': `Bearer ${token}` }
+        }).then(res => res.json()).then(userData => {
+            if (userData.isAdmin) {
                 const btnAdmin = document.createElement('button');
                 btnAdmin.id = 'btn-dashboard-admin';
                 btnAdmin.className = 'btn-preciso-agora-lateral';
@@ -2308,12 +2111,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     modalDashboardAdmin?.classList.remove('hidden');
                 });
             }
-        }).catch((error) => {
-            // Se não conseguir verificar (token inválido, erro de rede, etc), não adiciona o botão
-            // Não loga erro para não poluir o console com 401 esperados
-            if (error.message !== 'Token inválido') {
-                console.debug('Não foi possível verificar status de admin:', error.message);
-            }
+        }).catch(() => {
+            // Se não conseguir verificar, não adiciona o botão
         });
     }
 });

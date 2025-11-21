@@ -1,47 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // 🛑 CORREÇÃO: Variáveis globais do escopo para serem acessíveis em todas as funções
-    // Como o index.html já faz TODA a verificação de autenticação e redireciona,
-    // aqui no script do feed vamos apenas ler os valores do localStorage
-    // e, se não tiver dados válidos, não chamamos a API.
-    let userId = localStorage.getItem('userId');
-    let token = localStorage.getItem('jwtToken');
-    let userType = localStorage.getItem('userType');
-
-    const hasValidToken = token && 
-                          token !== 'null' && 
-                          token !== 'undefined' && 
-                          token !== '' &&
-                          token.length > 10;
-
-    const hasValidUserId = userId && 
-                           userId !== 'null' && 
-                           userId !== 'undefined' && 
-                           userId !== '' &&
-                           userId.length > 5;
-
-    if (!hasValidToken || !hasValidUserId) {
-        console.warn('[Helpy][Feed] Script do feed carregado, mas sem userId/token válidos. Nenhum dado do feed será buscado.', {
-            hasValidToken,
-            hasValidUserId,
-            rawUserId: userId,
-            rawToken: token ? `${token.slice(0, 10)}...` : null
-        });
-        // Não redireciona aqui; quem cuida disso é o index.html
-        // Apenas evita chamadas de API mais abaixo.
-    } else {
-        console.debug('[Helpy][Feed] Script do feed inicializado com sucesso.', {
-            userId,
-            userType,
-            hasValidToken
-        });
-    }
+    const userId = localStorage.getItem('userId');
+    const token = localStorage.getItem('jwtToken');
+    const userType = localStorage.getItem('userType');
 
     // --- Elementos do Header ---
     const userAvatarHeader = document.getElementById('user-avatar-header');
     const userNameHeader = document.getElementById('user-name-header');
     const profileButton = document.getElementById('profile-button');
     const logoutButton = document.getElementById('logout-button');
-    const searchInput = document.querySelector('.search');
     
     // --- Modais ---
     const logoutConfirmModal = document.getElementById('logout-confirm-modal');
@@ -207,29 +173,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     async function fetchPosts(cidade = null) {
         if (!postsContainer) return;
-        
-        // Verifica se ainda há token antes de fazer requisição
-        const currentToken = localStorage.getItem('jwtToken');
-        if (!currentToken) {
-            console.warn('[Helpy][Feed] fetchPosts chamado sem token. Nenhuma requisição será feita.');
-            return; // Não faz requisição se não há token
-        }
-        
         let url = '/api/posts';
         if (cidade) {
             url += `?cidade=${encodeURIComponent(cidade)}`;
         }
         try {
-            console.debug('[Helpy][Feed] Buscando posts do feed...', { url });
             const response = await fetch(url, {
-                headers: { 'Authorization': `Bearer ${currentToken}` }
+                headers: { 'Authorization': `Bearer ${token}` }
             });
-            console.debug('[Helpy][Feed] Resposta de /api/posts recebida.', { status: response.status });
             if (!response.ok) {
                 throw new Error('Não foi possível carregar as postagens.');
             }
             const posts = await response.json();
-            console.debug('[Helpy][Feed] Posts carregados:', { quantidade: Array.isArray(posts) ? posts.length : 'desconhecida' });
             renderPosts(posts);
         } catch (error) {
             console.error('Erro ao buscar postagens:', error);
@@ -284,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
-            const isLiked = post.likes && Array.isArray(post.likes) && userId && post.likes.includes(userId);
+            const isLiked = post.likes.includes(userId);
             
             // 🛑 ATUALIZAÇÃO: Renderização dos Comentários e Respostas
             let commentsHTML = (post.comments || []).map(comment => {
@@ -296,7 +251,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }).join('');
 
                 const commentPhoto = comment.userId.foto || comment.userId.avatarUrl || 'imagens/default-user.png';
-                const isCommentLiked = comment.likes && Array.isArray(comment.likes) && userId && comment.likes.includes(userId);
+                const isCommentLiked = comment.likes && comment.likes.includes(userId);
                 const replyCount = comment.replies?.length || 0;
                 
                 return `
@@ -380,7 +335,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function renderReply(reply, commentId, isPostOwner) {
         if (!reply.userId) return '';
         const replyPhoto = reply.userId.foto || reply.userId.avatarUrl || 'imagens/default-user.png';
-        const isReplyLiked = reply.likes && Array.isArray(reply.likes) && userId && reply.likes.includes(userId);
+        const isReplyLiked = reply.likes && reply.likes.includes(userId);
 
         return `
         <div class="reply" data-reply-id="${reply._id}">
@@ -414,7 +369,7 @@ document.addEventListener('DOMContentLoaded', () => {
             el.addEventListener('click', (e) => {
                 const targetUserId = e.currentTarget.dataset.userid;
                 if (targetUserId) {
-                    window.location.href = `/perfil?id=${targetUserId}`;
+                    window.location.href = `perfil.html?id=${targetUserId}`;
                 }
             });
         });
@@ -829,36 +784,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- NAVEGAÇÃO DO HEADER ---
     if (profileButton) {
         profileButton.addEventListener('click', () => {
-            window.location.href = `/perfil?id=${userId}`;
+            window.location.href = `perfil.html?id=${userId}`;
         });
     }
-
-    // Função para fazer logout de forma segura (disponível globalmente)
-    window.fazerLogout = function() {
-        // Para todos os intervalos ativos
-        if (window.notificacoesInterval) {
-            clearInterval(window.notificacoesInterval);
-            window.notificacoesInterval = null;
-        }
-        
-        // Cancela requisições pendentes (se houver AbortController)
-        if (window.abortControllers) {
-            window.abortControllers.forEach(controller => {
-                try {
-                    controller.abort();
-                } catch (e) {
-                    // Ignora erros ao abortar
-                }
-            });
-            window.abortControllers = [];
-        }
-        
-        // Limpa localStorage
-        localStorage.clear();
-        
-        // Redireciona imediatamente
-        window.location.href = '/login';
-    };
 
     if (logoutButton) {
         logoutButton.addEventListener('click', (e) => {
@@ -868,40 +796,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (confirmLogoutYesBtn) {
         confirmLogoutYesBtn.addEventListener('click', () => {
-            window.fazerLogout();
+            localStorage.clear();
+            window.location.href = 'login.html';
         });
     }
     if (confirmLogoutNoBtn) {
         confirmLogoutNoBtn.addEventListener('click', () => {
             logoutConfirmModal && logoutConfirmModal.classList.add('hidden');
         });
-    }
-
-    // ----------------------------------------------------------------------
-    // FUNCIONALIDADE DE BUSCA (desabilitada para evitar erros)
-    // ----------------------------------------------------------------------
-    try {
-        if (searchInput) {
-            // Desabilita busca - campo apenas visual por enquanto
-            searchInput.addEventListener('focus', (e) => {
-                if (e && e.target) {
-                    e.target.blur();
-                }
-            });
-            searchInput.addEventListener('keydown', (e) => {
-                if (e) {
-                    e.preventDefault();
-                    return false;
-                }
-            });
-            searchInput.style.cursor = 'not-allowed';
-            searchInput.style.opacity = '0.6';
-            searchInput.setAttribute('readonly', 'readonly');
-            searchInput.setAttribute('title', 'Funcionalidade de busca em desenvolvimento');
-        }
-    } catch (error) {
-        // Ignora erros se o campo não existir
-        console.debug('Campo de busca não encontrado ou erro ao configurá-lo:', error.message);
     }
 
     // ----------------------------------------------------------------------
@@ -1036,7 +938,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Carregar times locais
     async function carregarTimesLocais() {
-        if (!timesContainer || !userId || !token) return;
+        if (!timesContainer) return;
         
         try {
             const user = await fetch(`/api/usuario/${userId}`, {
@@ -1213,26 +1115,17 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- INICIALIZAÇÃO ---
-    // Se chegou até aqui, o usuário está autenticado (verificação já foi feita no início)
-    try {
-        // Garante que o body está visível
-        if (document.body) {
-            document.body.classList.add('auth-verified');
+    if (!token || !userId) {
+        if (!window.location.pathname.endsWith('login.html') && !window.location.pathname.endsWith('cadastro.html')) {
+             window.location.href = 'login.html';
         }
-        
-        // Carrega conteúdo apenas se os elementos existirem
+    } else {
         if (postsContainer) {
             loadHeaderInfo();
             fetchPosts(); 
         }
         if (timesContainer) {
             carregarTimesLocais();
-        }
-    } catch (error) {
-        console.error('Erro na inicialização:', error);
-        // Em caso de erro, tenta mostrar o body mesmo assim
-        if (document.body) {
-            document.body.classList.add('auth-verified');
         }
     }
 });

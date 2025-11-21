@@ -224,7 +224,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (response.ok && data.success) {
                 showMessage('Senha redefinida com sucesso! Redirecionando para login...', 'success');
                 setTimeout(() => {
-                    window.location.href = '/login';
+                    window.location.href = 'login.html';
                 }, 2000);
             } else {
                 throw new Error(data.message || 'Erro ao redefinir senha.');

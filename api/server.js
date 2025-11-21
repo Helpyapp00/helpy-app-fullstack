@@ -583,85 +583,17 @@ app.use(cors({
     credentials: true
 }));
 
-// Rotas para servir páginas HTML sem mostrar o nome do arquivo na URL
-// IMPORTANTE: Estas rotas devem vir ANTES do express.static para ter prioridade
-
-// Rota raiz - serve index.html
-app.get('/', (req, res) => {
-    try {
-        res.sendFile(path.join(__dirname, '../public/index.html'));
-    } catch (error) {
-        console.error('Erro ao servir index.html:', error);
-        res.status(500).send('Erro ao carregar página');
-    }
+// Middleware para garantir que todas as respostas sejam JSON
+app.use((req, res, next) => {
+    res.header('Content-Type', 'application/json; charset=utf-8');
+    next();
 });
 
-// Rota de perfil - serve perfil.html
-app.get('/perfil', (req, res) => {
-    try {
-        res.sendFile(path.join(__dirname, '../public/perfil.html'));
-    } catch (error) {
-        console.error('Erro ao servir perfil.html:', error);
-        res.status(500).send('Erro ao carregar página');
-    }
-});
-
-// Rota de cadastro - serve cadastro.html
-app.get('/cadastro', (req, res) => {
-    try {
-        res.sendFile(path.join(__dirname, '../public/cadastro.html'));
-    } catch (error) {
-        console.error('Erro ao servir cadastro.html:', error);
-        res.status(500).send('Erro ao carregar página');
-    }
-});
-
-// Rota de login - serve login.html
-app.get('/login', (req, res) => {
-    try {
-        res.sendFile(path.join(__dirname, '../public/login.html'));
-    } catch (error) {
-        console.error('Erro ao servir login.html:', error);
-        res.status(500).send('Erro ao carregar página de login');
-    }
-});
-
-// Rota de esqueci senha - serve esqueci-senha.html
-app.get('/esqueci-senha', (req, res) => {
-    try {
-        res.sendFile(path.join(__dirname, '../public/esqueci-senha.html'));
-    } catch (error) {
-        console.error('Erro ao servir esqueci-senha.html:', error);
-        res.status(500).send('Erro ao carregar página');
-    }
-});
-
-// Rota de configurações de privacidade - serve configuracoes-privacidade.html
-app.get('/configuracoes-privacidade', (req, res) => {
-    try {
-        res.sendFile(path.join(__dirname, '../public/configuracoes-privacidade.html'));
-    } catch (error) {
-        console.error('Erro ao servir configuracoes-privacidade.html:', error);
-        res.status(500).send('Erro ao carregar página');
-    }
-});
-
-// Rota de configurações de conta - serve configuracoes-conta.html
-app.get('/configuracoes-conta', (req, res) => {
-    try {
-        res.sendFile(path.join(__dirname, '../public/configuracoes-conta.html'));
-    } catch (error) {
-        console.error('Erro ao servir configuracoes-conta.html:', error);
-        res.status(500).send('Erro ao carregar página');
-    }
-});
-
-// Servir arquivos estáticos (CSS, JS, imagens, etc.)
+// Servir arquivos estáticos
 app.use(express.static(path.join(__dirname, '../public')));
 
-// Inicialização dos serviços (apenas para rotas de API)
-// Não bloqueia rotas de HTML estático
-app.use('/api', async (req, res, next) => { 
+// Inicialização dos serviços
+app.use(async (req, res, next) => { 
     try { 
         await initializeServices(); 
         next(); 
@@ -2122,42 +2054,21 @@ app.post('/api/servico', authMiddleware, upload.array('images', 5), async (req, 
         let imageUrls = [];
         if (files && files.length > 0 && s3Client) {
             const sharp = getSharp();
-            await Promise.all(files.map(async (file) => {
-                try {
-                    let imageBuffer;
-                    
-                    if (sharp) {
-                        // Processa a imagem com Sharp
-                        imageBuffer = await sharp(file.buffer)
-                            .resize(800, 600, { 
-                                fit: 'cover',
-                                withoutEnlargement: true
-                            })
-                            .jpeg({ 
-                                quality: 90,
-                                progressive: true
-                            })
-                            .toBuffer();
-                    } else {
-                        // Se Sharp não estiver disponível, usa o buffer original
-                        imageBuffer = file.buffer;
-                        console.warn('Sharp não disponível, usando imagem original sem redimensionamento');
+            if (!sharp) {
+                console.warn('Sharp não disponível, pulando processamento de imagens');
+            } else {
+                await Promise.all(files.map(async (file) => {
+                    try {
+                        const imageBuffer = await sharp(file.buffer).resize(800, 600, { fit: 'cover' }).toFormat('jpeg').toBuffer();
+                        const key = `servicos/${userId}/${Date.now()}_${path.basename(file.originalname)}`;
+                        const uploadCommand = new PutObjectCommand({ Bucket: bucketName, Key: key, Body: imageBuffer, ContentType: 'image/jpeg' });
+                        await s3Client.send(uploadCommand);
+                        imageUrls.push(`https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`);
+                    } catch (error) {
+                        console.error('Erro ao processar imagem:', error);
                     }
-                    
-                    const key = `servicos/${userId}/${Date.now()}_${path.basename(file.originalname || 'imagem')}`;
-                    const uploadCommand = new PutObjectCommand({ 
-                        Bucket: bucketName, 
-                        Key: key, 
-                        Body: imageBuffer, 
-                        ContentType: sharp ? 'image/jpeg' : (file.mimetype || 'image/jpeg')
-                    });
-                    await s3Client.send(uploadCommand);
-                    imageUrls.push(`https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`);
-                } catch (error) {
-                    console.error('Erro ao processar imagem:', error);
-                    // Continua processando outras imagens mesmo se uma falhar
-                }
-            }));
+                }));
+            }
         }
 
         // Processa tecnologias (pode vir como string separada por vírgula ou array)
@@ -2886,39 +2797,24 @@ app.post('/api/pedidos-urgentes', authMiddleware, upload.single('foto'), async (
         if (req.file && s3Client) {
             try {
                 const sharp = getSharp();
-                let imageBuffer;
-                
                 if (sharp) {
-                    // Processa a imagem com Sharp
-                    imageBuffer = await sharp(req.file.buffer)
-                        .resize(800, 600, { 
-                            fit: 'cover',
-                            withoutEnlargement: true
-                        })
-                        .jpeg({ 
-                            quality: 90,
-                            progressive: true
-                        })
+                    const imageBuffer = await sharp(req.file.buffer)
+                        .resize(800, 600, { fit: 'cover' })
+                        .toFormat('jpeg', { quality: 90 })
                         .toBuffer();
-                } else {
-                    // Se Sharp não estiver disponível, usa o buffer original
-                    imageBuffer = req.file.buffer;
-                    console.warn('Sharp não disponível, usando imagem original sem redimensionamento');
+                    
+                    const key = `pedidos-urgentes/${clienteId}/${Date.now()}_${path.basename(req.file.originalname)}`;
+                    const uploadCommand = new PutObjectCommand({
+                        Bucket: bucketName,
+                        Key: key,
+                        Body: imageBuffer,
+                        ContentType: 'image/jpeg'
+                    });
+                    await s3Client.send(uploadCommand);
+                    fotoUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
                 }
-                
-                // Faz upload para S3 (com ou sem Sharp)
-                const key = `pedidos-urgentes/${clienteId}/${Date.now()}_${path.basename(req.file.originalname || 'foto')}`;
-                const uploadCommand = new PutObjectCommand({
-                    Bucket: bucketName,
-                    Key: key,
-                    Body: imageBuffer,
-                    ContentType: sharp ? 'image/jpeg' : req.file.mimetype || 'image/jpeg'
-                });
-                await s3Client.send(uploadCommand);
-                fotoUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
             } catch (fotoError) {
                 console.error('Erro ao processar foto do pedido urgente:', fotoError);
-                // Não bloqueia a criação do pedido se a foto falhar
             }
         }
 
@@ -3129,29 +3025,6 @@ app.post('/api/pedidos-urgentes/:pedidoId/aceitar-proposta', authMiddleware, asy
         });
 
         await agendamento.save();
-
-        // Notifica o profissional sobre a proposta aceita
-        try {
-            const profissional = await User.findById(proposta.profissionalId);
-            if (profissional) {
-                const cliente = await User.findById(clienteId);
-                const titulo = 'Proposta aceita! 🎉';
-                const mensagem = `${cliente?.nome || 'Cliente'} aceitou sua proposta de R$ ${proposta.valor.toFixed(2)} para o serviço: ${pedido.servico}`;
-                await criarNotificacao(
-                    proposta.profissionalId,
-                    'proposta_aceita',
-                    titulo,
-                    mensagem,
-                    { 
-                        pedidoId: pedido._id,
-                        propostaId: proposta._id,
-                        agendamentoId: agendamento._id
-                    }
-                );
-            }
-        } catch (notifError) {
-            console.error('Erro ao criar notificação de proposta aceita:', notifError);
-        }
         
         res.json({ 
             success: true, 
@@ -3161,66 +3034,6 @@ app.post('/api/pedidos-urgentes/:pedidoId/aceitar-proposta', authMiddleware, asy
         });
     } catch (error) {
         console.error('Erro ao aceitar proposta:', error);
-        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
-    }
-});
-
-// Rejeitar Proposta de Pedido Urgente
-app.post('/api/pedidos-urgentes/:pedidoId/rejeitar-proposta', authMiddleware, async (req, res) => {
-    try {
-        const { pedidoId } = req.params;
-        const { propostaId } = req.body;
-        const clienteId = req.user.id;
-
-        const pedido = await PedidoUrgente.findById(pedidoId);
-        if (!pedido) {
-            return res.status(404).json({ success: false, message: 'Pedido não encontrado.' });
-        }
-
-        if (pedido.clienteId.toString() !== clienteId) {
-            return res.status(403).json({ success: false, message: 'Apenas o cliente pode rejeitar propostas.' });
-        }
-
-        const proposta = pedido.propostas.id(propostaId);
-        if (!proposta) {
-            return res.status(404).json({ success: false, message: 'Proposta não encontrada.' });
-        }
-
-        if (proposta.status === 'aceita') {
-            return res.status(400).json({ success: false, message: 'Não é possível rejeitar uma proposta já aceita.' });
-        }
-
-        proposta.status = 'rejeitada';
-        await pedido.save();
-
-        // Notifica o profissional sobre a proposta rejeitada
-        try {
-            const profissional = await User.findById(proposta.profissionalId);
-            if (profissional) {
-                const cliente = await User.findById(clienteId);
-                const titulo = 'Proposta não selecionada';
-                const mensagem = `${cliente?.nome || 'Cliente'} não selecionou sua proposta de R$ ${proposta.valor.toFixed(2)} para o serviço: ${pedido.servico}. Continue enviando propostas para outros pedidos!`;
-                await criarNotificacao(
-                    proposta.profissionalId,
-                    'proposta_rejeitada',
-                    titulo,
-                    mensagem,
-                    { 
-                        pedidoId: pedido._id,
-                        propostaId: proposta._id
-                    }
-                );
-            }
-        } catch (notifError) {
-            console.error('Erro ao criar notificação de proposta rejeitada:', notifError);
-        }
-        
-        res.json({ 
-            success: true, 
-            message: 'Proposta rejeitada. O profissional foi notificado.'
-        });
-    } catch (error) {
-        console.error('Erro ao rejeitar proposta:', error);
         res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
     }
 });
