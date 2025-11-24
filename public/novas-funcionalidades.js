@@ -68,7 +68,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const servico = document.getElementById('pedido-servico').value;
             const categoria = document.getElementById('pedido-categoria').value;
             const descricao = document.getElementById('pedido-descricao').value;
-            const endereco = document.getElementById('pedido-endereco').value;
+            const rua = document.getElementById('pedido-rua').value;
+            const numero = document.getElementById('pedido-numero').value;
+            const bairro = document.getElementById('pedido-bairro').value;
+            const referencia = document.getElementById('pedido-referencia').value;
             const cidade = document.getElementById('pedido-cidade').value;
             const estado = document.getElementById('pedido-estado').value;
             const prazoHoras = document.getElementById('pedido-prazo')?.value || '1';
@@ -81,8 +84,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 formData.append('categoria', categoria);
                 formData.append('descricao', descricao);
                 formData.append('prazoHoras', prazoHoras);
+                const enderecoCompleto = `${rua}, ${numero} - ${bairro}`;
                 formData.append('localizacao', JSON.stringify({
-                    endereco,
+                    endereco: enderecoCompleto,
+                    rua,
+                    numero,
+                    bairro,
+                    pontoReferencia: referencia,
                     cidade,
                     estado
                 }));
@@ -1772,11 +1780,20 @@ document.addEventListener('DOMContentLoaded', () => {
                                 if (notifId) {
                                     await marcarNotificacaoLida(notifId);
                                     
-                                    // Se for notificação de proposta de pedido urgente, abre o modal de propostas
+                                    // Localiza a notificação completa
                                     const notif = notificacoes.find(n => n._id === notifId);
+                                    
+                                    // Se for notificação de proposta de pedido urgente, abre o modal de propostas
                                     if (notif && notif.tipo === 'proposta_pedido_urgente' && notif.dadosAdicionais?.pedidoId) {
                                         modalNotificacoes?.classList.add('hidden');
                                         await carregarPropostas(notif.dadosAdicionais.pedidoId);
+                                    }
+
+                                    // Se for notificação de proposta aceita, redireciona para a página de perfil (agenda)
+                                    if (notif && notif.tipo === 'proposta_aceita' && notif.dadosAdicionais?.agendamentoId) {
+                                        modalNotificacoes?.classList.add('hidden');
+                                        // Abre a página de perfil onde o profissional tem a seção "Minha Agenda"
+                                        window.location.href = 'perfil.html#minha-agenda';
                                     }
                                 }
                             });

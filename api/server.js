@@ -154,7 +154,9 @@ const agendamentoSchema = new mongoose.Schema({
     status: { type: String, enum: ['pendente', 'confirmado', 'cancelado', 'concluido'], default: 'pendente' },
     endereco: {
         rua: { type: String },
+        numero: { type: String },
         bairro: { type: String },
+        pontoReferencia: { type: String },
         cidade: { type: String },
         estado: { type: String }
     }
@@ -440,7 +442,11 @@ const pedidoUrgenteSchema = new mongoose.Schema({
     descricao: { type: String },
     foto: { type: String }, // URL da foto do serviço
     localizacao: {
-        endereco: { type: String, required: true },
+        endereco: { type: String, required: true }, // Rua completa (pode incluir número/bairro)
+        rua: { type: String },
+        numero: { type: String },
+        bairro: { type: String },
+        pontoReferencia: { type: String },
         cidade: { type: String, required: true },
         estado: { type: String, required: true },
         latitude: { type: Number },

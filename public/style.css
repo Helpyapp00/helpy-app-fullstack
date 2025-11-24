@@ -703,9 +703,18 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
 /* 🆕 Estilo para select de tempo de chegada */
 .select-tempo-chegada {
-    padding: 8px 10px;
-    border-radius: 6px;
+    padding: 10px 12px;
+    border-radius: 999px;
     border: 1px solid var(--border-color);
+    background: linear-gradient(135deg, #fdfbfb 0%, #ebedee 100%);
+    font-weight: 500;
+    cursor: pointer;
+    transition: box-shadow 0.2s ease, transform 0.1s ease;
+}
+
+.select-tempo-chegada:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    transform: translateY(-1px);
 }
 
 .filtro-servico {
