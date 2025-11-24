@@ -269,7 +269,8 @@ const notificacaoSchema = new mongoose.Schema({
             'disputa_aberta',
             'disputa_resolvida',
             'avaliacao_recebida',
-            'pedido_urgente'
+            'pedido_urgente',
+            'proposta_pedido_urgente'
         ], 
         required: true 
     },
