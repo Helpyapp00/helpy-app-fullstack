@@ -3137,9 +3137,6 @@ app.get('/api/pedidos-urgentes', authMiddleware, async (req, res) => {
         // Filtra por categoria apenas se especificado explicitamente
         if (categoria) {
             query.categoria = categoria;
-        } else if (profissional.atuacao) {
-            // Se nenhuma categoria foi informada, usa a atuação do profissional como filtro padrão
-            query.categoria = { $regex: profissional.atuacao, $options: 'i' };
         }
 
         const pedidos = await PedidoUrgente.find(query)
@@ -3147,14 +3144,39 @@ app.get('/api/pedidos-urgentes', authMiddleware, async (req, res) => {
             .sort({ createdAt: -1 })
             .exec();
 
-        // Filtra por cidade se especificado
+        // Filtra por profissão (atuacao) de forma flexível, se nenhuma categoria foi informada
         let pedidosFiltrados = pedidos;
+        if (!categoria && profissional.atuacao) {
+            const atuacaoNorm = profissional.atuacao
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase().trim();
+
+            const filtraPorAtuacao = (texto) => {
+                if (!texto) return false;
+                const norm = String(texto)
+                    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                    .toLowerCase().trim();
+                return norm.includes(atuacaoNorm) || atuacaoNorm.includes(norm);
+            };
+
+            const porProfissao = pedidos.filter(p => 
+                filtraPorAtuacao(p.categoria) || filtraPorAtuacao(p.servico)
+            );
+
+            // Se o filtro por profissão trouxer algum resultado, usa ele;
+            // senão, mantém a lista completa para não esconder tudo.
+            if (porProfissao.length > 0) {
+                pedidosFiltrados = porProfissao;
+            }
+        }
+
+        // Filtra por cidade se especificado
         if (cidade) {
             const normalizeString = (str) => {
                 return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
             };
             const cidadeNormalizada = normalizeString(cidade);
-            pedidosFiltrados = pedidos.filter(pedido => {
+            pedidosFiltrados = pedidosFiltrados.filter(pedido => {
                 const cidadePedido = pedido.localizacao?.cidade || '';
                 return normalizeString(cidadePedido).includes(cidadeNormalizada) ||
                        cidadeNormalizada.includes(normalizeString(cidadePedido));

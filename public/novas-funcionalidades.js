@@ -1899,22 +1899,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Adicionar botão para ver disputas
-    if (userType === 'cliente' || userType === 'trabalhador') {
-        const acoesRapidas = document.querySelector('.filtro-acoes-rapidas');
-        if (acoesRapidas && !document.getElementById('btn-minhas-disputas')) {
-            const btnNovo = document.createElement('button');
-            btnNovo.id = 'btn-minhas-disputas';
-            btnNovo.className = 'btn-preciso-agora-lateral';
-            btnNovo.innerHTML = '<i class="fas fa-gavel"></i> Minhas Disputas';
-            acoesRapidas.appendChild(btnNovo);
-            
-            btnNovo.addEventListener('click', async () => {
-                await carregarDisputas();
-                modalMinhasDisputas?.classList.remove('hidden');
-            });
-        }
-    }
+    // (Botão lateral de "Minhas Disputas" removido para simplificar a navegação)
 
     // Adicionar botão "Abrir Disputa" nos cards de pagamento quando status é "pago"
     // Isso será feito dinamicamente quando os pagamentos forem renderizados
