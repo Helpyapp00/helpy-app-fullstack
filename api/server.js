@@ -446,6 +446,7 @@ const pedidoUrgenteSchema = new mongoose.Schema({
         longitude: { type: Number }
     },
     categoria: { type: String, required: true }, // Para filtrar profissionais
+    prazoHoras: { type: Number, default: 1 }, // Prazo escolhido (1, 2, 5, 9, 12, 24)
     propostas: [{
         profissionalId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
         valor: { type: Number, required: true },
@@ -2789,7 +2790,7 @@ app.get('/api/projetos-time', async (req, res) => {
 // Criar Pedido Urgente
 app.post('/api/pedidos-urgentes', authMiddleware, upload.single('foto'), async (req, res) => {
     try {
-        const { servico, descricao, localizacao, categoria } = req.body;
+        const { servico, descricao, localizacao, categoria, prazoHoras } = req.body;
         const clienteId = req.user.id;
 
         // Processa a foto se foi enviada
@@ -2818,9 +2819,15 @@ app.post('/api/pedidos-urgentes', authMiddleware, upload.single('foto'), async (
             }
         }
 
-        // Define expiração em 1 hora
+        // Define expiração conforme prazo escolhido (padrão: 1h)
+        const horasValidas = [1, 2, 5, 9, 12, 24];
+        let horas = parseInt(prazoHoras, 10);
+        if (isNaN(horas) || !horasValidas.includes(horas)) {
+            horas = 1;
+        }
+
         const dataExpiracao = new Date();
-        dataExpiracao.setHours(dataExpiracao.getHours() + 1);
+        dataExpiracao.setHours(dataExpiracao.getHours() + horas);
 
         const novoPedido = new PedidoUrgente({
             clienteId,
@@ -2829,6 +2836,7 @@ app.post('/api/pedidos-urgentes', authMiddleware, upload.single('foto'), async (
             foto: fotoUrl,
             localizacao: typeof localizacao === 'string' ? JSON.parse(localizacao) : localizacao,
             categoria,
+            prazoHoras: horas,
             dataExpiracao
         });
 
@@ -2979,6 +2987,41 @@ app.get('/api/pedidos-urgentes/:pedidoId/propostas', authMiddleware, async (req,
     }
 });
 
+// Recusar Proposta de Pedido Urgente (cliente não gostou da proposta)
+app.post('/api/pedidos-urgentes/:pedidoId/recusar-proposta', authMiddleware, async (req, res) => {
+    try {
+        const { pedidoId } = req.params;
+        const { propostaId } = req.body;
+        const clienteId = req.user.id;
+
+        const pedido = await PedidoUrgente.findById(pedidoId);
+        if (!pedido) {
+            return res.status(404).json({ success: false, message: 'Pedido não encontrado.' });
+        }
+
+        if (pedido.clienteId.toString() !== clienteId) {
+            return res.status(403).json({ success: false, message: 'Apenas o cliente pode recusar propostas.' });
+        }
+
+        const proposta = pedido.propostas.id(propostaId);
+        if (!proposta) {
+            return res.status(404).json({ success: false, message: 'Proposta não encontrada.' });
+        }
+
+        if (proposta.status === 'aceita') {
+            return res.status(400).json({ success: false, message: 'Não é possível recusar uma proposta já aceita.' });
+        }
+
+        proposta.status = 'rejeitada';
+        await pedido.save();
+
+        return res.json({ success: true, message: 'Proposta recusada com sucesso.', pedido });
+    } catch (error) {
+        console.error('Erro ao recusar proposta:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
 // Aceitar Proposta de Pedido Urgente
 app.post('/api/pedidos-urgentes/:pedidoId/aceitar-proposta', authMiddleware, async (req, res) => {
     try {
@@ -3038,6 +3081,42 @@ app.post('/api/pedidos-urgentes/:pedidoId/aceitar-proposta', authMiddleware, asy
     }
 });
 
+// Cancelar Pedido Urgente (cliente)
+app.post('/api/pedidos-urgentes/:pedidoId/cancelar', authMiddleware, async (req, res) => {
+    try {
+        const { pedidoId } = req.params;
+        const clienteId = req.user.id;
+
+        const pedido = await PedidoUrgente.findById(pedidoId);
+        if (!pedido) {
+            return res.status(404).json({ success: false, message: 'Pedido não encontrado.' });
+        }
+
+        if (pedido.clienteId.toString() !== clienteId) {
+            return res.status(403).json({ success: false, message: 'Apenas o cliente pode cancelar o pedido.' });
+        }
+
+        if (pedido.status !== 'aberto') {
+            return res.status(400).json({ success: false, message: 'Somente pedidos em aberto podem ser cancelados.' });
+        }
+
+        pedido.status = 'cancelado';
+        // Marca propostas pendentes como canceladas
+        pedido.propostas.forEach(p => {
+            if (p.status === 'pendente') {
+                p.status = 'cancelada';
+            }
+        });
+
+        await pedido.save();
+
+        return res.json({ success: true, message: 'Pedido cancelado com sucesso.', pedido });
+    } catch (error) {
+        console.error('Erro ao cancelar pedido urgente:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
 // Listar Pedidos Urgentes Disponíveis (para profissionais)
 app.get('/api/pedidos-urgentes', authMiddleware, async (req, res) => {
     try {
@@ -3055,9 +3134,11 @@ app.get('/api/pedidos-urgentes', authMiddleware, async (req, res) => {
         };
 
         // Filtra por categoria apenas se especificado explicitamente
-        // Não filtra automaticamente pela atuação do profissional (permite ver todos os pedidos)
         if (categoria) {
             query.categoria = categoria;
+        } else if (profissional.atuacao) {
+            // Se nenhuma categoria foi informada, usa a atuação do profissional como filtro padrão
+            query.categoria = { $regex: profissional.atuacao, $options: 'i' };
         }
 
         const pedidos = await PedidoUrgente.find(query)
@@ -3110,7 +3191,22 @@ app.get('/api/pedidos-urgentes/meus', authMiddleware, async (req, res) => {
             .sort({ createdAt: -1 })
             .exec();
 
-        res.json({ success: true, pedidos });
+        const agora = new Date();
+        const pedidosAtivos = [];
+        const pedidosExpirados = [];
+
+        pedidos.forEach(p => {
+            const expirado = p.dataExpiracao && p.dataExpiracao <= agora && p.status === 'aberto';
+            const plain = p.toObject();
+            plain.expirado = expirado;
+            if (expirado) {
+                pedidosExpirados.push(plain);
+            } else {
+                pedidosAtivos.push(plain);
+            }
+        });
+
+        res.json({ success: true, pedidos, pedidosAtivos, pedidosExpirados });
     } catch (error) {
         console.error('Erro ao buscar pedidos urgentes do cliente:', error);
         res.status(500).json({ success: false, message: 'Erro interno do servidor.' });

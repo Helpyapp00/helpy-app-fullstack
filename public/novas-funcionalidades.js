@@ -71,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const endereco = document.getElementById('pedido-endereco').value;
             const cidade = document.getElementById('pedido-cidade').value;
             const estado = document.getElementById('pedido-estado').value;
+            const prazoHoras = document.getElementById('pedido-prazo')?.value || '1';
             const fotoFile = inputFotoPedido?.files[0];
 
             try {
@@ -79,6 +80,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 formData.append('servico', servico);
                 formData.append('categoria', categoria);
                 formData.append('descricao', descricao);
+                formData.append('prazoHoras', prazoHoras);
                 formData.append('localizacao', JSON.stringify({
                     endereco,
                     cidade,
@@ -172,9 +174,14 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                                 ${proposta.observacoes ? `<p class="proposta-observacoes">${proposta.observacoes}</p>` : ''}
                             </div>
-                            <button class="btn-aceitar-proposta" data-proposta-id="${proposta._id}" data-pedido-id="${pedidoId}">
-                                Aceitar Proposta
-                            </button>
+                            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                                <button class="btn-aceitar-proposta" data-proposta-id="${proposta._id}" data-pedido-id="${pedidoId}">
+                                    Aceitar Proposta
+                                </button>
+                                <button class="btn-recusar-proposta" data-proposta-id="${proposta._id}" data-pedido-id="${pedidoId}" style="background: #dc3545; color: #fff; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">
+                                    Recusar
+                                </button>
+                            </div>
                         </div>
                     `;
                 }).join('');
@@ -208,6 +215,39 @@ document.addEventListener('DOMContentLoaded', () => {
                         } catch (error) {
                             console.error('Erro ao aceitar proposta:', error);
                             alert('Erro ao aceitar proposta.');
+                        }
+                    });
+                });
+
+                // Adicionar listeners para recusar propostas
+                document.querySelectorAll('.btn-recusar-proposta').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const propostaId = btn.dataset.propostaId;
+                        const pedidoId = btn.dataset.pedidoId;
+
+                        if (!confirm('Tem certeza que deseja recusar esta proposta?')) return;
+
+                        try {
+                            const response = await fetch(`/api/pedidos-urgentes/${pedidoId}/recusar-proposta`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify({ propostaId })
+                            });
+
+                            const data = await response.json();
+
+                            if (data.success) {
+                                alert('Proposta recusada com sucesso.');
+                                await carregarPropostas(pedidoId);
+                            } else {
+                                alert(data.message || 'Erro ao recusar proposta.');
+                            }
+                        } catch (error) {
+                            console.error('Erro ao recusar proposta:', error);
+                            alert('Erro ao recusar proposta.');
                         }
                     });
                 });
@@ -506,17 +546,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
             
             if (data.success) {
-                if (!data.pedidos || data.pedidos.length === 0) {
+                const pedidosAtivos = data.pedidosAtivos || data.pedidos || [];
+                const pedidosExpirados = data.pedidosExpirados || [];
+
+                if (pedidosAtivos.length === 0 && pedidosExpirados.length === 0) {
                     listaMeusPedidosUrgentes.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-secondary);">Você ainda não criou nenhum pedido urgente.</p>';
                     return;
                 }
 
-                listaMeusPedidosUrgentes.innerHTML = data.pedidos.map(pedido => {
+                function renderPedidoCard(pedido, expirado = false) {
                     const tempoRestante = Math.max(0, Math.ceil((new Date(pedido.dataExpiracao) - new Date()) / 60000));
                     const numPropostas = pedido.propostas?.length || 0;
                     const statusBadge = {
                         'aberto': '<span class="badge-status badge-aberto">Aberto</span>',
-                        'aceito': '<span class="badge-status badge-aceito">Aceito</span>',
+                        'em_andamento': '<span class="badge-status badge-aceito">Em andamento</span>',
                         'concluido': '<span class="badge-status badge-concluido">Concluído</span>',
                         'cancelado': '<span class="badge-status badge-cancelado">Cancelado</span>'
                     }[pedido.status] || '';
@@ -529,7 +572,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                     <span class="badge-categoria">${pedido.categoria}</span>
                                     ${statusBadge}
                                 </div>
-                                ${pedido.status === 'aberto' ? `<span class="tempo-restante">⏱️ ${tempoRestante} min</span>` : ''}
+                                ${pedido.status === 'aberto' && !expirado ? `<span class="tempo-restante">⏱️ ${tempoRestante} min</span>` : ''}
                             </div>
                             
                             ${pedido.foto ? `
@@ -548,20 +591,41 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div style="margin-top: 15px; padding: 15px; background: var(--bg-secondary); border-radius: 8px;">
                                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                                     <strong><i class="fas fa-hand-holding-usd"></i> Propostas Recebidas: ${numPropostas}</strong>
-                                    ${pedido.status === 'aberto' && numPropostas > 0 ? `
+                                    ${numPropostas > 0 ? `
                                         <button class="btn-ver-propostas" data-pedido-id="${pedido._id}" style="padding: 8px 15px; background: var(--primary-color); color: white; border: none; border-radius: 4px; cursor: pointer;">
                                             <i class="fas fa-eye"></i> Ver Propostas
                                         </button>
                                     ` : ''}
                                 </div>
                                 ${numPropostas === 0 && pedido.status === 'aberto' ? 
-                                    '<p style="color: var(--text-secondary); font-size: 14px;">Aguardando propostas de profissionais...</p>' : 
+                                    (!expirado ? '<p style="color: var(--text-secondary); font-size: 14px;">Aguardando propostas de profissionais...</p>' : '') : 
                                     ''
                                 }
                             </div>
+                            ${pedido.status === 'aberto' && !expirado ? `
+                                <div style="margin-top: 10px; text-align: right;">
+                                    <button class="btn-cancelar-pedido" data-pedido-id="${pedido._id}" style="padding: 8px 15px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                        <i class="fas fa-times"></i> Cancelar Pedido
+                                    </button>
+                                </div>
+                            ` : ''}
                         </div>
                     `;
-                }).join('');
+                }
+
+                let html = '';
+
+                if (pedidosAtivos.length > 0) {
+                    html += '<h4 style="margin-bottom: 10px;">Pedidos Ativos</h4>';
+                    html += pedidosAtivos.map(p => renderPedidoCard(p, false)).join('');
+                }
+
+                if (pedidosExpirados.length > 0) {
+                    html += '<h4 style="margin: 20px 0 10px;">Pedidos Expirados</h4>';
+                    html += pedidosExpirados.map(p => renderPedidoCard(p, true)).join('');
+                }
+
+                listaMeusPedidosUrgentes.innerHTML = html;
 
                 // Adicionar listeners para ver propostas
                 document.querySelectorAll('.btn-ver-propostas').forEach(btn => {
@@ -569,6 +633,35 @@ document.addEventListener('DOMContentLoaded', () => {
                         const pedidoId = btn.dataset.pedidoId;
                         modalMeusPedidosUrgentes?.classList.add('hidden');
                         await carregarPropostas(pedidoId);
+                    });
+                });
+
+                // Adicionar listeners para cancelar pedidos
+                document.querySelectorAll('.btn-cancelar-pedido').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const pedidoId = btn.dataset.pedidoId;
+                        if (!confirm('Tem certeza que deseja cancelar este pedido?')) return;
+
+                        try {
+                            const response = await fetch(`/api/pedidos-urgentes/${pedidoId}/cancelar`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                }
+                            });
+
+                            const data = await response.json();
+                            if (data.success) {
+                                alert('Pedido cancelado com sucesso.');
+                                await carregarMeusPedidosUrgentes(status);
+                            } else {
+                                alert(data.message || 'Erro ao cancelar pedido.');
+                            }
+                        } catch (error) {
+                            console.error('Erro ao cancelar pedido urgente:', error);
+                            alert('Erro ao cancelar pedido.');
+                        }
                     });
                 });
             } else {
