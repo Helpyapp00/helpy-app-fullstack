@@ -275,30 +275,32 @@
                         <input type="text" id="pedido-servico" placeholder="Ex: Montar guarda-roupa" required>
                     </div>
                     
-                    <div class="form-group">
-                        <label><i class="fas fa-tags"></i> Categoria</label>
-                        <select id="pedido-categoria" required>
-                            <option value="">Selecione...</option>
-                            <option value="montagem">Montagem</option>
-                            <option value="pintura">Pintura</option>
-                            <option value="eletricista">Eletricista</option>
-                            <option value="encanador">Encanador</option>
-                            <option value="jardinagem">Jardinagem</option>
-                            <option value="limpeza">Limpeza</option>
-                            <option value="outros">Outros</option>
-                        </select>
-                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label><i class="fas fa-tags"></i> Categoria</label>
+                            <select id="pedido-categoria" required>
+                                <option value="">Selecione...</option>
+                                <option value="montagem">Montagem</option>
+                                <option value="pintura">Pintura</option>
+                                <option value="eletricista">Eletricista</option>
+                                <option value="encanador">Encanador</option>
+                                <option value="jardinagem">Jardinagem</option>
+                                <option value="limpeza">Limpeza</option>
+                                <option value="outros">Outros</option>
+                            </select>
+                        </div>
 
-                    <div class="form-group">
-                        <label><i class="fas fa-clock"></i> Prazo para atendimento</label>
-                        <select id="pedido-prazo" required>
-                            <option value="1">Urgente (até 1 hora)</option>
-                            <option value="2">Até 2 horas</option>
-                            <option value="5">Até 5 horas</option>
-                            <option value="9">Até 9 horas</option>
-                            <option value="12">Até 12 horas</option>
-                            <option value="24">Até 24 horas</option>
-                        </select>
+                        <div class="form-group">
+                            <label><i class="fas fa-clock"></i> Prazo para atendimento</label>
+                            <select id="pedido-prazo" required>
+                                <option value="1">Urgente (até 1 hora)</option>
+                                <option value="2">Até 2 horas</option>
+                                <option value="5">Até 5 horas</option>
+                                <option value="9">Até 9 horas</option>
+                                <option value="12">Até 12 horas</option>
+                                <option value="24">Até 24 horas</option>
+                            </select>
+                        </div>
                     </div>
                     
                     <div class="form-group">

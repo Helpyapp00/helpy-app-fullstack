@@ -442,8 +442,8 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 .popup-conteudo button { background-color: var(--btn-secondary-bg); color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-size: 1.1em; margin: 5px; transition: background-color 0.2s; } 
 .popup-conteudo button:hover { background-color: var(--btn-secondary-hover); } 
 .oculto { display: none !important; }
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
-.modal-content { background-color: var(--bg-secondary); padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); max-width: 400px; width: 90%; }
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 10px; box-sizing: border-box; }
+.modal-content { background-color: var(--bg-secondary); padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); max-width: 400px; width: 90%; max-height: 90vh; overflow-y: auto; }
 .modal-grande { max-width: 600px; text-align: left; }
 .modal-grande h2 { text-align: center; margin-bottom: 20px; color: var(--text-primary); }
 .modal-grande .form-group { margin-bottom: 15px; }

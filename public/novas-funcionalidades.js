@@ -666,7 +666,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             ${pedido.status === 'aberto' && !expirado ? `
                                 <div style="margin-top: 10px; text-align: right;">
                                     <button class="btn-cancelar-pedido" data-pedido-id="${pedido._id}" style="padding: 8px 15px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
-                                        <i class="fas fa-times"></i> Cancelar Pedido
+                                        <i class="fas fa-times"></i> Apagar Pedido
                                     </button>
                                 </div>
                             ` : ''}
