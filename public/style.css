@@ -617,6 +617,97 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     text-align: left;
 }
 
+/* 🆕 Feedback visual (toast) para sucesso */
+.toast-sucesso {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #28a745;
+    color: #fff;
+    padding: 12px 18px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 2000;
+    font-size: 14px;
+}
+
+.toast-sucesso.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.check-animado {
+    display: inline-flex;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #fff;
+    color: #28a745;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    animation: pulse-check 0.6s ease-out;
+}
+
+@keyframes pulse-check {
+    0% { transform: scale(0.4); opacity: 0; }
+    60% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* 🆕 Miniatura e overlay da foto do pedido nas propostas */
+.pedido-propostas-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.pedido-propostas-info p {
+    margin: 6px 0 0 0;
+}
+
+.pedido-propostas-foto .pedido-foto-miniatura {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 2px solid var(--border-color);
+}
+
+.imagem-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2100;
+}
+
+.imagem-overlay-content img {
+    max-width: 95vw;
+    max-height: 90vh;
+    border-radius: 8px;
+}
+
+/* 🆕 Estilo para select de tempo de chegada */
+.select-tempo-chegada {
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
+
 .filtro-servico {
     display: flex;
     gap: 10px;

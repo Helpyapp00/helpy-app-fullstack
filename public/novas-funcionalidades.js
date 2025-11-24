@@ -102,7 +102,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert(`Pedido criado! ${data.profissionaisNotificados} profissionais foram notificados.`);
+                    // Feedback visual com check animado
+                    const toast = document.createElement('div');
+                    toast.className = 'toast-sucesso';
+                    toast.innerHTML = `<span class="check-animado">✔</span> Pedido criado! ${data.profissionaisNotificados} profissionais foram notificados.`;
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.classList.add('show'), 10);
+                    setTimeout(() => toast.remove(), 2500);
+
                     formPedidoUrgente.reset();
                     if (previewFotoPedido) previewFotoPedido.style.display = 'none';
                     if (imgPreviewPedido) imgPreviewPedido.src = '';
@@ -140,13 +147,34 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (data.success) {
                 modalPropostas.classList.remove('hidden');
-                
-                if (data.propostas.length === 0) {
+
+                const pedido = data.pedido;
+                const propostas = data.propostas || [];
+
+                if (propostas.length === 0) {
                     listaPropostas.innerHTML = '<p>Ainda não há propostas. Profissionais serão notificados!</p>';
                     return;
                 }
 
-                listaPropostas.innerHTML = data.propostas.map(proposta => {
+                let headerHtml = '';
+                if (pedido) {
+                    headerHtml = `
+                        <div class="pedido-propostas-header">
+                            <div class="pedido-propostas-info">
+                                <strong>${pedido.servico || ''}</strong>
+                                ${pedido.categoria ? `<span class="badge-categoria">${pedido.categoria}</span>` : ''}
+                                ${pedido.descricao ? `<p class="pedido-descricao">${pedido.descricao}</p>` : ''}
+                            </div>
+                            ${pedido.foto ? `
+                                <div class="pedido-propostas-foto">
+                                    <img src="${pedido.foto}" alt="Foto do serviço" class="pedido-foto-miniatura" id="pedido-foto-miniatura">
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                }
+
+                const propostasHtml = propostas.map(proposta => {
                     const prof = proposta.profissionalId;
                     const nivel = prof.gamificacao?.nivel || 1;
                     const mediaAvaliacao = prof.mediaAvaliacao || 0;
@@ -186,6 +214,24 @@ document.addEventListener('DOMContentLoaded', () => {
                     `;
                 }).join('');
 
+                listaPropostas.innerHTML = headerHtml + propostasHtml;
+
+                // Clique na miniatura para ampliar a imagem do serviço
+                const miniatura = document.getElementById('pedido-foto-miniatura');
+                if (miniatura) {
+                    miniatura.addEventListener('click', () => {
+                        const overlay = document.createElement('div');
+                        overlay.className = 'imagem-overlay';
+                        overlay.innerHTML = `
+                            <div class="imagem-overlay-content">
+                                <img src="${pedido.foto}" alt="Foto do serviço ampliada">
+                            </div>
+                        `;
+                        overlay.addEventListener('click', () => overlay.remove());
+                        document.body.appendChild(overlay);
+                    });
+                }
+
                 // Adicionar listeners para aceitar propostas
                 document.querySelectorAll('.btn-aceitar-proposta').forEach(btn => {
                     btn.addEventListener('click', async () => {
@@ -207,7 +253,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             const data = await response.json();
                             
                             if (data.success) {
-                                alert('Proposta aceita! O profissional foi notificado.');
+                                // Feedback visual de sucesso
+                                const toast = document.createElement('div');
+                                toast.className = 'toast-sucesso';
+                                toast.innerHTML = '<span class="check-animado">✔</span> Proposta aceita! Agora é só aguardar o profissional.';
+                                document.body.appendChild(toast);
+                                setTimeout(() => toast.classList.add('show'), 10);
+                                setTimeout(() => toast.remove(), 2500);
+
                                 modalPropostas.classList.add('hidden');
                             } else {
                                 alert(data.message || 'Erro ao aceitar proposta.');
@@ -725,7 +778,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
                 
                 if (data.success) {
-                    alert('Proposta enviada com sucesso! O cliente será notificado.');
+                    // Feedback visual com check animado
+                    const toast = document.createElement('div');
+                    toast.className = 'toast-sucesso';
+                    toast.innerHTML = '<span class="check-animado">✔</span> Proposta enviada com sucesso! O cliente será notificado.';
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.classList.add('show'), 10);
+                    setTimeout(() => toast.remove(), 2500);
+
                     formEnviarProposta.reset();
                     modalEnviarProposta?.classList.add('hidden');
                 } else {

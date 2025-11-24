@@ -2981,7 +2981,18 @@ app.get('/api/pedidos-urgentes/:pedidoId/propostas', authMiddleware, async (req,
             return res.status(403).json({ success: false, message: 'Acesso negado.' });
         }
 
-        res.json({ success: true, propostas: pedido.propostas });
+        res.json({ 
+            success: true, 
+            propostas: pedido.propostas,
+            pedido: {
+                _id: pedido._id,
+                servico: pedido.servico,
+                descricao: pedido.descricao,
+                foto: pedido.foto,
+                categoria: pedido.categoria,
+                localizacao: pedido.localizacao
+            }
+        });
     } catch (error) {
         console.error('Erro ao buscar propostas:', error);
         res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
@@ -3069,10 +3080,32 @@ app.post('/api/pedidos-urgentes/:pedidoId/aceitar-proposta', authMiddleware, asy
         });
 
         await agendamento.save();
-        
+
+        // Notifica o profissional que a proposta foi aceita
+        try {
+            const profissional = await User.findById(proposta.profissionalId);
+            if (profissional) {
+                const titulo = 'Sua proposta foi aceita!';
+                const mensagem = `Um cliente aceitou sua proposta para o pedido urgente: ${pedido.servico}. Prepare-se para o atendimento.`;
+                await criarNotificacao(
+                    proposta.profissionalId,
+                    'proposta_aceita',
+                    titulo,
+                    mensagem,
+                    {
+                        pedidoId: pedido._id,
+                        agendamentoId: agendamento._id
+                    },
+                    null
+                );
+            }
+        } catch (notifError) {
+            console.error('Erro ao criar notificação de proposta aceita:', notifError);
+        }
+
         res.json({ 
             success: true, 
-            message: 'Proposta aceita! O profissional foi notificado.',
+            message: 'Proposta aceita! Agora é só aguardar o profissional.',
             pedido,
             agendamento
         });
