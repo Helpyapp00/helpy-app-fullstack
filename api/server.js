@@ -2802,24 +2802,47 @@ app.post('/api/pedidos-urgentes', authMiddleware, upload.single('foto'), async (
 
         // Processa a foto se foi enviada
         let fotoUrl = null;
-        if (req.file && s3Client) {
+        if (req.file) {
             try {
                 const sharp = getSharp();
+                let imageBuffer = req.file.buffer;
+
                 if (sharp) {
-                    const imageBuffer = await sharp(req.file.buffer)
+                    imageBuffer = await sharp(req.file.buffer)
                         .resize(800, 600, { fit: 'cover' })
                         .toFormat('jpeg', { quality: 90 })
                         .toBuffer();
-                    
-                    const key = `pedidos-urgentes/${clienteId}/${Date.now()}_${path.basename(req.file.originalname)}`;
-                    const uploadCommand = new PutObjectCommand({
-                        Bucket: bucketName,
-                        Key: key,
-                        Body: imageBuffer,
-                        ContentType: 'image/jpeg'
-                    });
-                    await s3Client.send(uploadCommand);
-                    fotoUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+                }
+
+                // Tenta enviar para o S3 se estiver configurado
+                if (s3Client) {
+                    try {
+                        const key = `pedidos-urgentes/${clienteId}/${Date.now()}_${path.basename(req.file.originalname)}`;
+                        const uploadCommand = new PutObjectCommand({
+                            Bucket: bucketName,
+                            Key: key,
+                            Body: imageBuffer,
+                            ContentType: 'image/jpeg'
+                        });
+                        await s3Client.send(uploadCommand);
+                        fotoUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+                    } catch (s3Error) {
+                        console.warn('Falha ao enviar foto de pedido urgente para S3, usando fallback local:', s3Error);
+                    }
+                }
+
+                // Fallback local se não houver S3 ou se o upload falhar
+                if (!s3Client || !fotoUrl) {
+                    const uploadsDir = path.join(__dirname, '../public/uploads/pedidos-urgentes');
+                    if (!fs.existsSync(uploadsDir)) {
+                        fs.mkdirSync(uploadsDir, { recursive: true });
+                    }
+                    const fileName = `${Date.now()}_${path.basename(req.file.originalname || 'pedido-urgente.jpg')}`;
+                    const filePath = path.join(uploadsDir, fileName);
+                    fs.writeFileSync(filePath, imageBuffer);
+                    // URL relativa servida via express.static
+                    fotoUrl = `/uploads/pedidos-urgentes/${fileName}`;
+                    console.log('✅ Foto de pedido urgente salva localmente:', fotoUrl);
                 }
             } catch (fotoError) {
                 console.error('Erro ao processar foto do pedido urgente:', fotoError);
@@ -2911,6 +2934,11 @@ app.post('/api/pedidos-urgentes/:pedidoId/proposta', authMiddleware, async (req,
         const pedido = await PedidoUrgente.findById(pedidoId);
         if (!pedido) {
             return res.status(404).json({ success: false, message: 'Pedido urgente não encontrado.' });
+        }
+
+        // Impede que o próprio criador envie proposta para o seu pedido
+        if (pedido.clienteId.toString() === profissionalId) {
+            return res.status(400).json({ success: false, message: 'Você não pode enviar proposta para um pedido criado por você.' });
         }
 
         if (pedido.status !== 'aberto') {
@@ -3170,7 +3198,8 @@ app.get('/api/pedidos-urgentes', authMiddleware, async (req, res) => {
 
         let query = { 
             status: 'aberto',
-            dataExpiracao: { $gt: new Date() } // Apenas pedidos não expirados
+            dataExpiracao: { $gt: new Date() }, // Apenas pedidos não expirados
+            clienteId: { $ne: profissionalId } // Não mostrar pedidos criados por este profissional
         };
 
         // Filtra por categoria apenas se especificado explicitamente
