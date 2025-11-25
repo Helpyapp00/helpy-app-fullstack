@@ -785,8 +785,98 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------------------------
     // LÓGICA DE AVALIAÇÃO, SERVIÇOS, MODAIS, LOGOUT, ETC.
     // ----------------------------------------------------------------------
-    if (estrelasAvaliacao.length > 0) { estrelasAvaliacao.forEach(star => { star.addEventListener('click', () => { const value = star.dataset.value; if (formAvaliacao) formAvaliacao.dataset.value = value; estrelasAvaliacao.forEach(s => { const sValue = s.dataset.value; if (sValue <= value) s.innerHTML = '<i class="fas fa-star"></i>'; else s.innerHTML = '<i class="far fa-star"></i>'; }); if (notaSelecionada) notaSelecionada.textContent = `Você selecionou ${value} estrela(s).`; }); }); }
-    if (btnEnviarAvaliacao) { btnEnviarAvaliacao.addEventListener('click', async (e) => { e.preventDefault(); const estrelas = formAvaliacao.dataset.value; const comentario = comentarioAvaliacaoInput.value; if (!estrelas || estrelas == 0) { alert('Por favor, selecione pelo menos uma estrela.'); return; } try { const response = await fetch('/api/avaliar-trabalhador', { method: 'POST', headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ trabalhadorId: profileId, estrelas: parseInt(estrelas, 10), comentario: comentario }) }); const data = await response.json(); if (!response.ok) throw new Error(data.message || 'Erro ao enviar avaliação.'); alert('Avaliação enviada com sucesso!'); formAvaliacao.reset(); estrelasAvaliacao.forEach(s => s.innerHTML = '<i class="far fa-star"></i>'); if (notaSelecionada) notaSelecionada.textContent = ''; fetchUserProfile(); } catch (error) { console.error('Erro ao enviar avaliação:', error); alert(error.message); } }); }
+    if (estrelasAvaliacao.length > 0) {
+        estrelasAvaliacao.forEach(star => {
+            star.addEventListener('click', () => {
+                const value = star.dataset.value;
+                if (formAvaliacao) formAvaliacao.dataset.value = value;
+                estrelasAvaliacao.forEach(s => {
+                    const sValue = s.dataset.value;
+                    if (sValue <= value) s.innerHTML = '<i class="fas fa-star"></i>';
+                    else s.innerHTML = '<i class="far fa-star"></i>';
+                });
+                if (notaSelecionada) notaSelecionada.textContent = `Você selecionou ${value} estrela(s).`;
+            });
+        });
+    }
+
+    // Se veio de uma notificação de serviço concluído, mostra a seção de avaliação
+    const origemAvaliacao = urlParams.get('origem');
+    const agendamentoIdAvaliacao = urlParams.get('agendamentoId');
+    if (origemAvaliacao === 'servico_concluido' && secaoAvaliacao) {
+        secaoAvaliacao.style.display = 'block';
+        // Rola até a seção de avaliação
+        setTimeout(() => {
+            secaoAvaliacao.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 300);
+    }
+
+    if (btnEnviarAvaliacao) {
+        btnEnviarAvaliacao.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const estrelas = formAvaliacao.dataset.value;
+            const comentario = comentarioAvaliacaoInput.value;
+
+            if (!estrelas || estrelas == 0) {
+                alert('Por favor, selecione pelo menos uma estrela.');
+                return;
+            }
+
+            try {
+                let response;
+                let data;
+
+                // Avaliação verificada (veio de serviço concluído)
+                if (origemAvaliacao === 'servico_concluido' && agendamentoIdAvaliacao) {
+                    response = await fetch('/api/avaliacao-verificada', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            profissionalId: profileId,
+                            agendamentoId: agendamentoIdAvaliacao,
+                            estrelas: parseInt(estrelas, 10),
+                            comentario: comentario,
+                            dataServico: new Date().toISOString()
+                        })
+                    });
+                    data = await response.json();
+                    if (!response.ok) throw new Error(data.message || 'Erro ao enviar avaliação verificada.');
+                    alert('Avaliação verificada enviada com sucesso! Obrigado por avaliar o serviço.');
+                } else {
+                    // Avaliação geral do trabalhador
+                    response = await fetch('/api/avaliar-trabalhador', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            trabalhadorId: profileId,
+                            estrelas: parseInt(estrelas, 10),
+                            comentario: comentario
+                        })
+                    });
+                    data = await response.json();
+                    if (!response.ok) throw new Error(data.message || 'Erro ao enviar avaliação.');
+                    alert('Avaliação enviada com sucesso!');
+                }
+
+                // Limpa formulário
+                formAvaliacao.reset();
+                estrelasAvaliacao.forEach(s => s.innerHTML = '<i class="far fa-star"></i>');
+                if (notaSelecionada) notaSelecionada.textContent = '';
+
+                // Recarrega perfil para atualizar métricas
+                fetchUserProfile();
+            } catch (error) {
+                console.error('Erro ao enviar avaliação:', error);
+                alert(error.message);
+            }
+        });
+    }
     // 🆕 ATUALIZADO: Usa modal para adicionar projeto
     const modalAdicionarProjeto = document.getElementById('modal-adicionar-projeto');
     const formAdicionarProjeto = document.getElementById('form-adicionar-projeto');

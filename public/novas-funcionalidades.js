@@ -1946,8 +1946,15 @@ document.addEventListener('DOMContentLoaded', () => {
                                     if (notif && notif.tipo === 'servico_concluido' && notif.dadosAdicionais?.profissionalId) {
                                         modalNotificacoes?.classList.add('hidden');
                                         const profissionalId = notif.dadosAdicionais.profissionalId;
-                                        // Abre o perfil do profissional já focado na seção de avaliação
-                                        window.location.href = `perfil.html?id=${profissionalId}#secao-avaliacao`;
+                                        const agendamentoId = notif.dadosAdicionais.agendamentoId || '';
+                                        // Abre o perfil do profissional já focado na seção de avaliação,
+                                        // passando o agendamento para criar avaliação verificada
+                                        const params = new URLSearchParams({
+                                            id: profissionalId,
+                                            origem: 'servico_concluido',
+                                            agendamentoId
+                                        });
+                                        window.location.href = `perfil.html?${params.toString()}#secao-avaliacao`;
                                     }
                                 }
                             });
