@@ -1714,22 +1714,43 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
 /* 🔔 NOVO: Estilos para Notificações */
 .notificacao-card {
-    background: var(--bg-primary);
+    background: #1f1f1f;
     padding: 15px;
     border-radius: 8px;
     margin-bottom: 10px;
     cursor: pointer;
-    transition: background 0.2s;
+    transition: background 0.2s, opacity 0.2s;
     border-left: 3px solid transparent;
 }
 
 .notificacao-card.nao-lida {
-    background: var(--bg-secondary);
+    background: #2a2a2a;
     border-left-color: #007bff;
 }
 
 .notificacao-card:hover {
-    background: var(--bg-secondary);
+    background: #333333;
+}
+
+/* Destaque para serviço ativo vindo da notificação */
+.servico-ativo-destacado {
+    box-shadow: 0 0 0 2px var(--primary-color);
+}
+
+.btn-mapa-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--primary-color);
+    color: #fff;
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.btn-mapa-link:hover {
+    opacity: 0.9;
 }
 
 /* ⚖️ NOVO: Estilos para Disputas */

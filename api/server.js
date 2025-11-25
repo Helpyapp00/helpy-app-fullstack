@@ -3779,6 +3779,32 @@ app.get('/api/agenda/profissional', authMiddleware, async (req, res) => {
     }
 });
 
+// Listar serviços ativos de pedidos urgentes para o profissional (propostas aceitas)
+app.get('/api/pedidos-urgentes/ativos', authMiddleware, async (req, res) => {
+    try {
+        const profissionalId = req.user.id;
+
+        const profissional = await User.findById(profissionalId);
+        if (!profissional || profissional.tipo !== 'trabalhador') {
+            return res.status(403).json({ success: false, message: 'Apenas profissionais podem ver serviços ativos.' });
+        }
+
+        const pedidos = await PedidoUrgente.find({
+            status: 'em_andamento',
+            'propostas.profissionalId': profissionalId,
+            'propostas.status': 'aceita'
+        })
+            .populate('clienteId', 'nome foto avatarUrl cidade estado telefone')
+            .sort({ updatedAt: -1 })
+            .exec();
+
+        res.json({ success: true, pedidos });
+    } catch (error) {
+        console.error('Erro ao buscar serviços ativos de pedidos urgentes:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
 // Listar agendamentos do cliente
 app.get('/api/agenda/cliente', authMiddleware, async (req, res) => {
     try {

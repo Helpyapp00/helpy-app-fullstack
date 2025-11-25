@@ -437,8 +437,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // ============================================
     
     const btnVerPedidosUrgentes = document.getElementById('btn-ver-pedidos-urgentes');
+    const btnServicosAtivos = document.getElementById('btn-servicos-ativos');
     const modalPedidosUrgentesProfissional = document.getElementById('modal-pedidos-urgentes-profissional');
     const listaPedidosUrgentes = document.getElementById('lista-pedidos-urgentes');
+    const modalServicosAtivos = document.getElementById('modal-servicos-ativos');
+    const listaServicosAtivos = document.getElementById('lista-servicos-ativos');
     const modalEnviarProposta = document.getElementById('modal-enviar-proposta');
     const formEnviarProposta = document.getElementById('form-enviar-proposta');
 
@@ -574,6 +577,85 @@ document.addEventListener('DOMContentLoaded', () => {
                 await carregarPedidosUrgentes();
                 modalPedidosUrgentesProfissional?.classList.remove('hidden');
             });
+        }
+    }
+
+    // Adicionar botão lateral para Serviços Ativos (profissional)
+    if (userType === 'trabalhador' && !btnServicosAtivos) {
+        const acoesRapidas = document.querySelector('.filtro-acoes-rapidas');
+        if (acoesRapidas) {
+            const btnNovo = document.createElement('button');
+            btnNovo.id = 'btn-servicos-ativos';
+            btnNovo.className = 'btn-preciso-agora-lateral';
+            btnNovo.innerHTML = '<i class="fas fa-briefcase"></i> Serviços Ativos';
+            btnNovo.style.marginTop = '10px';
+            acoesRapidas.appendChild(btnNovo);
+            
+            btnNovo.addEventListener('click', async () => {
+                await carregarServicosAtivos();
+                modalServicosAtivos?.classList.remove('hidden');
+            });
+        }
+    }
+
+    async function carregarServicosAtivos(pedidoIdDestacado = null) {
+        if (!listaServicosAtivos) return;
+
+        try {
+            const response = await fetch('/api/pedidos-urgentes/ativos', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+
+            if (!data.success) {
+                listaServicosAtivos.innerHTML = '<p style="color: var(--error-color);">Erro ao carregar serviços ativos.</p>';
+                return;
+            }
+
+            const pedidos = data.pedidos || [];
+            if (pedidos.length === 0) {
+                listaServicosAtivos.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-secondary);">Você ainda não tem serviços ativos de pedidos urgentes.</p>';
+                return;
+            }
+
+            listaServicosAtivos.innerHTML = pedidos.map(pedido => {
+                const cliente = pedido.clienteId;
+                const endereco = pedido.localizacao || {};
+                const enderecoLinha = endereco.endereco || '';
+                const cidadeEstado = `${endereco.cidade || ''}${endereco.cidade && endereco.estado ? ' - ' : ''}${endereco.estado || ''}`;
+                const enderecoMapa = encodeURIComponent(`${enderecoLinha} ${cidadeEstado}`);
+                const destaqueClass = pedidoIdDestacado && pedido._id === pedidoIdDestacado ? 'servico-ativo-destacado' : '';
+
+                return `
+                    <div class="pedido-urgente-card ${destaqueClass}">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <div>
+                                <strong style="font-size:16px;">${pedido.servico}</strong>
+                                ${pedido.categoria ? `<span class="badge-categoria">${pedido.categoria}</span>` : ''}
+                            </div>
+                            <span class="badge-status badge-aceito">Ativo</span>
+                        </div>
+                        <p style="margin:4px 0; color: var(--text-secondary);">
+                            <i class="fas fa-user"></i> ${cliente?.nome || 'Cliente'}
+                        </p>
+                        <p style="margin:4px 0;">
+                            <i class="fas fa-map-marker-alt"></i> ${enderecoLinha} ${cidadeEstado ? `- ${cidadeEstado}` : ''}
+                        </p>
+                        ${pedido.descricao ? `<p class="pedido-descricao">${pedido.descricao}</p>` : ''}
+                        <div style="margin-top:10px; text-align:right;">
+                            <a href="https://www.google.com/maps/search/?api=1&query=${enderecoMapa}" target="_blank" rel="noopener noreferrer" class="btn-mapa-link">
+                                <i class="fas fa-map"></i> Ver no mapa
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } catch (error) {
+            console.error('Erro ao carregar serviços ativos:', error);
+            listaServicosAtivos.innerHTML = '<p style="color: var(--error-color);">Erro ao carregar serviços ativos. Tente novamente.</p>';
         }
     }
 
@@ -1789,11 +1871,11 @@ document.addEventListener('DOMContentLoaded', () => {
                                         await carregarPropostas(notif.dadosAdicionais.pedidoId);
                                     }
 
-                                    // Se for notificação de proposta aceita, redireciona para a página de perfil (agenda)
+                                    // Se for notificação de proposta aceita, abre Serviços Ativos e destaca o pedido
                                     if (notif && notif.tipo === 'proposta_aceita' && notif.dadosAdicionais?.agendamentoId) {
                                         modalNotificacoes?.classList.add('hidden');
-                                        // Abre a página de perfil onde o profissional tem a seção "Minha Agenda"
-                                        window.location.href = 'perfil.html#minha-agenda';
+                                        await carregarServicosAtivos(notif.dadosAdicionais.pedidoId);
+                                        modalServicosAtivos?.classList.remove('hidden');
                                     }
                                 }
                             });
