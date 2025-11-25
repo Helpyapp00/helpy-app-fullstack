@@ -455,7 +455,7 @@
                 <button class="btn-close-modal" data-modal="modal-pedidos-urgentes-profissional">&times;</button>
             </div>
             <div class="modal-body">
-                <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center;">
+                <div style="margin-bottom: 15px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                     <label style="display: flex; align-items: center; gap: 8px; flex: 1;">
                         <i class="fas fa-filter"></i>
                         <select id="filtro-categoria-pedidos" style="flex: 1; padding: 8px; border-radius: 4px; border: 1px solid var(--border-color);">
@@ -471,6 +471,9 @@
                     </label>
                     <button id="btn-filtrar-pedidos" class="btn-primary">
                         <i class="fas fa-search"></i> Filtrar
+                    </button>
+                    <button id="btn-servicos-ativos" class="btn-secondary">
+                        <i class="fas fa-briefcase"></i> Serviços Ativos
                     </button>
                 </div>
                 <div id="lista-pedidos-urgentes" class="lista-propostas">

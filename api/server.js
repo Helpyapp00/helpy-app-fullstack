@@ -463,11 +463,14 @@ const pedidoUrgenteSchema = new mongoose.Schema({
         dataProposta: { type: Date, default: Date.now }
     }],
     propostaSelecionada: { type: mongoose.Schema.Types.ObjectId },
+    agendamentoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Agendamento' },
     status: { 
         type: String, 
         enum: ['aberto', 'em_andamento', 'concluido', 'cancelado'], 
         default: 'aberto' 
     },
+    motivoCancelamento: { type: String },
+    canceladoPor: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     dataExpiracao: { type: Date }, // Pedidos urgentes expiram rápido
     notificacoesEnviadas: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], // Profissionais notificados
     notificacoesCriadas: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Notificacao' }] // IDs das notificações geradas
@@ -3098,9 +3101,6 @@ app.post('/api/pedidos-urgentes/:pedidoId/aceitar-proposta', authMiddleware, asy
 
         proposta.status = 'aceita';
         pedido.propostaSelecionada = propostaId;
-        pedido.status = 'em_andamento';
-
-        await pedido.save();
 
         // Cria agendamento automaticamente
         const agendamento = new Agendamento({
@@ -3114,6 +3114,11 @@ app.post('/api/pedidos-urgentes/:pedidoId/aceitar-proposta', authMiddleware, asy
         });
 
         await agendamento.save();
+
+        // Vincula o agendamento ao pedido e marca como em andamento
+        pedido.agendamentoId = agendamento._id;
+        pedido.status = 'em_andamento';
+        await pedido.save();
 
         // Notifica o profissional que a proposta foi aceita
         try {
@@ -3165,7 +3170,7 @@ app.post('/api/pedidos-urgentes/:pedidoId/cancelar', authMiddleware, async (req,
         }
 
         if (pedido.status !== 'aberto') {
-            return res.status(400).json({ success: false, message: 'Somente pedidos em aberto podem ser cancelados.' });
+            return res.status(400).json({ success: false, message: 'Somente pedidos em aberto podem ser cancelados por aqui.' });
         }
 
         pedido.status = 'cancelado';
@@ -3181,6 +3186,73 @@ app.post('/api/pedidos-urgentes/:pedidoId/cancelar', authMiddleware, async (req,
         return res.json({ success: true, message: 'Pedido cancelado com sucesso.', pedido });
     } catch (error) {
         console.error('Erro ao cancelar pedido urgente:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Cancelar serviço de pedido urgente após aceito (cliente ou profissional)
+app.post('/api/pedidos-urgentes/:pedidoId/cancelar-servico', authMiddleware, async (req, res) => {
+    try {
+        const { pedidoId } = req.params;
+        const { motivo } = req.body;
+        const userId = req.user.id;
+
+        const pedido = await PedidoUrgente.findById(pedidoId);
+        if (!pedido) {
+            return res.status(404).json({ success: false, message: 'Pedido não encontrado.' });
+        }
+
+        if (pedido.status !== 'em_andamento') {
+            return res.status(400).json({ success: false, message: 'Somente serviços em andamento podem ser cancelados.' });
+        }
+
+        const propostaAceita = pedido.propostas.id(pedido.propostaSelecionada);
+        if (!propostaAceita) {
+            return res.status(400).json({ success: false, message: 'Nenhuma proposta aceita encontrada para este pedido.' });
+        }
+
+        const profissionalId = propostaAceita.profissionalId.toString();
+        const clienteId = pedido.clienteId.toString();
+
+        // Apenas o cliente ou o profissional responsável podem cancelar
+        if (userId !== clienteId && userId !== profissionalId) {
+            return res.status(403).json({ success: false, message: 'Você não tem permissão para cancelar este serviço.' });
+        }
+
+        pedido.status = 'cancelado';
+        pedido.motivoCancelamento = motivo || null;
+        pedido.canceladoPor = userId;
+        await pedido.save();
+
+        // Cancela agendamento relacionado, se existir
+        if (pedido.agendamentoId) {
+            await Agendamento.findByIdAndUpdate(pedido.agendamentoId, { status: 'cancelado' });
+        }
+
+        // Notifica a outra parte sobre o cancelamento
+        try {
+            const outroLadoId = userId === clienteId ? profissionalId : clienteId;
+            const titulo = 'Serviço cancelado';
+            const mensagem = `O serviço "${pedido.servico}" foi cancelado. Motivo: ${motivo || 'não informado.'}`;
+            await criarNotificacao(
+                outroLadoId,
+                'disputa_aberta',
+                titulo,
+                mensagem,
+                {
+                    pedidoId: pedido._id,
+                    canceladoPor: userId,
+                    motivo: motivo || null
+                },
+                null
+            );
+        } catch (notifError) {
+            console.error('Erro ao criar notificação de cancelamento de serviço:', notifError);
+        }
+
+        res.json({ success: true, message: 'Serviço cancelado com sucesso.' });
+    } catch (error) {
+        console.error('Erro ao cancelar serviço de pedido urgente:', error);
         res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
     }
 });
@@ -3801,6 +3873,67 @@ app.get('/api/pedidos-urgentes/ativos', authMiddleware, async (req, res) => {
         res.json({ success: true, pedidos });
     } catch (error) {
         console.error('Erro ao buscar serviços ativos de pedidos urgentes:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Profissional marca serviço de pedido urgente como concluído
+app.post('/api/pedidos-urgentes/:pedidoId/concluir-servico', authMiddleware, async (req, res) => {
+    try {
+        const { pedidoId } = req.params;
+        const profissionalId = req.user.id;
+
+        const profissional = await User.findById(profissionalId);
+        if (!profissional || profissional.tipo !== 'trabalhador') {
+            return res.status(403).json({ success: false, message: 'Apenas profissionais podem marcar serviço como concluído.' });
+        }
+
+        const pedido = await PedidoUrgente.findById(pedidoId);
+        if (!pedido) {
+            return res.status(404).json({ success: false, message: 'Pedido não encontrado.' });
+        }
+
+        if (pedido.status !== 'em_andamento') {
+            return res.status(400).json({ success: false, message: 'Somente serviços em andamento podem ser concluídos.' });
+        }
+
+        const propostaAceita = pedido.propostas.id(pedido.propostaSelecionada);
+        if (!propostaAceita || propostaAceita.profissionalId.toString() !== profissionalId) {
+            return res.status(403).json({ success: false, message: 'Você não é o profissional responsável por este serviço.' });
+        }
+
+        // Marca pedido como concluído
+        pedido.status = 'concluido';
+        await pedido.save();
+
+        // Marca agendamento (se existir) como concluído
+        if (pedido.agendamentoId) {
+            await Agendamento.findByIdAndUpdate(pedido.agendamentoId, { status: 'concluido' });
+        }
+
+        // Notifica o cliente que o serviço foi concluído (para avaliar)
+        try {
+            const titulo = 'Serviço concluído! Conte como foi 🙂';
+            const mensagem = `O profissional concluiu o serviço: ${pedido.servico}. Deixe sua avaliação para ajudar a comunidade.`;
+            await criarNotificacao(
+                pedido.clienteId,
+                'servico_concluido',
+                titulo,
+                mensagem,
+                {
+                    profissionalId: propostaAceita.profissionalId,
+                    agendamentoId: pedido.agendamentoId || null,
+                    pedidoId: pedido._id
+                },
+                null
+            );
+        } catch (notifError) {
+            console.error('Erro ao criar notificação de serviço concluído:', notifError);
+        }
+
+        res.json({ success: true, message: 'Serviço marcado como concluído.' });
+    } catch (error) {
+        console.error('Erro ao concluir serviço de pedido urgente:', error);
         res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
     }
 });

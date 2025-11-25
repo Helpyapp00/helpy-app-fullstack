@@ -562,7 +562,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Adicionar botão na lateral se for profissional (após a função estar definida)
+    // Adicionar botão na lateral se for profissional (apenas para "Ver Pedidos Urgentes")
     if (userType === 'trabalhador' && !btnVerPedidosUrgentes) {
         const acoesRapidas = document.querySelector('.filtro-acoes-rapidas');
         if (acoesRapidas) {
@@ -579,23 +579,12 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     }
-
-    // Adicionar botão lateral para Serviços Ativos (profissional)
-    if (userType === 'trabalhador' && !btnServicosAtivos) {
-        const acoesRapidas = document.querySelector('.filtro-acoes-rapidas');
-        if (acoesRapidas) {
-            const btnNovo = document.createElement('button');
-            btnNovo.id = 'btn-servicos-ativos';
-            btnNovo.className = 'btn-preciso-agora-lateral';
-            btnNovo.innerHTML = '<i class="fas fa-briefcase"></i> Serviços Ativos';
-            btnNovo.style.marginTop = '10px';
-            acoesRapidas.appendChild(btnNovo);
-            
-            btnNovo.addEventListener('click', async () => {
-                await carregarServicosAtivos();
-                modalServicosAtivos?.classList.remove('hidden');
-            });
-        }
+    // Clique no botão de serviços ativos dentro do modal de pedidos urgentes
+    if (btnServicosAtivos) {
+        btnServicosAtivos.addEventListener('click', async () => {
+            await carregarServicosAtivos();
+            modalServicosAtivos?.classList.remove('hidden');
+        });
     }
 
     async function carregarServicosAtivos(pedidoIdDestacado = null) {
@@ -645,14 +634,89 @@ document.addEventListener('DOMContentLoaded', () => {
                             <i class="fas fa-map-marker-alt"></i> ${enderecoLinha} ${cidadeEstado ? `- ${cidadeEstado}` : ''}
                         </p>
                         ${pedido.descricao ? `<p class="pedido-descricao">${pedido.descricao}</p>` : ''}
-                        <div style="margin-top:10px; text-align:right;">
+                        <div style="margin-top:10px; display:flex; justify-content:space-between; gap: 10px; flex-wrap: wrap;">
                             <a href="https://www.google.com/maps/search/?api=1&query=${enderecoMapa}" target="_blank" rel="noopener noreferrer" class="btn-mapa-link">
                                 <i class="fas fa-map"></i> Ver no mapa
                             </a>
+                            <div style="display:flex; gap:8px;">
+                                <button class="btn-servico-concluido" data-pedido-id="${pedido._id}" style="padding:6px 10px; border-radius:6px; border:none; background:#28a745; color:#fff; cursor:pointer; font-size:13px;">
+                                    <i class="fas fa-check"></i> Marcar serviço feito
+                                </button>
+                                <button class="btn-servico-cancelar" data-pedido-id="${pedido._id}" style="padding:6px 10px; border-radius:6px; border:none; background:#dc3545; color:#fff; cursor:pointer; font-size:13px;">
+                                    <i class="fas fa-times"></i> Cancelar serviço
+                                </button>
+                            </div>
                         </div>
                     </div>
                 `;
             }).join('');
+
+            // Listeners: marcar serviço feito
+            document.querySelectorAll('.btn-servico-concluido').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const pedidoId = btn.dataset.pedidoId;
+                    if (!confirm('Confirmar que este serviço foi concluído?')) return;
+
+                    try {
+                        const resp = await fetch(`/api/pedidos-urgentes/${pedidoId}/concluir-servico`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        const data = await resp.json();
+                        if (data.success) {
+                            const toast = document.createElement('div');
+                            toast.className = 'toast-sucesso';
+                            toast.innerHTML = '<span class="check-animado">✔</span> Serviço marcado como concluído. O cliente poderá avaliar você.';
+                            document.body.appendChild(toast);
+                            setTimeout(() => toast.classList.add('show'), 10);
+                            setTimeout(() => toast.remove(), 2500);
+                            await carregarServicosAtivos();
+                        } else {
+                            alert(data.message || 'Erro ao marcar serviço como concluído.');
+                        }
+                    } catch (error) {
+                        console.error('Erro ao concluir serviço:', error);
+                        alert('Erro ao concluir serviço.');
+                    }
+                });
+            });
+
+            // Listeners: cancelar serviço
+            document.querySelectorAll('.btn-servico-cancelar').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const pedidoId = btn.dataset.pedidoId;
+                    const motivo = prompt('Por qual motivo você está cancelando este serviço?\nExemplos: Cliente não apareceu, Problema de saúde, Outro...');
+                    if (motivo === null) return; // cancelou prompt
+                    if (!motivo.trim()) {
+                        alert('Por favor, informe um motivo para o cancelamento.');
+                        return;
+                    }
+
+                    try {
+                        const resp = await fetch(`/api/pedidos-urgentes/${pedidoId}/cancelar-servico`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ motivo })
+                        });
+                        const data = await resp.json();
+                        if (data.success) {
+                            alert('Serviço cancelado. A outra parte será notificada.');
+                            await carregarServicosAtivos();
+                        } else {
+                            alert(data.message || 'Erro ao cancelar serviço.');
+                        }
+                    } catch (error) {
+                        console.error('Erro ao cancelar serviço:', error);
+                        alert('Erro ao cancelar serviço.');
+                    }
+                });
+            });
         } catch (error) {
             console.error('Erro ao carregar serviços ativos:', error);
             listaServicosAtivos.innerHTML = '<p style="color: var(--error-color);">Erro ao carregar serviços ativos. Tente novamente.</p>';
@@ -1876,6 +1940,14 @@ document.addEventListener('DOMContentLoaded', () => {
                                         modalNotificacoes?.classList.add('hidden');
                                         await carregarServicosAtivos(notif.dadosAdicionais.pedidoId);
                                         modalServicosAtivos?.classList.remove('hidden');
+                                    }
+
+                                    // Se for notificação de serviço concluído, abre página de avaliação do profissional
+                                    if (notif && notif.tipo === 'servico_concluido' && notif.dadosAdicionais?.profissionalId) {
+                                        modalNotificacoes?.classList.add('hidden');
+                                        const profissionalId = notif.dadosAdicionais.profissionalId;
+                                        // Abre o perfil do profissional já focado na seção de avaliação
+                                        window.location.href = `perfil.html?id=${profissionalId}#secao-avaliacao`;
                                     }
                                 }
                             });
