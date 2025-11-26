@@ -325,56 +325,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // ============================================
-    // TIMES LOCAIS
+    // TIMES LOCAIS (somente listagem na lateral)
+    // A criação de times de projeto é feita pelo modal "Montar Time" (script.js)
     // ============================================
     
-    const btnCriarTimeLocal = document.getElementById('btn-criar-time');
-    const modalCriarTimeLocal = document.getElementById('modal-criar-time-local');
-    const formCriarTimeLocal = document.getElementById('form-criar-time-local');
-
-    if (btnCriarTimeLocal && userType === 'trabalhador') {
-        btnCriarTimeLocal.addEventListener('click', () => {
-            modalCriarTimeLocal?.classList.remove('hidden');
-        });
-    } else if (btnCriarTimeLocal) {
-        btnCriarTimeLocal.style.display = 'none';
-    }
-
-    if (formCriarTimeLocal) {
-        formCriarTimeLocal.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const nome = document.getElementById('time-nome').value;
-            const descricao = document.getElementById('time-descricao').value;
-            const categoria = document.getElementById('time-categoria').value;
-
-            try {
-                const response = await fetch('/api/times-locais', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ nome, descricao, categoria })
-                });
-
-                const data = await response.json();
-                
-                if (data.success) {
-                    alert('Time local criado com sucesso!');
-                    formCriarTimeLocal.reset();
-                    modalCriarTimeLocal?.classList.add('hidden');
-                    carregarTimesLocais();
-                } else {
-                    alert(data.message || 'Erro ao criar time local.');
-                }
-            } catch (error) {
-                console.error('Erro ao criar time local:', error);
-                alert('Erro ao criar time local.');
-            }
-        });
-    }
-
     // Carregar times locais
     async function carregarTimesLocais() {
         const timesContainer = document.getElementById('times-container');
