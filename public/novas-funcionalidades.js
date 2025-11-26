@@ -921,21 +921,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Adicionar botão para criar projeto de time (clientes)
-    if (userType === 'cliente' && modalProjetoTime) {
-        const acoesRapidas = document.querySelector('.filtro-acoes-rapidas');
-        if (acoesRapidas && !document.getElementById('btn-criar-projeto-time')) {
-            const btnNovo = document.createElement('button');
-            btnNovo.id = 'btn-criar-projeto-time';
-            btnNovo.className = 'btn-acao-lateral';
-            btnNovo.innerHTML = '<i class="fas fa-project-diagram"></i> Criar Projeto de Time';
-            acoesRapidas.appendChild(btnNovo);
-            
-            btnNovo.addEventListener('click', () => {
-                modalProjetoTime.classList.remove('hidden');
-            });
-        }
-    }
+    // (Botão de criar projeto de time removido da área de ações rápidas para evitar duplicidade com a seção de times)
 
     if (formProjetoTime) {
         formProjetoTime.addEventListener('submit', async (e) => {
