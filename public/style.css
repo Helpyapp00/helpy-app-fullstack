@@ -1078,6 +1078,17 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     background: #c0392b;
 }
 
+/* Versão do botão cancelar dentro de modais (como "Montar Time de Projeto") */
+.modal-content .btn-cancelar {
+    font-size: 0.9em;
+    padding: 8px 16px;
+    border-radius: 5px;
+    min-width: 110px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .btn-primary {
     padding: 10px 20px;
     background: var(--btn-primary-bg);
