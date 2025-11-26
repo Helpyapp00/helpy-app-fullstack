@@ -1052,16 +1052,21 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
 .btn-secondary {
     padding: 10px 20px;
-    background: var(--bg-action);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
+    background: var(--btn-secondary-bg);
+    color: #ffffff;
+    border: none;
     border-radius: 5px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
 }
 
 .btn-secondary:hover {
-    background: var(--bg-action-hover);
+    background: var(--btn-secondary-hover);
+    transform: translateY(-1px);
 }
 
 .btn-primary {
