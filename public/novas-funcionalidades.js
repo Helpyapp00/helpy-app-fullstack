@@ -573,7 +573,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (acoesRapidas) {
             const btnNovo = document.createElement('button');
             btnNovo.id = 'btn-ver-pedidos-urgentes';
-            btnNovo.className = 'btn-preciso-agora-lateral';
+            btnNovo.className = 'btn-acao-lateral';
             btnNovo.innerHTML = '<i class="fas fa-bolt"></i> Ver Pedidos Urgentes';
             btnNovo.style.marginTop = '10px';
             acoesRapidas.appendChild(btnNovo);
@@ -714,7 +714,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                 });
                                 const data = await resp.json();
                                 if (data.success) {
-                                    alert('Serviço cancelado. A outra parte será notificada.');
+                                    const toast = document.createElement('div');
+                                    toast.className = 'toast-sucesso';
+                                    toast.innerHTML = '<span class="check-animado">✔</span> Serviço cancelado com sucesso. O outro usuário recebeu o motivo do cancelamento.';
+                                    document.body.appendChild(toast);
+                                    setTimeout(() => toast.classList.add('show'), 10);
+                                    setTimeout(() => toast.remove(), 2500);
                                     await carregarServicosAtivos();
                                 } else {
                                     alert(data.message || 'Erro ao cancelar serviço.');
@@ -904,7 +909,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (acoesRapidas) {
             const btnNovo = document.createElement('button');
             btnNovo.id = 'btn-meus-pedidos-urgentes';
-            btnNovo.className = 'btn-preciso-agora-lateral';
+            btnNovo.className = 'btn-acao-lateral';
             btnNovo.innerHTML = '<i class="fas fa-list"></i> Meus Pedidos Urgentes';
             btnNovo.style.marginTop = '10px';
             acoesRapidas.appendChild(btnNovo);
@@ -968,7 +973,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (acoesRapidas && !document.getElementById('btn-criar-projeto-time')) {
             const btnNovo = document.createElement('button');
             btnNovo.id = 'btn-criar-projeto-time';
-            btnNovo.className = 'btn-preciso-agora-lateral';
+            btnNovo.className = 'btn-acao-lateral';
             btnNovo.innerHTML = '<i class="fas fa-project-diagram"></i> Criar Projeto de Time';
             acoesRapidas.appendChild(btnNovo);
             
@@ -1055,7 +1060,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (acoesRapidas && !document.getElementById('btn-criar-vaga-relampago')) {
             const btnNovo = document.createElement('button');
             btnNovo.id = 'btn-criar-vaga-relampago';
-            btnNovo.className = 'btn-preciso-agora-lateral';
+            btnNovo.className = 'btn-acao-lateral';
             btnNovo.innerHTML = '<i class="fas fa-bolt"></i> Criar Vaga-Relâmpago';
             acoesRapidas.appendChild(btnNovo);
             
@@ -1068,7 +1073,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (acoesRapidas && !document.getElementById('btn-minhas-vagas')) {
             const btnMinhasVagas = document.createElement('button');
             btnMinhasVagas.id = 'btn-minhas-vagas';
-            btnMinhasVagas.className = 'btn-preciso-agora-lateral';
+            btnMinhasVagas.className = 'btn-acao-lateral';
             btnMinhasVagas.innerHTML = '<i class="fas fa-list"></i> Minhas Vagas';
             acoesRapidas.appendChild(btnMinhasVagas);
             
@@ -1084,7 +1089,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (acoesRapidas && !document.getElementById('btn-ver-vagas-relampago')) {
             const btnNovo = document.createElement('button');
             btnNovo.id = 'btn-ver-vagas-relampago';
-            btnNovo.className = 'btn-preciso-agora-lateral';
+            btnNovo.className = 'btn-acao-lateral';
             btnNovo.innerHTML = '<i class="fas fa-briefcase"></i> Vagas-Relâmpago';
             acoesRapidas.appendChild(btnNovo);
             
@@ -1828,7 +1833,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (acoesRapidas && !document.getElementById('btn-meus-pagamentos')) {
             const btnNovo = document.createElement('button');
             btnNovo.id = 'btn-meus-pagamentos';
-            btnNovo.className = 'btn-preciso-agora-lateral';
+            btnNovo.className = 'btn-acao-lateral';
             btnNovo.innerHTML = '<i class="fas fa-wallet"></i> Meus Pagamentos';
             acoesRapidas.appendChild(btnNovo);
             
@@ -1844,7 +1849,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (acoesRapidas && !document.getElementById('btn-pagamentos-garantidos')) {
             const btnNovo = document.createElement('button');
             btnNovo.id = 'btn-pagamentos-garantidos';
-            btnNovo.className = 'btn-preciso-agora-lateral';
+            btnNovo.className = 'btn-acao-lateral';
             btnNovo.innerHTML = '<i class="fas fa-shield-alt"></i> Pagamentos Garantidos';
             acoesRapidas.appendChild(btnNovo);
             
@@ -2479,7 +2484,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (userData.isAdmin) {
                 const btnAdmin = document.createElement('button');
                 btnAdmin.id = 'btn-dashboard-admin';
-                btnAdmin.className = 'btn-preciso-agora-lateral';
+                btnAdmin.className = 'btn-acao-lateral';
                 btnAdmin.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
                 btnAdmin.style.color = 'white';
                 btnAdmin.innerHTML = '<i class="fas fa-chart-line"></i> Dashboard Admin';

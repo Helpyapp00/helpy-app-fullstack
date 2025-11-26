@@ -500,11 +500,35 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     justify-content: center;
     gap: 8px;
     width: 100%;
+    margin: 5px 0;
 }
 
 .btn-preciso-agora-lateral:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(255, 107, 107, 0.5);
+}
+
+/* Botões de ações rápidas secundários (menos chamativos) */
+.btn-acao-lateral {
+    background: var(--btn-secondary-bg);
+    color: #ffffff;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    width: 100%;
+    margin: 5px 0;
+}
+
+.btn-acao-lateral:hover {
+    background: var(--btn-secondary-hover);
+    transform: translateY(-1px);
 }
 
 .section-header-lateral {
