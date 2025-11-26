@@ -850,6 +850,22 @@
         </div>
     </div>
 
+    <!-- ✅ NOVO: Modal Genérico de Confirmação de Ação -->
+    <div id="modal-confirmacao-acao" class="modal-overlay hidden">
+        <div class="modal-content modal-confirmacao">
+            <h3 id="confirmacao-titulo">Confirmar ação</h3>
+            <p id="confirmacao-texto" style="margin-bottom: 15px;">Tem certeza que deseja continuar?</p>
+            <div id="confirmacao-motivo-group" class="form-group" style="display: none; text-align:left; margin-bottom: 15px;">
+                <label for="confirmacao-motivo">Motivo</label>
+                <textarea id="confirmacao-motivo" rows="3" placeholder="Descreva o motivo..."></textarea>
+            </div>
+            <div class="modal-buttons">
+                <button id="confirmacao-ok" class="btn-confirm-yes">Confirmar</button>
+                <button id="confirmacao-cancelar" class="btn-confirm-no">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 📈 NOVO: Dashboard Administrativo -->
     <div id="modal-dashboard-admin" class="modal-overlay hidden">
         <div class="modal-content modal-grande">

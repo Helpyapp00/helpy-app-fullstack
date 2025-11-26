@@ -246,37 +246,42 @@ document.addEventListener('DOMContentLoaded', () => {
                         const propostaId = btn.dataset.propostaId;
                         const pedidoId = btn.dataset.pedidoId;
                         
-                        if (!confirm('Tem certeza que deseja aceitar esta proposta?')) return;
+                        abrirConfirmacaoAcao({
+                            titulo: 'Aceitar proposta',
+                            texto: 'Ao aceitar esta proposta, o serviço será iniciado com este profissional.',
+                            exigeMotivo: false,
+                            onConfirm: async () => {
+                                try {
+                                    const response = await fetch(`/api/pedidos-urgentes/${pedidoId}/aceitar-proposta`, {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'Authorization': `Bearer ${token}`
+                                        },
+                                        body: JSON.stringify({ propostaId })
+                                    });
 
-                        try {
-                            const response = await fetch(`/api/pedidos-urgentes/${pedidoId}/aceitar-proposta`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${token}`
-                                },
-                                body: JSON.stringify({ propostaId })
-                            });
+                                    const data = await response.json();
+                                    
+                                    if (data.success) {
+                                        // Feedback visual de sucesso
+                                        const toast = document.createElement('div');
+                                        toast.className = 'toast-sucesso';
+                                        toast.innerHTML = '<span class="check-animado">✔</span> Proposta aceita! Agora é só aguardar o profissional.';
+                                        document.body.appendChild(toast);
+                                        setTimeout(() => toast.classList.add('show'), 10);
+                                        setTimeout(() => toast.remove(), 2500);
 
-                            const data = await response.json();
-                            
-                            if (data.success) {
-                                // Feedback visual de sucesso
-                                const toast = document.createElement('div');
-                                toast.className = 'toast-sucesso';
-                                toast.innerHTML = '<span class="check-animado">✔</span> Proposta aceita! Agora é só aguardar o profissional.';
-                                document.body.appendChild(toast);
-                                setTimeout(() => toast.classList.add('show'), 10);
-                                setTimeout(() => toast.remove(), 2500);
-
-                                modalPropostas.classList.add('hidden');
-                            } else {
-                                alert(data.message || 'Erro ao aceitar proposta.');
+                                        modalPropostas.classList.add('hidden');
+                                    } else {
+                                        alert(data.message || 'Erro ao aceitar proposta.');
+                                    }
+                                } catch (error) {
+                                    console.error('Erro ao aceitar proposta:', error);
+                                    alert('Erro ao aceitar proposta.');
+                                }
                             }
-                        } catch (error) {
-                            console.error('Erro ao aceitar proposta:', error);
-                            alert('Erro ao aceitar proposta.');
-                        }
+                        });
                     });
                 });
 
@@ -655,32 +660,37 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.btn-servico-concluido').forEach(btn => {
                 btn.addEventListener('click', async () => {
                     const pedidoId = btn.dataset.pedidoId;
-                    if (!confirm('Confirmar que este serviço foi concluído?')) return;
-
-                    try {
-                        const resp = await fetch(`/api/pedidos-urgentes/${pedidoId}/concluir-servico`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`
+                    abrirConfirmacaoAcao({
+                        titulo: 'Marcar serviço como concluído',
+                        texto: 'Confirme apenas se o serviço foi realmente finalizado.',
+                        exigeMotivo: false,
+                        onConfirm: async () => {
+                            try {
+                                const resp = await fetch(`/api/pedidos-urgentes/${pedidoId}/concluir-servico`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${token}`
+                                    }
+                                });
+                                const data = await resp.json();
+                                if (data.success) {
+                                    const toast = document.createElement('div');
+                                    toast.className = 'toast-sucesso';
+                                    toast.innerHTML = '<span class="check-animado">✔</span> Serviço marcado como concluído. O cliente poderá avaliar você.';
+                                    document.body.appendChild(toast);
+                                    setTimeout(() => toast.classList.add('show'), 10);
+                                    setTimeout(() => toast.remove(), 2500);
+                                    await carregarServicosAtivos();
+                                } else {
+                                    alert(data.message || 'Erro ao marcar serviço como concluído.');
+                                }
+                            } catch (error) {
+                                console.error('Erro ao concluir serviço:', error);
+                                alert('Erro ao concluir serviço.');
                             }
-                        });
-                        const data = await resp.json();
-                        if (data.success) {
-                            const toast = document.createElement('div');
-                            toast.className = 'toast-sucesso';
-                            toast.innerHTML = '<span class="check-animado">✔</span> Serviço marcado como concluído. O cliente poderá avaliar você.';
-                            document.body.appendChild(toast);
-                            setTimeout(() => toast.classList.add('show'), 10);
-                            setTimeout(() => toast.remove(), 2500);
-                            await carregarServicosAtivos();
-                        } else {
-                            alert(data.message || 'Erro ao marcar serviço como concluído.');
                         }
-                    } catch (error) {
-                        console.error('Erro ao concluir serviço:', error);
-                        alert('Erro ao concluir serviço.');
-                    }
+                    });
                 });
             });
 
@@ -688,33 +698,33 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.btn-servico-cancelar').forEach(btn => {
                 btn.addEventListener('click', async () => {
                     const pedidoId = btn.dataset.pedidoId;
-                    const motivo = prompt('Por qual motivo você está cancelando este serviço?\nExemplos: Cliente não apareceu, Problema de saúde, Outro...');
-                    if (motivo === null) return; // cancelou prompt
-                    if (!motivo.trim()) {
-                        alert('Por favor, informe um motivo para o cancelamento.');
-                        return;
-                    }
-
-                    try {
-                        const resp = await fetch(`/api/pedidos-urgentes/${pedidoId}/cancelar-servico`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'Authorization': `Bearer ${token}`
-                            },
-                            body: JSON.stringify({ motivo })
-                        });
-                        const data = await resp.json();
-                        if (data.success) {
-                            alert('Serviço cancelado. A outra parte será notificada.');
-                            await carregarServicosAtivos();
-                        } else {
-                            alert(data.message || 'Erro ao cancelar serviço.');
+                    abrirConfirmacaoAcao({
+                        titulo: 'Cancelar serviço',
+                        texto: 'Informe o motivo do cancelamento. Isso ajuda a manter a segurança na plataforma.',
+                        exigeMotivo: true,
+                        onConfirm: async (motivo) => {
+                            try {
+                                const resp = await fetch(`/api/pedidos-urgentes/${pedidoId}/cancelar-servico`, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${token}`
+                                    },
+                                    body: JSON.stringify({ motivo })
+                                });
+                                const data = await resp.json();
+                                if (data.success) {
+                                    alert('Serviço cancelado. A outra parte será notificada.');
+                                    await carregarServicosAtivos();
+                                } else {
+                                    alert(data.message || 'Erro ao cancelar serviço.');
+                                }
+                            } catch (error) {
+                                console.error('Erro ao cancelar serviço:', error);
+                                alert('Erro ao cancelar serviço.');
+                            }
                         }
-                    } catch (error) {
-                        console.error('Erro ao cancelar serviço:', error);
-                        alert('Erro ao cancelar serviço.');
-                    }
+                    });
                 });
             });
         } catch (error) {
@@ -1854,6 +1864,59 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalNotificacoes = document.getElementById('modal-notificacoes');
     const listaNotificacoes = document.getElementById('lista-notificacoes');
     const btnMarcarTodasLidas = document.getElementById('btn-marcar-todas-lidas');
+
+    // Modal genérico de confirmação (para concluir/cancelar serviço, aceitar proposta, etc.)
+    const modalConfirmacao = document.getElementById('modal-confirmacao-acao');
+    const confirmacaoTitulo = document.getElementById('confirmacao-titulo');
+    const confirmacaoTexto = document.getElementById('confirmacao-texto');
+    const confirmacaoMotivoGroup = document.getElementById('confirmacao-motivo-group');
+    const confirmacaoMotivoInput = document.getElementById('confirmacao-motivo');
+    const btnConfirmacaoOk = document.getElementById('confirmacao-ok');
+    const btnConfirmacaoCancelar = document.getElementById('confirmacao-cancelar');
+
+    let confirmacaoHandler = null;
+    let confirmacaoExigeMotivo = false;
+
+    function abrirConfirmacaoAcao({ titulo, texto, exigeMotivo = false, onConfirm }) {
+        if (!modalConfirmacao) return;
+        confirmacaoTitulo.textContent = titulo || 'Confirmar ação';
+        confirmacaoTexto.textContent = texto || 'Tem certeza que deseja continuar?';
+        confirmacaoMotivoGroup.style.display = exigeMotivo ? 'block' : 'none';
+        confirmacaoMotivoInput.value = '';
+        confirmacaoExigeMotivo = exigeMotivo;
+        confirmacaoHandler = onConfirm || null;
+        modalConfirmacao.classList.remove('hidden');
+    }
+
+    function fecharConfirmacaoAcao() {
+        if (!modalConfirmacao) return;
+        modalConfirmacao.classList.add('hidden');
+        confirmacaoHandler = null;
+        confirmacaoMotivoInput.value = '';
+    }
+
+    if (btnConfirmacaoOk) {
+        btnConfirmacaoOk.addEventListener('click', async () => {
+            if (!confirmacaoHandler) {
+                fecharConfirmacaoAcao();
+                return;
+            }
+            const motivo = confirmacaoMotivoInput.value.trim();
+            if (confirmacaoExigeMotivo && !motivo) {
+                alert('Por favor, informe um motivo.');
+                return;
+            }
+            const handler = confirmacaoHandler;
+            fecharConfirmacaoAcao();
+            await handler(motivo);
+        });
+    }
+
+    if (btnConfirmacaoCancelar) {
+        btnConfirmacaoCancelar.addEventListener('click', () => {
+            fecharConfirmacaoAcao();
+        });
+    }
 
     // Carregar notificações periodicamente
     async function carregarNotificacoes() {
