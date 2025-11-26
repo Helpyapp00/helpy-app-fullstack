@@ -1069,6 +1069,15 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     transform: translateY(-1px);
 }
 
+/* Botões de cancelar (ações destrutivas) em modais */
+.btn-cancelar {
+    background: #e74c3c;
+}
+
+.btn-cancelar:hover {
+    background: #c0392b;
+}
+
 .btn-primary {
     padding: 10px 20px;
     background: var(--btn-primary-bg);
