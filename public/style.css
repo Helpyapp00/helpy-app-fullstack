@@ -465,6 +465,24 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 .modal-confirmacao {
     max-width: 360px;
 }
+
+/* Layout compacto do formulário de pedido urgente */
+.pedido-form-grid {
+    display: grid;
+    grid-template-columns: 1.1fr 1fr;
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.pedido-form-col .form-group {
+    margin-bottom: 10px;
+}
+
+@media (max-width: 900px) {
+    .pedido-form-grid {
+        grid-template-columns: 1fr;
+    }
+}
 @media (max-width: 992px) { .conteudo { flex-direction: column; align-items: center; margin-top: 80px; } .categorias, .anuncio { width: 100%; max-width: 700px; margin-bottom: 25px; position: static; top: auto; } main { width: 100%; } }
 @media (max-width: 768px) { header { flex-wrap: wrap; padding: 10px; height: auto; } .search { order: 3; width: 100%; margin: 10px 0 0 0; max-width: none; } .user-info { gap: 10px; } .logo-box { margin-right: auto; } .categorias, .anuncio { top: 20px; position: static; } .conteudo { margin-top: 20px; } #user-name-header { display: none; } .publicar, .post { padding: 15px; } .botoes-postar { flex-direction: column; align-items: stretch; } .upload-area { width: 100%; justify-content: center; } .upload-button, .btn-enviar { width: 100%; text-align: center; } .filename-display, .image-preview { text-align: center; margin-top: 5px; width: 100%; } .image-preview { max-height: 120px; width: auto; } .filtro-botoes { flex-direction: row; flex-wrap: wrap; justify-content: center; } .filtro-btn { flex-basis: 150px; } .post-header .post-avatar { width: 40px; height: 40px; } .post-header .user-name { font-size: 1em; } .post-content { font-size: 0.95em; } .modal-content { padding: 20px; } .modal-content h3 { font-size: 18px; } .modal-buttons button { padding: 8px 20px; font-size: 14px; } .action-btn { padding: 6px 10px; font-size: 12px; } .action-btn i { font-size: 14px; } }
 @media (max-width: 480px) { header { padding: 10px; } .logo-box img { width: 40px; height: 40px; } .logo-box h1 { font-size: 20px; } .user-avatar-header { width: 30px; height: 30px; } .user-info span { font-size: 0.9em; } #logout-button, #profile-button, #feed-button { padding: 6px 10px; font-size: 0.8em; } #feed-button, #profile-button { font-size: 14px; padding: 6px 10px; } .search { padding: 6px 10px; font-size: 0.9em; } .publicar h2 { font-size: 1.2em; } textarea#post-content-input { min-height: 60px; font-size: 0.9em; } .upload-button, .btn-enviar { padding: 8px 12px; font-size: 0.9em; } .form-message { font-size: 0.8em; } .filtro-btn { flex-basis: 100%; } .post-header .user-name { font-size: 0.9em; } .post-content { font-size: 0.9em; } .comment-avatar { width: 28px; height: 28px; } .comment-body { padding: 6px 10px; font-size: 13px; } .comment-input { padding: 6px 10px; font-size: 13px; } .btn-send-comment { padding: 6px 10px; font-size: 13px; } }
