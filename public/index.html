@@ -7,21 +7,6 @@
     <link rel="icon" href="/public/icons/helpy.ico" type="image/x-icon">
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" xintegrity="sha512-..." crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <!-- Script de proteção: se não tiver sessão, manda pro login -->
-    <script>
-        (function () {
-            try {
-                const token = localStorage.getItem('jwtToken');
-                const userId = localStorage.getItem('userId');
-                if (!token || !userId) {
-                    window.location.replace('/login');
-                }
-            } catch (e) {
-                // Se der erro ao acessar localStorage, também força login
-                window.location.replace('/login');
-            }
-        })();
-    </script>
 </head>
 <body>
     <!-- 🛑 NOVO: Script de Tema (Deve vir ANTES de todo o conteúdo) -->
