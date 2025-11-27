@@ -2,14 +2,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Identificação do Usuário ---
     const urlParams = new URLSearchParams(window.location.search);
     const loggedInUserId = localStorage.getItem('userId');
-    const profileId = urlParams.get('id') || loggedInUserId; // Vê o perfil da URL ou o próprio
+    // Suporte a slug em /perfil/:slug e também query ?id=...
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const slugFromPath = pathParts.length >= 2 && pathParts[0] === 'perfil' ? pathParts[1] : null;
+    let profileId = urlParams.get('id') || loggedInUserId; // Vê o perfil da URL ou o próprio
     
     const token = localStorage.getItem('jwtToken');
     const userType = localStorage.getItem('userType'); 
 
     if (!loggedInUserId || !token) {
         alert('Você precisa estar logado para acessar esta página.');
-        window.location.href = 'login.html';
+        window.location.href = '/login';
         return;
     }
     
@@ -92,6 +95,38 @@ document.addEventListener('DOMContentLoaded', () => {
     const confirmLogoutYesBtn = document.getElementById('confirm-logout-yes');
     const confirmLogoutNoBtn = document.getElementById('confirm-logout-no');
 
+
+    // --- Buscar dados do usuário quando acessado por slug ---
+    async function fetchUsuarioPorSlug(slug) {
+        try {
+            const resp = await fetch(`/api/usuarios/slug/${encodeURIComponent(slug)}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await resp.json();
+            if (!data.success) return null;
+            return data.usuario;
+        } catch (error) {
+            console.error('Erro ao buscar usuário por slug:', error);
+            return null;
+        }
+    }
+
+    // Se veio por slug (/perfil/:slug), resolve o _id antes de continuar
+    (async () => {
+        if (slugFromPath && !urlParams.get('id')) {
+            const usuario = await fetchUsuarioPorSlug(slugFromPath);
+            if (!usuario) {
+                alert('Perfil não encontrado.');
+                window.location.href = '/';
+                return;
+            }
+            profileId = usuario._id;
+        }
+
+        inicializarPagina();
+    })();
+
+    // A partir daqui, funções normais da página (usadas após resolver profileId)
 
     // --- FUNÇÃO PARA CARREGAR O HEADER ---
     function loadHeaderInfo() {
@@ -1100,10 +1135,10 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fotoPerfil) { fotoPerfil.style.cursor = 'pointer'; fotoPerfil.addEventListener('click', () => { if (fotoPerfil.src && imageModal && modalImage) { modalImage.src = fotoPerfil.src; imageModal.classList.add('visible'); } }); }
     if (closeImageModalBtn) { closeImageModalBtn.addEventListener('click', () => { imageModal.classList.remove('visible'); }); }
     if (imageModal) { imageModal.addEventListener('click', (e) => { if (e.target.id === 'image-modal' || e.target.classList.contains('image-modal-overlay')) { imageModal.classList.remove('visible'); } }); }
-    if (feedButton) { feedButton.addEventListener('click', (e) => { e.preventDefault(); window.location.href = 'index.html'; }); }
-    if (profileButton) { profileButton.addEventListener('click', (e) => { e.preventDefault(); window.location.href = `perfil.html?id=${loggedInUserId}`; }); }
+    if (feedButton) { feedButton.addEventListener('click', (e) => { e.preventDefault(); window.location.href = '/'; }); }
+    if (profileButton) { profileButton.addEventListener('click', (e) => { e.preventDefault(); window.location.href = `/perfil?id=${loggedInUserId}`; }); }
     if (logoutButton) { logoutButton.addEventListener('click', (e) => { e.preventDefault(); logoutConfirmModal && logoutConfirmModal.classList.remove('hidden'); }); }
-    if (confirmLogoutYesBtn) { confirmLogoutYesBtn.addEventListener('click', () => { localStorage.clear(); window.location.href = 'login.html'; }); }
+    if (confirmLogoutYesBtn) { confirmLogoutYesBtn.addEventListener('click', () => { localStorage.clear(); window.location.href = '/login'; }); }
     if (confirmLogoutNoBtn) { confirmLogoutNoBtn.addEventListener('click', () => { logoutConfirmModal && logoutConfirmModal.classList.add('hidden'); }); }
     
     // --- INICIALIZAÇÃO DA PÁGINA ---

@@ -499,7 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         e.stopPropagation(); // Evita que o clique se propague
                         const clienteId = element.dataset.clienteId;
                         if (clienteId) {
-                            window.location.href = `perfil.html?id=${clienteId}`;
+                            window.location.href = `/perfil?id=${clienteId}`;
                         }
                     });
                 });
@@ -1962,7 +1962,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                             origem: 'servico_concluido',
                                             agendamentoId
                                         });
-                                        window.location.href = `perfil.html?${params.toString()}#secao-avaliacao`;
+                                        window.location.href = `/perfil?${params.toString()}#secao-avaliacao`;
                                     }
                                 }
                             });

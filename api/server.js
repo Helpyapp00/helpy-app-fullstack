@@ -520,6 +520,7 @@ const VagaRelampago = mongoose.model('VagaRelampago', vagaRelampagoSchema);
 // 🛑 ATUALIZADO: Schema de Usuário
 const userSchema = new mongoose.Schema({
     nome: { type: String, required: true },
+    slugPerfil: { type: String, unique: true, sparse: true },
     idade: { type: Number },
     cidade: { type: String }, 
     estado: { type: String }, 
@@ -584,6 +585,33 @@ const Postagem = mongoose.model('Postagem', postagemSchema);
 const Servico = mongoose.model('Servico', servicoSchema);
 //----------------------------------------------------------------------
 
+// Helper para gerar slug único de perfil (baseado no nome)
+async function gerarSlugPerfil(nome) {
+    if (!nome) {
+        // Fallback simples se não tiver nome
+        const base = `user-${Date.now()}`;
+        return base;
+    }
+
+    const baseSlug = nome
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)+/g, '') || `user-${Date.now()}`;
+
+    let slug = baseSlug;
+    let contador = 0;
+
+    // Garante unicidade
+    while (await User.exists({ slugPerfil: slug })) {
+        contador += 1;
+        slug = `${baseSlug}-${contador}`;
+    }
+
+    return slug;
+}
+
 // MIDDLEWARES (App.use, Auth, Multer)
 // ----------------------------------------------------------------------
 // Configuração do CORS
@@ -601,7 +629,59 @@ app.use((req, res, next) => {
 });
 
 // Servir arquivos estáticos
-app.use(express.static(path.join(__dirname, '../public')));
+const publicDir = path.join(__dirname, '../public');
+app.use(express.static(publicDir));
+
+// Rotas amigáveis para páginas principais (sem expor .html)
+app.get('/', (req, res) => {
+    res.sendFile(path.join(publicDir, 'index.html'));
+});
+
+app.get('/login', (req, res) => {
+    res.sendFile(path.join(publicDir, 'login.html'));
+});
+
+app.get('/cadastro', (req, res) => {
+    res.sendFile(path.join(publicDir, 'cadastro.html'));
+});
+
+// Perfil por query (?id=...) - redireciona para slug amigável quando possível
+app.get('/perfil', async (req, res) => {
+    try {
+        const { id } = req.query;
+        if (id) {
+            const usuario = await User.findById(id).select('slugPerfil');
+            if (usuario && usuario.slugPerfil) {
+                return res.redirect(`/perfil/${usuario.slugPerfil}`);
+            }
+        }
+        // Fallback: serve a página normalmente
+        res.sendFile(path.join(publicDir, 'perfil.html'));
+    } catch (error) {
+        console.error('Erro ao redirecionar perfil por id para slug:', error);
+        res.sendFile(path.join(publicDir, 'perfil.html'));
+    }
+});
+
+// Perfil por slug amigável: /perfil/:slug
+app.get('/perfil/:slug', (req, res) => {
+    res.sendFile(path.join(publicDir, 'perfil.html'));
+});
+
+// API: Buscar usuário por slug de perfil
+app.get('/api/usuarios/slug/:slug', authMiddleware, async (req, res) => {
+    try {
+        const { slug } = req.params;
+        const usuario = await User.findOne({ slugPerfil: slug }).select('-senha -codigoVerificacao -codigoExpiracao');
+        if (!usuario) {
+            return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
+        }
+        res.json({ success: true, usuario });
+    } catch (error) {
+        console.error('Erro ao buscar usuário por slug:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
 
 // Inicialização dos serviços
 app.use(async (req, res, next) => { 
@@ -1277,10 +1357,17 @@ app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
             usuarioExistente.codigoVerificacao = null;
             usuarioExistente.codigoVerificacaoExpira = null;
             
+            // Gera slug de perfil se ainda não existir
+            if (!usuarioExistente.slugPerfil) {
+                usuarioExistente.slugPerfil = await gerarSlugPerfil(nome);
+            }
+
             await usuarioExistente.save();
             usuarioFinal = usuarioExistente;
         } else {
             // Cria novo usuário (caso não tenha passado pela verificação de email)
+            const slugPerfil = await gerarSlugPerfil(nome);
+
             const newUser = new User({
                 nome,
                 idade,
@@ -1294,6 +1381,7 @@ app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
                 senha: senhaHash,
                 foto: fotoUrl,
                 avatarUrl: fotoUrl,
+                slugPerfil,
                 tema: tema || 'light',
                 emailVerificado: true // Assumindo que já foi verificado antes de chegar aqui
             });
