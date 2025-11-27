@@ -797,7 +797,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (confirmLogoutYesBtn) {
         confirmLogoutYesBtn.addEventListener('click', () => {
             localStorage.clear();
-            window.location.href = '/login';
+            // Usa replace para evitar que o usuário volte para o feed com o botão "voltar"
+            window.location.replace('/login');
         });
     }
     if (confirmLogoutNoBtn) {
@@ -1116,7 +1117,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INICIALIZAÇÃO ---
     if (!token || !userId) {
-        if (!window.location.pathname.endsWith('/login') && !window.location.pathname.endsWith('/cadastro')) {
+        const path = window.location.pathname;
+        const isLoginPath = path.endsWith('/login') || path.endsWith('/login.html');
+        const isCadastroPath = path.endsWith('/cadastro') || path.endsWith('/cadastro.html');
+        if (!isLoginPath && !isCadastroPath) {
              window.location.href = '/login';
         }
     } else {
