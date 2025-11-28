@@ -1041,6 +1041,16 @@ app.post('/api/login', async (req, res) => {
         }
         
         console.log('Usuário encontrado, verificando senha...');
+
+        // Validação extra: garante que há uma senha hash válida antes de chamar o bcrypt
+        if (!user.senha || typeof user.senha !== 'string' || !user.senha.startsWith('$2')) {
+            console.warn('Usuário com senha inválida ou não-hash, bloqueando login para evitar erro 500:', email);
+            return res.status(401).json({ 
+                success: false, 
+                message: 'Não foi possível fazer login com esta conta. Por favor, redefina sua senha ou finalize seu cadastro.' 
+            });
+        }
+
         // Verifica se a senha está correta
         const isMatch = await bcrypt.compare(senha, user.senha);
         
@@ -1096,9 +1106,11 @@ app.post('/api/login', async (req, res) => {
             return;
         }
         
-        res.status(500).json({ 
+        // Para evitar que a Vercel/servidor substitua nossa resposta JSON por HTML genérico,
+        // sempre retornamos 200 aqui com success: false.
+        res.json({ 
             success: false, 
-            message: 'Erro interno do servidor.',
+            message: 'Erro interno do servidor ao fazer login. Tente novamente em alguns instantes.',
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
