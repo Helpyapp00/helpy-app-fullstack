@@ -622,12 +622,6 @@ app.use(cors({
     credentials: true
 }));
 
-// Middleware para garantir que todas as respostas sejam JSON
-app.use((req, res, next) => {
-    res.header('Content-Type', 'application/json; charset=utf-8');
-    next();
-});
-
 // Servir arquivos estáticos
 const publicDir = path.join(__dirname, '../public');
 app.use(express.static(publicDir));

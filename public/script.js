@@ -4,6 +4,18 @@ document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('jwtToken');
     const userType = localStorage.getItem('userType');
 
+    // Tratamento especial para /login: garantir que mostre sempre a página de login real
+    if (path === '/login' || path === '/login/') {
+        // Se NÃO estiver logado, força ir para o arquivo de login direto
+        if (!token || !userId) {
+            window.location.replace('/login.html');
+        } else {
+            // Se já estiver logado e tentar ir para o login, manda para o feed
+            window.location.replace('/');
+        }
+        return;
+    }
+
     // --- Elementos do Header ---
     const userAvatarHeader = document.getElementById('user-avatar-header');
     const userNameHeader = document.getElementById('user-name-header');
