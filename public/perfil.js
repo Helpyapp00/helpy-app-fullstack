@@ -12,7 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!loggedInUserId || !token) {
         alert('Você precisa estar logado para acessar esta página.');
-        window.location.href = '/login';
+        window.location.href = '/login.html';
         return;
     }
     
@@ -1138,7 +1138,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (feedButton) { feedButton.addEventListener('click', (e) => { e.preventDefault(); window.location.href = '/'; }); }
     if (profileButton) { profileButton.addEventListener('click', (e) => { e.preventDefault(); window.location.href = `/perfil?id=${loggedInUserId}`; }); }
     if (logoutButton) { logoutButton.addEventListener('click', (e) => { e.preventDefault(); logoutConfirmModal && logoutConfirmModal.classList.remove('hidden'); }); }
-    if (confirmLogoutYesBtn) { confirmLogoutYesBtn.addEventListener('click', () => { localStorage.clear(); window.location.href = '/login'; }); }
+    if (confirmLogoutYesBtn) { confirmLogoutYesBtn.addEventListener('click', () => { localStorage.clear(); window.location.href = '/login.html'; }); }
     if (confirmLogoutNoBtn) { confirmLogoutNoBtn.addEventListener('click', () => { logoutConfirmModal && logoutConfirmModal.classList.add('hidden'); }); }
     
     // --- INICIALIZAÇÃO DA PÁGINA ---
