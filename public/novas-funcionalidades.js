@@ -2426,7 +2426,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Nota: Em produção, você deve verificar se o usuário é admin no backend
     // Por enquanto, vamos adicionar um botão que só aparece se o usuário tiver permissão
     const acoesRapidas = document.querySelector('.filtro-acoes-rapidas');
-    if (acoesRapidas && !document.getElementById('btn-dashboard-admin')) {
+    // Só tenta carregar /api/usuario/me se houver token (usuário logado)
+    if (acoesRapidas && !document.getElementById('btn-dashboard-admin') && token) {
         // Verifica se é admin (em produção, isso viria do backend)
         fetch('/api/usuario/me', {
             headers: { 'Authorization': `Bearer ${token}` }
