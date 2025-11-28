@@ -119,14 +119,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CARREGAMENTO INICIAL ---
     function loadHeaderInfo() {
-        const storedName = localStorage.getItem('userName') || 'Carregando...';
+        const storedName = localStorage.getItem('userName') || '';
         const storedPhotoUrl = localStorage.getItem('userPhotoUrl');
 
         if (userNameHeader) {
-            userNameHeader.textContent = storedName.split(' ')[0];
+            userNameHeader.textContent = storedName ? storedName.split(' ')[0] : '';
         }
         if (userAvatarHeader) {
-            if (storedPhotoUrl && storedPhotoUrl !== 'undefined' && !storedPhotoUrl.includes('pixabay')) {
+            if (!storedPhotoUrl || storedPhotoUrl === 'undefined') {
+                userAvatarHeader.src = 'imagens/default-user.png';
+            } else if (!storedPhotoUrl.includes('pixabay')) {
                 // Técnica similar ao Facebook: carrega a imagem com cache busting para forçar alta qualidade
                 // Remove src primeiro para forçar reload completo
                 userAvatarHeader.src = '';
@@ -166,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Inicia o pré-carregamento
                 preloadImg.src = freshUrl;
             } else {
-                userAvatarHeader.src = 'imagens/default-user.png';
+                userAvatarHeader.src = storedPhotoUrl;
             }
         }
     }
@@ -1120,8 +1122,13 @@ document.addEventListener('DOMContentLoaded', () => {
         const path = window.location.pathname;
         const isLoginPath = path.endsWith('/login') || path.endsWith('/login.html');
         const isCadastroPath = path.endsWith('/cadastro') || path.endsWith('/cadastro.html');
+        // Se está no feed sem login, manda para login
         if (!isLoginPath && !isCadastroPath) {
              window.location.href = '/login';
+        } else {
+            // Se está na página de login/cadastro, garante header limpo
+            if (userNameHeader) userNameHeader.textContent = '';
+            if (userAvatarHeader) userAvatarHeader.src = 'imagens/default-user.png';
         }
     } else {
         if (postsContainer) {

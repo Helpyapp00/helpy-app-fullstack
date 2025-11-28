@@ -1866,6 +1866,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Carregar notificações periodicamente
     async function carregarNotificacoes() {
         if (!badgeNotificacoes && !listaNotificacoes) return;
+        // Se não estiver logado, não tenta carregar notificações
+        if (!token || !localStorage.getItem('userId')) {
+            if (badgeNotificacoes) {
+                badgeNotificacoes.style.display = 'none';
+            }
+            if (listaNotificacoes && modalNotificacoes && !modalNotificacoes.classList.contains('hidden')) {
+                listaNotificacoes.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-secondary);">Faça login para ver suas notificações.</p>';
+            }
+            return;
+        }
         
         try {
             const response = await fetch('/api/notificacoes?limit=50', {
