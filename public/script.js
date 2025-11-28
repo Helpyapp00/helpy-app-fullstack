@@ -4,18 +4,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem('jwtToken');
     const userType = localStorage.getItem('userType');
 
-    // Tratamento especial para /login: garantir que caia em login.html
-    if (path === '/login' || path === '/login/') {
-        // Se não estiver logado, manda para a página de login real
-        if (!token || !userId) {
-            window.location.replace('/login.html');
-        } else {
-            // Se já estiver logado e tentar ir pro login, manda para o feed
-            window.location.replace('/');
-        }
-        return;
-    }
-
     // --- Elementos do Header ---
     const userAvatarHeader = document.getElementById('user-avatar-header');
     const userNameHeader = document.getElementById('user-name-header');
@@ -1134,9 +1122,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!token || !userId) {
         const isLoginPath = path.endsWith('/login') || path.endsWith('/login.html');
         const isCadastroPath = path.endsWith('/cadastro') || path.endsWith('/cadastro.html');
-        // Se está no feed (ou outra página protegida) sem login → manda para login.html
+        // Se está no feed (ou outra página protegida) sem login → manda para /login
         if (!isLoginPath && !isCadastroPath) {
-             window.location.href = '/login.html';
+             window.location.href = '/login';
         } else {
             // Se está na página de login/cadastro, garante header limpo
             if (userNameHeader) userNameHeader.textContent = '';

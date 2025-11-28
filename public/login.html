@@ -12,6 +12,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <script>
+        // Se a URL tiver login.html, redireciona para /login para esconder o .html
+        (function() {
+            if (window.location.pathname.endsWith('/login.html')) {
+                const search = window.location.search || '';
+                const hash = window.location.hash || '';
+                window.location.replace('/login' + search + hash);
+            }
+        })();
+    </script>
     <!-- Background Content -->
     <section class="login-hero">
         <div class="hero-content">
