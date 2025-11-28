@@ -12,6 +12,17 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+    <script>
+        // Esconde o ".html" da URL sem recarregar a página
+        (function() {
+            if (window.location.pathname.endsWith('/login.html')) {
+                const search = window.location.search || '';
+                const hash = window.location.hash || '';
+                // Troca apenas o que aparece na barra do navegador
+                window.history.replaceState(null, '', '/login' + search + hash);
+            }
+        })();
+    </script>
     <!-- Background Content -->
     <section class="login-hero">
         <div class="hero-content">

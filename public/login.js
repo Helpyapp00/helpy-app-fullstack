@@ -55,7 +55,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify({ email, senha })
             });
 
-            const data = await response.json();
+            let data;
+            try {
+                data = await response.json();
+            } catch (parseError) {
+                // Se o servidor retornar HTML (ex: "A server error occurred"),
+                // evita quebrar o login e mostra uma mensagem amigável.
+                const rawText = await response.text().catch(() => '');
+                console.error('Resposta não-JSON do /api/login:', rawText);
+                throw new Error('Erro no servidor ao fazer login. Tente novamente em alguns instantes.');
+            }
 
             if (response.ok && data.success) {
                 showMessage(data.message || 'Login realizado com sucesso!', 'success');
