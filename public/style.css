@@ -175,15 +175,14 @@ header {
 }
 .user-info { display: flex; align-items: center; gap: 15px; }
 .user-avatar-header { 
-    width: 50px; 
-    height: 50px; 
+    width: 56px; 
+    height: 56px; 
     border-radius: 50%; 
     object-fit: cover; 
     object-position: center center;
     border: 2px solid white;
-    /* Técnica do Facebook: alta qualidade de renderização sem pixelização */
+    /* Alta qualidade de renderização quando a imagem é reduzida */
     image-rendering: -webkit-optimize-contrast;
-    image-rendering: auto;
     /* Força aceleração de hardware para melhor renderização */
     -webkit-backface-visibility: hidden;
     backface-visibility: hidden;
