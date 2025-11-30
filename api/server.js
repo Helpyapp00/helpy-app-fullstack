@@ -1021,6 +1021,76 @@ app.post('/api/verificar-email/validar', async (req, res) => {
     }
 });
 
+// ----------------------------------------------------------------------
+// 🔍 ROTA DE BUSCA GLOBAL (usuários, serviços, postagens)
+// ----------------------------------------------------------------------
+app.get('/api/busca', authMiddleware, async (req, res) => {
+    try {
+        const termoBruto = (req.query.q || '').toString().trim();
+
+        if (!termoBruto) {
+            return res.json({
+                success: true,
+                usuarios: [],
+                servicos: [],
+                posts: []
+            });
+        }
+
+        // Escapa caracteres especiais para usar em RegExp
+        const escaped = termoBruto.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regex = new RegExp(escaped, 'i');
+
+        const [usuarios, servicos, posts] = await Promise.all([
+            User.find({
+                $or: [
+                    { nome: regex },
+                    { atuacao: regex },
+                    { cidade: regex },
+                    { estado: regex },
+                    { email: regex }
+                ]
+            })
+            .select('nome cidade estado atuacao avatarUrl foto slugPerfil tipo')
+            .limit(10),
+
+            Servico.find({
+                $or: [
+                    { title: regex },
+                    { description: regex },
+                    { tecnologias: regex },
+                    { desafio: regex }
+                ]
+            })
+            .select('title description imagens ownerId')
+            .limit(10),
+
+            Postagem.find({
+                $or: [
+                    { content: regex }
+                ]
+            })
+            .populate('userId', 'nome cidade estado tipo avatarUrl foto slugPerfil')
+            .select('content mediaUrl mediaType createdAt userId')
+            .limit(10)
+        ]);
+
+        res.json({
+            success: true,
+            usuarios,
+            servicos,
+            posts
+        });
+    } catch (error) {
+        console.error('Erro na rota /api/busca:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Erro ao realizar busca.',
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        });
+    }
+});
+
 // Rota de Login
 app.post('/api/login', async (req, res) => {
     console.log('Requisição de login recebida:', { email: req.body.email });

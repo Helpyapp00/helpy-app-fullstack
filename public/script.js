@@ -22,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileButton = document.getElementById('profile-button');
     const logoutButton = document.getElementById('logout-button');
     const searchInput = document.querySelector('.search');
+    let searchResultsContainer = null;
     
     // --- Modais ---
     const logoutConfirmModal = document.getElementById('logout-confirm-modal');
@@ -561,6 +562,124 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (searchInput) {
+        // Cria container de resultados de busca abaixo do header
+        const headerElement = document.querySelector('header');
+        if (headerElement && !document.getElementById('search-results')) {
+            searchResultsContainer = document.createElement('div');
+            searchResultsContainer.id = 'search-results';
+            searchResultsContainer.innerHTML = '';
+            headerElement.appendChild(searchResultsContainer);
+        } else {
+            searchResultsContainer = document.getElementById('search-results');
+        }
+
+        async function buscarNoServidor(termo) {
+            const q = (termo || '').trim();
+            if (!q || q.length < 2) {
+                if (searchResultsContainer) searchResultsContainer.innerHTML = '';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/busca?q=${encodeURIComponent(q)}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    console.error('Erro na busca:', data.message);
+                    return;
+                }
+                renderSearchResults(data, q);
+            } catch (err) {
+                console.error('Erro ao chamar /api/busca:', err);
+            }
+        }
+
+        function renderSearchResults(data, termo) {
+            if (!searchResultsContainer) return;
+
+            const { usuarios = [], servicos = [], posts = [] } = data;
+
+            if (usuarios.length === 0 && servicos.length === 0 && posts.length === 0) {
+                searchResultsContainer.innerHTML = `
+                    <div class="search-results-empty">
+                        Nenhum resultado para "<strong>${termo}</strong>".
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="search-results-box">';
+
+            if (usuarios.length > 0) {
+                html += '<div class="search-section"><h4>Usuários</h4>';
+                usuarios.forEach(u => {
+                    const foto = u.avatarUrl || u.foto || 'imagens/default-user.png';
+                    const cidadeEstado = [u.cidade, u.estado].filter(Boolean).join(' - ');
+                    html += `
+                        <div class="search-item search-user" data-user-id="${u._id}">
+                            <img src="${foto}" alt="${u.nome}" class="search-avatar">
+                            <div>
+                                <div class="search-title">${u.nome}</div>
+                                <div class="search-subtitle">
+                                    ${u.atuacao || ''} ${cidadeEstado ? '• ' + cidadeEstado : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+
+            if (servicos.length > 0) {
+                html += '<div class="search-section"><h4>Serviços</h4>';
+                servicos.forEach(s => {
+                    html += `
+                        <div class="search-item search-servico">
+                            <div>
+                                <div class="search-title">${s.title || 'Serviço'}</div>
+                                <div class="search-subtitle">${(s.description || '').slice(0, 80)}...</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+
+            if (posts.length > 0) {
+                html += '<div class="search-section"><h4>Postagens</h4>';
+                posts.forEach(p => {
+                    const autor = p.userId || {};
+                    const fotoAutor = autor.avatarUrl || autor.foto || 'imagens/default-user.png';
+                    html += `
+                        <div class="search-item search-post">
+                            <img src="${fotoAutor}" alt="${autor.nome || ''}" class="search-avatar">
+                            <div>
+                                <div class="search-title">${autor.nome || 'Usuário'}</div>
+                                <div class="search-subtitle">${(p.content || '').slice(0, 80)}...</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+            }
+
+            html += '</div>';
+            searchResultsContainer.innerHTML = html;
+
+            // Clique em usuário → abre perfil
+            searchResultsContainer.querySelectorAll('.search-user').forEach(item => {
+                item.addEventListener('click', () => {
+                    const targetUserId = item.dataset.userId;
+                    if (targetUserId) {
+                        window.location.href = `/perfil.html?id=${targetUserId}`;
+                    }
+                });
+            });
+        }
+
         let buscaTimeout = null;
 
         // Filtra enquanto digita (com pequeno atraso para não travar)
@@ -568,7 +687,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const valor = searchInput.value;
             clearTimeout(buscaTimeout);
             buscaTimeout = setTimeout(() => {
-                aplicarFiltroBusca(valor);
+                aplicarFiltroBusca(valor);   // Filtro local no feed
+                buscarNoServidor(valor);     // Busca global (usuários/serviços/posts)
             }, 200);
         });
 
@@ -576,7 +696,9 @@ document.addEventListener('DOMContentLoaded', () => {
         searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                aplicarFiltroBusca(searchInput.value);
+                const valor = searchInput.value;
+                aplicarFiltroBusca(valor);
+                buscarNoServidor(valor);
             }
         });
     }
