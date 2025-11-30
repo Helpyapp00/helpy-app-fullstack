@@ -159,6 +159,18 @@ header {
   padding: 12px 16px;
   font-size: 0.9rem;
 }
+
+#search-results-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 900;
+  display: none;
+}
+
+#search-results-backdrop.visible {
+  display: block;
+}
 .user-info { display: flex; align-items: center; gap: 15px; }
 .user-avatar-header { 
     width: 50px; 

@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutButton = document.getElementById('logout-button');
     const searchInput = document.querySelector('.search');
     let searchResultsContainer = null;
+    let searchResultsBackdrop = null;
     
     // --- Modais ---
     const logoutConfirmModal = document.getElementById('logout-confirm-modal');
@@ -564,19 +565,35 @@ document.addEventListener('DOMContentLoaded', () => {
     if (searchInput) {
         // Cria container de resultados de busca abaixo do header
         const headerElement = document.querySelector('header');
-        if (headerElement && !document.getElementById('search-results')) {
+        if (!document.getElementById('search-results')) {
             searchResultsContainer = document.createElement('div');
             searchResultsContainer.id = 'search-results';
             searchResultsContainer.innerHTML = '';
-            headerElement.appendChild(searchResultsContainer);
+            if (headerElement) headerElement.appendChild(searchResultsContainer);
         } else {
             searchResultsContainer = document.getElementById('search-results');
         }
 
+        // Backdrop escuro atrás dos resultados
+        if (!document.getElementById('search-results-backdrop')) {
+            searchResultsBackdrop = document.createElement('div');
+            searchResultsBackdrop.id = 'search-results-backdrop';
+            document.body.appendChild(searchResultsBackdrop);
+
+            searchResultsBackdrop.addEventListener('click', () => {
+                // Ao clicar fora, limpa resultados e esconde o fundo escurecido
+                if (searchResultsContainer) searchResultsContainer.innerHTML = '';
+                searchResultsBackdrop.classList.remove('visible');
+            });
+        } else {
+            searchResultsBackdrop = document.getElementById('search-results-backdrop');
+        }
+
         async function buscarNoServidor(termo) {
             const q = (termo || '').trim();
-            if (!q || q.length < 2) {
+            if (!q) {
                 if (searchResultsContainer) searchResultsContainer.innerHTML = '';
+                if (searchResultsBackdrop) searchResultsBackdrop.classList.remove('visible');
                 return;
             }
 
@@ -608,6 +625,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         Nenhum resultado para "<strong>${termo}</strong>".
                     </div>
                 `;
+                if (searchResultsBackdrop) searchResultsBackdrop.classList.add('visible');
                 return;
             }
 
@@ -668,6 +686,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
             html += '</div>';
             searchResultsContainer.innerHTML = html;
+
+            if (searchResultsBackdrop) searchResultsBackdrop.classList.add('visible');
 
             // Clique em usuário → abre perfil
             searchResultsContainer.querySelectorAll('.search-user').forEach(item => {
