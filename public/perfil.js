@@ -179,6 +179,35 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- FUNÇÕES DE CARREGAMENTO E RENDERIZAÇÃO ---
+    // Gera um slug local a partir do nome (espelhando a lógica do backend)
+    function gerarSlugLocal(nome) {
+        if (!nome) return `user-${Date.now()}`;
+        return nome
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .trim()
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/(^-|-$)+/g, '') || `user-${Date.now()}`;
+    }
+
+    // Atualiza a URL do navegador para usar o slug, sem recarregar a página
+    function atualizarUrlPerfil(user) {
+        try {
+            if (!user || !user.nome) return;
+            const slug = user.slugPerfil || gerarSlugLocal(user.nome);
+            const cleanPath = `/perfil/${slug}`;
+            const currentPath = window.location.pathname;
+
+            // Só troca se for diferente para evitar loop
+            if (currentPath !== cleanPath) {
+                const newUrl = cleanPath + window.location.search.replace(/(\?|&)id=[^&]*/g, '');
+                window.history.replaceState({}, '', newUrl);
+            }
+        } catch (e) {
+            console.error('Erro ao atualizar URL do perfil:', e);
+        }
+    }
+
     async function fetchUserProfile() {
         if (!profileId) { console.error("Nenhum ID de perfil para buscar."); return; }
         
@@ -201,6 +230,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.documentElement.classList.toggle('dark-mode', user.tema === 'dark');
                 }
             }
+
+            // Deixa a URL bonita: /perfil/slug-do-usuario
+            atualizarUrlPerfil(user);
             
             loadHeaderInfo();
             renderUserProfile(user);
@@ -1142,8 +1174,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (profileButton) { 
         profileButton.addEventListener('click', (e) => { 
             e.preventDefault(); 
-            // Usa /perfil?id=... para que o backend redirecione para /perfil/:slug
-            window.location.href = `/perfil?id=${loggedInUserId}`; 
+            // Abre diretamente perfil.html com o ID; perfil.js limpará a URL com o slug
+            window.location.href = `/perfil.html?id=${loggedInUserId}`; 
         }); 
     }
     if (logoutButton) { logoutButton.addEventListener('click', (e) => { e.preventDefault(); logoutConfirmModal && logoutConfirmModal.classList.remove('hidden'); }); }

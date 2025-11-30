@@ -374,8 +374,9 @@ document.addEventListener('DOMContentLoaded', () => {
             el.addEventListener('click', (e) => {
                 const targetUserId = e.currentTarget.dataset.userid;
                 if (targetUserId) {
-                    // Usa /perfil?id=... para que o backend redirecione para /perfil/:slug
-                    window.location.href = `/perfil?id=${targetUserId}`;
+                    // Abre diretamente o arquivo perfil.html com o ID,
+                    // e o próprio perfil.js vai limpar a URL depois com o slug
+                    window.location.href = `/perfil.html?id=${targetUserId}`;
                 }
             });
         });
@@ -790,8 +791,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- NAVEGAÇÃO DO HEADER ---
     if (profileButton) {
         profileButton.addEventListener('click', () => {
-            // Usa /perfil?id=... para que o backend redirecione para /perfil/:slug
-            window.location.href = `/perfil?id=${userId}`;
+            // Abre diretamente o arquivo perfil.html com o ID,
+            // e o próprio perfil.js vai limpar a URL depois com o slug
+            window.location.href = `/perfil.html?id=${userId}`;
         });
     }
 
