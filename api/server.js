@@ -188,10 +188,12 @@ const equipeVerificadaSchema = new mongoose.Schema({
     isVerificada: { type: Boolean, default: false }
 }, { timestamps: true });
 
-const TimeProjeto = mongoose.model('TimeProjeto', timeProjetoSchema);
-const Agendamento = mongoose.model('Agendamento', agendamentoSchema);
-const HorarioDisponivel = mongoose.model('HorarioDisponivel', horarioDisponivelSchema);
-const EquipeVerificada = mongoose.model('EquipeVerificada', equipeVerificadaSchema);
+// Em ambientes serverless (como Vercel), o arquivo pode ser carregado mais de uma vez.
+// Usamos mongoose.models[...] para evitar OverwriteModelError ao recompilar os models.
+const TimeProjeto = mongoose.models.TimeProjeto || mongoose.model('TimeProjeto', timeProjetoSchema);
+const Agendamento = mongoose.models.Agendamento || mongoose.model('Agendamento', agendamentoSchema);
+const HorarioDisponivel = mongoose.models.HorarioDisponivel || mongoose.model('HorarioDisponivel', horarioDisponivelSchema);
+const EquipeVerificada = mongoose.models.EquipeVerificada || mongoose.model('EquipeVerificada', equipeVerificadaSchema);
 
 // 🆕 NOVO: Schema de Pagamento Seguro (Escrow) - EXPANDIDO
 const pagamentoSeguroSchema = new mongoose.Schema({
@@ -1380,7 +1382,7 @@ app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
             if (!usuarioExistente.slugPerfil) {
                 usuarioExistente.slugPerfil = await gerarSlugPerfil(nome);
             }
-
+            
             await usuarioExistente.save();
             usuarioFinal = usuarioExistente;
         } else {
@@ -2915,19 +2917,19 @@ app.post('/api/pedidos-urgentes', authMiddleware, upload.single('foto'), async (
                         .toFormat('jpeg', { quality: 90 })
                         .toBuffer();
                 }
-
+                    
                 // Tenta enviar para o S3 se estiver configurado
                 if (s3Client) {
                     try {
-                        const key = `pedidos-urgentes/${clienteId}/${Date.now()}_${path.basename(req.file.originalname)}`;
-                        const uploadCommand = new PutObjectCommand({
-                            Bucket: bucketName,
-                            Key: key,
-                            Body: imageBuffer,
-                            ContentType: 'image/jpeg'
-                        });
-                        await s3Client.send(uploadCommand);
-                        fotoUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+                    const key = `pedidos-urgentes/${clienteId}/${Date.now()}_${path.basename(req.file.originalname)}`;
+                    const uploadCommand = new PutObjectCommand({
+                        Bucket: bucketName,
+                        Key: key,
+                        Body: imageBuffer,
+                        ContentType: 'image/jpeg'
+                    });
+                    await s3Client.send(uploadCommand);
+                    fotoUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
                     } catch (s3Error) {
                         console.warn('Falha ao enviar foto de pedido urgente para S3, usando fallback local:', s3Error);
                     }
@@ -3240,7 +3242,7 @@ app.post('/api/pedidos-urgentes/:pedidoId/aceitar-proposta', authMiddleware, asy
         } catch (notifError) {
             console.error('Erro ao criar notificação de proposta aceita:', notifError);
         }
-
+        
         res.json({ 
             success: true, 
             message: 'Proposta aceita! Agora é só aguardar o profissional.',

@@ -155,7 +155,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (data.success) {
                 modalPropostas.classList.remove('hidden');
-
+                
                 const pedido = data.pedido;
                 const propostas = data.propostas || [];
 
@@ -211,9 +211,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                 ${proposta.observacoes ? `<p class="proposta-observacoes">${proposta.observacoes}</p>` : ''}
                             </div>
                             <div style="display: flex; gap: 10px; margin-top: 10px;">
-                                <button class="btn-aceitar-proposta" data-proposta-id="${proposta._id}" data-pedido-id="${pedidoId}">
-                                    Aceitar Proposta
-                                </button>
+                            <button class="btn-aceitar-proposta" data-proposta-id="${proposta._id}" data-pedido-id="${pedidoId}">
+                                Aceitar Proposta
+                            </button>
                                 <button class="btn-recusar-proposta" data-proposta-id="${proposta._id}" data-pedido-id="${pedidoId}" style="background: #dc3545; color: #fff; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">
                                     Recusar
                                 </button>
@@ -251,19 +251,19 @@ document.addEventListener('DOMContentLoaded', () => {
                             texto: 'Ao aceitar esta proposta, o serviço será iniciado com este profissional.',
                             exigeMotivo: false,
                             onConfirm: async () => {
-                                try {
-                                    const response = await fetch(`/api/pedidos-urgentes/${pedidoId}/aceitar-proposta`, {
-                                        method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json',
-                                            'Authorization': `Bearer ${token}`
-                                        },
-                                        body: JSON.stringify({ propostaId })
-                                    });
+                        try {
+                            const response = await fetch(`/api/pedidos-urgentes/${pedidoId}/aceitar-proposta`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify({ propostaId })
+                            });
 
-                                    const data = await response.json();
-                                    
-                                    if (data.success) {
+                            const data = await response.json();
+                            
+                            if (data.success) {
                                         // Feedback visual de sucesso
                                         const toast = document.createElement('div');
                                         toast.className = 'toast-sucesso';
@@ -272,17 +272,17 @@ document.addEventListener('DOMContentLoaded', () => {
                                         setTimeout(() => toast.classList.add('show'), 10);
                                         setTimeout(() => toast.remove(), 2500);
 
-                                        modalPropostas.classList.add('hidden');
-                                    } else {
-                                        alert(data.message || 'Erro ao aceitar proposta.');
-                                    }
-                                } catch (error) {
-                                    console.error('Erro ao aceitar proposta:', error);
-                                    alert('Erro ao aceitar proposta.');
-                                }
+                                modalPropostas.classList.add('hidden');
+                            } else {
+                                alert(data.message || 'Erro ao aceitar proposta.');
                             }
-                        });
+                        } catch (error) {
+                            console.error('Erro ao aceitar proposta:', error);
+                            alert('Erro ao aceitar proposta.');
+                                }
+                        }
                     });
+                });
                 });
 
                 // Adicionar listeners para recusar propostas
@@ -293,30 +293,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
                         if (!confirm('Tem certeza que deseja recusar esta proposta?')) return;
 
-                        try {
+            try {
                             const response = await fetch(`/api/pedidos-urgentes/${pedidoId}/recusar-proposta`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${token}`
-                                },
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
                                 body: JSON.stringify({ propostaId })
-                            });
+                });
 
-                            const data = await response.json();
-
-                            if (data.success) {
+                const data = await response.json();
+                
+                if (data.success) {
                                 alert('Proposta recusada com sucesso.');
                                 await carregarPropostas(pedidoId);
-                            } else {
+                } else {
                                 alert(data.message || 'Erro ao recusar proposta.');
-                            }
-                        } catch (error) {
+                }
+            } catch (error) {
                             console.error('Erro ao recusar proposta:', error);
                             alert('Erro ao recusar proposta.');
-                        }
+            }
                     });
-                });
+        });
             }
         } catch (error) {
             console.error('Erro ao carregar propostas:', error);
@@ -328,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // TIMES LOCAIS (somente listagem na lateral)
     // A criação de times de projeto é feita pelo modal "Montar Time" (script.js)
     // ============================================
-    
+
     // Carregar times locais
     async function carregarTimesLocais() {
         const timesContainer = document.getElementById('times-container');
