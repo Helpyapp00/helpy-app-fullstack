@@ -374,8 +374,8 @@ document.addEventListener('DOMContentLoaded', () => {
             el.addEventListener('click', (e) => {
                 const targetUserId = e.currentTarget.dataset.userid;
                 if (targetUserId) {
-                    // Usa perfil.html para garantir compatibilidade com o servidor atual
-                    window.location.href = `/perfil.html?id=${targetUserId}`;
+                    // Usa /perfil?id=... para que o backend redirecione para /perfil/:slug
+                    window.location.href = `/perfil?id=${targetUserId}`;
                 }
             });
         });
@@ -790,8 +790,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- NAVEGAÇÃO DO HEADER ---
     if (profileButton) {
         profileButton.addEventListener('click', () => {
-            // Usa perfil.html para garantir que o perfil abra corretamente
-            window.location.href = `/perfil.html?id=${userId}`;
+            // Usa /perfil?id=... para que o backend redirecione para /perfil/:slug
+            window.location.href = `/perfil?id=${userId}`;
         });
     }
 

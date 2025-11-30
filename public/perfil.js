@@ -111,6 +111,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Função de inicialização da página (chamada depois de resolver slug/ID)
+    function inicializarPagina() {
+        loadHeaderInfo();
+        fetchUserProfile();
+        setupSectionSwitching();
+    }
+
     // Se veio por slug (/perfil/:slug), resolve o _id antes de continuar
     (async () => {
         if (slugFromPath && !urlParams.get('id')) {
@@ -127,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
     })();
 
     // A partir daqui, funções normais da página (usadas após resolver profileId)
-
+    
     // --- FUNÇÃO PARA CARREGAR O HEADER ---
     function loadHeaderInfo() {
         const storedName = localStorage.getItem('userName') || 'Usuário';
@@ -1126,22 +1133,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fotoPerfil) { fotoPerfil.style.cursor = 'pointer'; fotoPerfil.addEventListener('click', () => { if (fotoPerfil.src && imageModal && modalImage) { modalImage.src = fotoPerfil.src; imageModal.classList.add('visible'); } }); }
     if (closeImageModalBtn) { closeImageModalBtn.addEventListener('click', () => { imageModal.classList.remove('visible'); }); }
     if (imageModal) { imageModal.addEventListener('click', (e) => { if (e.target.id === 'image-modal' || e.target.classList.contains('image-modal-overlay')) { imageModal.classList.remove('visible'); } }); }
-    if (feedButton) { feedButton.addEventListener('click', (e) => { e.preventDefault(); window.location.href = '/'; }); }
+    if (feedButton) { 
+        feedButton.addEventListener('click', (e) => { 
+            e.preventDefault(); 
+            window.location.href = '/'; 
+        }); 
+    }
     if (profileButton) { 
         profileButton.addEventListener('click', (e) => { 
             e.preventDefault(); 
-            // Garante que o perfil abra mesmo no ambiente atual
-            window.location.href = `/perfil.html?id=${loggedInUserId}`; 
+            // Usa /perfil?id=... para que o backend redirecione para /perfil/:slug
+            window.location.href = `/perfil?id=${loggedInUserId}`; 
         }); 
     }
     if (logoutButton) { logoutButton.addEventListener('click', (e) => { e.preventDefault(); logoutConfirmModal && logoutConfirmModal.classList.remove('hidden'); }); }
     if (confirmLogoutYesBtn) { confirmLogoutYesBtn.addEventListener('click', () => { localStorage.clear(); window.location.href = '/login'; }); }
     if (confirmLogoutNoBtn) { confirmLogoutNoBtn.addEventListener('click', () => { logoutConfirmModal && logoutConfirmModal.classList.add('hidden'); }); }
-    
-    // --- INICIALIZAÇÃO DA PÁGINA ---
-    loadHeaderInfo(); 
-    fetchUserProfile(); 
-    setupSectionSwitching();
     
     // 🆕 NOVO: Agendador Helpy
     const btnVerAgenda = document.getElementById('btn-ver-agenda');
