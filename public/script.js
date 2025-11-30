@@ -21,6 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const userNameHeader = document.getElementById('user-name-header');
     const profileButton = document.getElementById('profile-button');
     const logoutButton = document.getElementById('logout-button');
+    const searchInput = document.querySelector('.search');
     
     // --- Modais ---
     const logoutConfirmModal = document.getElementById('logout-confirm-modal');
@@ -531,6 +532,52 @@ document.addEventListener('DOMContentLoaded', () => {
         filtroCidadeBtn.addEventListener('click', () => {
             const cidade = filtroCidadeInput.value.trim();
             fetchPosts(cidade || null); // Busca todos se o campo estiver vazio
+        });
+    }
+
+    // ----------------------------------------------------------------------
+    // BUSCA RÁPIDA NO CABEÇALHO (serviços / profissionais no feed)
+    // ----------------------------------------------------------------------
+    function aplicarFiltroBusca(term) {
+        const termo = (term || '').trim().toLowerCase();
+        const posts = document.querySelectorAll('.post');
+
+        posts.forEach(post => {
+            if (!termo) {
+                post.style.display = 'block';
+                return;
+            }
+
+            const textoPost = post.querySelector('.post-content')?.innerText.toLowerCase() || '';
+            const nomeAutor = post.querySelector('.user-name')?.innerText.toLowerCase() || '';
+            const cidadeAutor = post.querySelector('.post-author-city')?.innerText.toLowerCase() || '';
+
+            const corresponde = textoPost.includes(termo) ||
+                                nomeAutor.includes(termo) ||
+                                cidadeAutor.includes(termo);
+
+            post.style.display = corresponde ? 'block' : 'none';
+        });
+    }
+
+    if (searchInput) {
+        let buscaTimeout = null;
+
+        // Filtra enquanto digita (com pequeno atraso para não travar)
+        searchInput.addEventListener('input', () => {
+            const valor = searchInput.value;
+            clearTimeout(buscaTimeout);
+            buscaTimeout = setTimeout(() => {
+                aplicarFiltroBusca(valor);
+            }, 200);
+        });
+
+        // Enter também dispara a busca imediatamente
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                aplicarFiltroBusca(searchInput.value);
+            }
         });
     }
 
