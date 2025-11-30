@@ -10,6 +10,16 @@
     <link rel="stylesheet" href="/cadastro.css">
 </head>
 <body>
+  <script>
+    // Esconde o ".html" da URL sem recarregar a página (limpa para /cadastro)
+    (function() {
+      if (window.location.pathname.endsWith('/cadastro.html')) {
+        const search = window.location.search || '';
+        const hash = window.location.hash || '';
+        window.history.replaceState(null, '', '/cadastro' + search + hash);
+      }
+    })();
+  </script>
   <div class="container-cadastro">
     <div class="header-content">
       <img src="imagens/helpy-cadastro.png" alt="Logo Helpy Cadastro" class="header-logo">

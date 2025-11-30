@@ -16,6 +16,18 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
 
+    // Tratamento especial para /cadastro: garantir que mostre sempre a página de cadastro real
+    if (path === '/cadastro' || path === '/cadastro/') {
+        // Se NÃO estiver logado, força ir para o arquivo de cadastro direto
+        if (!token || !userId) {
+            window.location.replace('/cadastro.html');
+        } else {
+            // Se já estiver logado e tentar ir para o cadastro, manda para o feed
+            window.location.replace('/');
+        }
+        return;
+    }
+
 
     // --- Elementos do Header ---
     const userAvatarHeader = document.getElementById('user-avatar-header');
