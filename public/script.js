@@ -142,43 +142,33 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!storedPhotoUrl || storedPhotoUrl === 'undefined') {
                 userAvatarHeader.src = 'imagens/default-user.png';
             } else if (!storedPhotoUrl.includes('pixabay')) {
-                // Técnica similar ao Facebook: carrega a imagem com cache busting para forçar alta qualidade
                 // Remove src primeiro para forçar reload completo
                 userAvatarHeader.src = '';
-                
+
                 // Adiciona timestamp para evitar cache e garantir carregamento fresco
                 const separator = storedPhotoUrl.includes('?') ? '&' : '?';
                 const freshUrl = storedPhotoUrl + separator + '_t=' + Date.now();
-                
-                // Cria uma nova imagem para pré-carregar com alta qualidade
+
+                // Pré-carrega a imagem SEM usar crossOrigin (evita erros de CORS com S3)
                 const preloadImg = new Image();
-                // Só define crossOrigin se a URL for de outro domínio
-                if (freshUrl.startsWith('http') && !freshUrl.includes(window.location.hostname)) {
-                    preloadImg.crossOrigin = 'anonymous';
-                }
-                
-                preloadImg.onload = function() {
-                    // Quando a imagem pré-carregada estiver pronta, aplica ao elemento
+
+                preloadImg.onload = function () {
                     userAvatarHeader.src = freshUrl;
                     userAvatarHeader.loading = 'eager';
-                    userAvatarHeader.decoding = 'sync'; // Síncrono para melhor qualidade
-                    
-                    // Força repaint para melhor renderização
+                    userAvatarHeader.decoding = 'sync';
+
                     userAvatarHeader.style.opacity = '0';
                     setTimeout(() => {
                         userAvatarHeader.style.opacity = '1';
-                        // Força reflow para garantir renderização de alta qualidade
                         userAvatarHeader.offsetHeight;
                     }, 10);
                 };
-                
-                preloadImg.onerror = function() {
-                    // Fallback se pré-carregamento falhar
+
+                preloadImg.onerror = function () {
                     userAvatarHeader.src = storedPhotoUrl;
                     userAvatarHeader.loading = 'eager';
                 };
-                
-                // Inicia o pré-carregamento
+
                 preloadImg.src = freshUrl;
             } else {
                 userAvatarHeader.src = storedPhotoUrl;
@@ -384,7 +374,8 @@ document.addEventListener('DOMContentLoaded', () => {
             el.addEventListener('click', (e) => {
                 const targetUserId = e.currentTarget.dataset.userid;
                 if (targetUserId) {
-                    window.location.href = `/perfil?id=${targetUserId}`;
+                    // Usa perfil.html para garantir compatibilidade com o servidor atual
+                    window.location.href = `/perfil.html?id=${targetUserId}`;
                 }
             });
         });
@@ -799,7 +790,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- NAVEGAÇÃO DO HEADER ---
     if (profileButton) {
         profileButton.addEventListener('click', () => {
-            window.location.href = `/perfil?id=${userId}`;
+            // Usa perfil.html para garantir que o perfil abra corretamente
+            window.location.href = `/perfil.html?id=${userId}`;
         });
     }
 

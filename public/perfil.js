@@ -144,35 +144,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 const separator = storedPhotoUrl.includes('?') ? '&' : '?';
                 const freshUrl = storedPhotoUrl + separator + '_t=' + Date.now();
                 
-                // Cria uma nova imagem para pré-carregar com alta qualidade
+                // Cria uma nova imagem para pré-carregar, sem crossOrigin (evita erros de CORS com S3)
                 const preloadImg = new Image();
-                // Só define crossOrigin se a URL for de outro domínio
-                if (freshUrl.startsWith('http') && !freshUrl.includes(window.location.hostname)) {
-                    preloadImg.crossOrigin = 'anonymous';
-                }
-                
+
                 preloadImg.onload = function() {
-                    // Quando a imagem pré-carregada estiver pronta, aplica ao elemento
                     userAvatarHeader.src = freshUrl;
                     userAvatarHeader.loading = 'eager';
-                    userAvatarHeader.decoding = 'sync'; // Síncrono para melhor qualidade
-                    
-                    // Força repaint para melhor renderização
+                    userAvatarHeader.decoding = 'sync';
+
                     userAvatarHeader.style.opacity = '0';
                     setTimeout(() => {
                         userAvatarHeader.style.opacity = '1';
-                        // Força reflow para garantir renderização de alta qualidade
                         userAvatarHeader.offsetHeight;
                     }, 10);
                 };
-                
+
                 preloadImg.onerror = function() {
-                    // Fallback se pré-carregamento falhar
                     userAvatarHeader.src = storedPhotoUrl;
                     userAvatarHeader.loading = 'eager';
                 };
-                
-                // Inicia o pré-carregamento
+
                 preloadImg.src = freshUrl;
             } else {
                 userAvatarHeader.src = 'imagens/default-user.png';
@@ -1136,7 +1127,13 @@ document.addEventListener('DOMContentLoaded', () => {
     if (closeImageModalBtn) { closeImageModalBtn.addEventListener('click', () => { imageModal.classList.remove('visible'); }); }
     if (imageModal) { imageModal.addEventListener('click', (e) => { if (e.target.id === 'image-modal' || e.target.classList.contains('image-modal-overlay')) { imageModal.classList.remove('visible'); } }); }
     if (feedButton) { feedButton.addEventListener('click', (e) => { e.preventDefault(); window.location.href = '/'; }); }
-    if (profileButton) { profileButton.addEventListener('click', (e) => { e.preventDefault(); window.location.href = `/perfil?id=${loggedInUserId}`; }); }
+    if (profileButton) { 
+        profileButton.addEventListener('click', (e) => { 
+            e.preventDefault(); 
+            // Garante que o perfil abra mesmo no ambiente atual
+            window.location.href = `/perfil.html?id=${loggedInUserId}`; 
+        }); 
+    }
     if (logoutButton) { logoutButton.addEventListener('click', (e) => { e.preventDefault(); logoutConfirmModal && logoutConfirmModal.classList.remove('hidden'); }); }
     if (confirmLogoutYesBtn) { confirmLogoutYesBtn.addEventListener('click', () => { localStorage.clear(); window.location.href = '/login'; }); }
     if (confirmLogoutNoBtn) { confirmLogoutNoBtn.addEventListener('click', () => { logoutConfirmModal && logoutConfirmModal.classList.add('hidden'); }); }
