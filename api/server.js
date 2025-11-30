@@ -1354,25 +1354,45 @@ app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
             try {
                 const sharp = getSharp();
                 let imageBuffer;
+                const mimeType = avatarFile.mimetype || '';
                 
                 if (sharp) {
                     // Processa a imagem com Sharp com máxima qualidade
                     // Usa tamanho 1000x1000 para melhor qualidade quando redimensionada pelo navegador
-                    imageBuffer = await sharp(avatarFile.buffer)
+                    let pipeline = sharp(avatarFile.buffer)
                         .resize(1000, 1000, { 
                             fit: 'cover',
                             withoutEnlargement: true, // Não aumenta imagens menores
                             kernel: 'lanczos3' // Melhor algoritmo de redimensionamento
-                        })
-                        .jpeg({ 
-                            quality: 98, 
-                            mozjpeg: true,
-                            progressive: true,
-                            optimizeScans: true,
-                            trellisQuantisation: true,
-                            overshootDeringing: true
-                        })
-                        .toBuffer();
+                        });
+
+                    // Mantém PNG/WebP praticamente sem perda, e JPEG com qualidade muito alta
+                    if (mimeType.includes('png')) {
+                        imageBuffer = await pipeline
+                            .png({
+                                compressionLevel: 6,
+                                adaptiveFiltering: true
+                            })
+                            .toBuffer();
+                    } else if (mimeType.includes('webp')) {
+                        imageBuffer = await pipeline
+                            .webp({
+                                quality: 98,
+                                lossless: true
+                            })
+                            .toBuffer();
+                    } else {
+                        imageBuffer = await pipeline
+                            .jpeg({ 
+                                quality: 98, 
+                                mozjpeg: true,
+                                progressive: true,
+                                optimizeScans: true,
+                                trellisQuantisation: true,
+                                overshootDeringing: true
+                            })
+                            .toBuffer();
+                    }
                 } else {
                     // Se Sharp não estiver disponível, usa o buffer original
                     imageBuffer = avatarFile.buffer;
@@ -1710,25 +1730,45 @@ app.put('/api/editar-perfil/:id', authMiddleware, upload.single('avatar'), async
             try {
                 const sharp = getSharp();
                 let imageBuffer;
+                const mimeType = avatarFile.mimetype || '';
                 
                 if (sharp) {
                     // Processa a imagem com Sharp com máxima qualidade
                     // Usa tamanho 1000x1000 para melhor qualidade quando redimensionada pelo navegador
-                    imageBuffer = await sharp(avatarFile.buffer)
+                    let pipeline = sharp(avatarFile.buffer)
                         .resize(1000, 1000, { 
                             fit: 'cover',
                             withoutEnlargement: true, // Não aumenta imagens menores
                             kernel: 'lanczos3' // Melhor algoritmo de redimensionamento
-                        })
-                        .jpeg({ 
-                            quality: 98, 
-                            mozjpeg: true,
-                            progressive: true,
-                            optimizeScans: true,
-                            trellisQuantisation: true,
-                            overshootDeringing: true
-                        })
-                        .toBuffer();
+                        });
+
+                    // Mantém PNG/WebP praticamente sem perda, e JPEG com qualidade muito alta
+                    if (mimeType.includes('png')) {
+                        imageBuffer = await pipeline
+                            .png({
+                                compressionLevel: 6,
+                                adaptiveFiltering: true
+                            })
+                            .toBuffer();
+                    } else if (mimeType.includes('webp')) {
+                        imageBuffer = await pipeline
+                            .webp({
+                                quality: 98,
+                                lossless: true
+                            })
+                            .toBuffer();
+                    } else {
+                        imageBuffer = await pipeline
+                            .jpeg({ 
+                                quality: 98, 
+                                mozjpeg: true,
+                                progressive: true,
+                                optimizeScans: true,
+                                trellisQuantisation: true,
+                                overshootDeringing: true
+                            })
+                            .toBuffer();
+                    }
                 } else {
                     // Se Sharp não estiver disponível, usa o buffer original
                     imageBuffer = avatarFile.buffer;
