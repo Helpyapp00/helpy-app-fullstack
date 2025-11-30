@@ -709,7 +709,7 @@ app.use('/api', (req, res, next) => {
 // Segredo JWT com fallback seguro em desenvolvimento (evita erro 500 se variável não estiver definida)
 const JWT_SECRET = process.env.JWT_SECRET || 'helpy-dev-secret-2024';
 
-const authMiddleware = (req, res, next) => {
+function authMiddleware(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ message: 'Token não fornecido ou inválido.' });
@@ -723,7 +723,7 @@ const authMiddleware = (req, res, next) => {
         console.error('Erro ao verificar token JWT:', error.message);
         return res.status(401).json({ message: 'Token inválido.' });
     }
-};
+}
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage, limits: { fileSize: 10 * 1024 * 1024 }, fileFilter: (req, file, cb) => { const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/quicktime', 'video/webm']; if (allowedTypes.includes(file.mimetype)) { cb(null, true); } else { cb(new Error('Tipo de arquivo não suportado.'), false); } } });
 // ----------------------------------------------------------------------
