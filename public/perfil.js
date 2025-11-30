@@ -6,6 +6,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const pathParts = window.location.pathname.split('/').filter(Boolean);
     const slugFromPath = pathParts.length >= 2 && pathParts[0] === 'perfil' ? pathParts[1] : null;
     let profileId = urlParams.get('id') || loggedInUserId; // Vê o perfil da URL ou o próprio
+
+    // Limpa o ID da URL o mais rápido possível, antes de qualquer chamada assíncrona
+    // Ex.: /perfil.html?id=123 -> /perfil/carregando (depois trocamos para o slug correto)
+    if (window.location.search.includes('id=')) {
+        try {
+            const tempSlug = 'carregando';
+            const cleanPath = `/perfil/${tempSlug}`;
+            if (window.location.pathname !== cleanPath) {
+                window.history.replaceState({}, '', cleanPath);
+            }
+        } catch (e) {
+            console.error('Erro ao limpar ID da URL do perfil:', e);
+        }
+    }
     
     const token = localStorage.getItem('jwtToken');
     const userType = localStorage.getItem('userType'); 
