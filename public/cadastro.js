@@ -301,18 +301,19 @@ document.addEventListener('DOMContentLoaded', function() {
             const cadastroData = await cadastroResponse.json();
 
             if (cadastroResponse.ok && cadastroData.success) {
-                showMessage('Cadastro realizado com sucesso! Redirecionando...', 'success');
-                // Loga o usuário e redireciona
-                if (cadastroData.token) {
-                    localStorage.setItem('jwtToken', cadastroData.token);
-                }
-                localStorage.setItem('userId', cadastroData.userId);
-                localStorage.setItem('userType', cadastroData.userType);
-                localStorage.setItem('userName', cadastroData.userName);
-                localStorage.setItem('userPhotoUrl', cadastroData.userPhotoUrl);
+                // ✅ Cadastro concluído, mas NÃO vamos logar automaticamente
+                showMessage('Cadastro realizado com sucesso! Agora faça login para entrar.', 'success');
+
+                // Garante que não fique nenhum dado antigo de login
+                localStorage.removeItem('jwtToken');
+                localStorage.removeItem('userId');
+                localStorage.removeItem('userType');
+                localStorage.removeItem('userName');
+                localStorage.removeItem('userPhotoUrl');
                 
+                // Redireciona para a página de login
                 setTimeout(() => {
-                    window.location.href = 'index.html';
+                    window.location.href = '/login.html';
                 }, 2000);
             } else {
                 throw new Error(cadastroData.message || 'Houve um erro ao criar a conta.');
