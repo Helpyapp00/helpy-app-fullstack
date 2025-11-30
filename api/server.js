@@ -256,8 +256,8 @@ const oportunidadeSchema = new mongoose.Schema({
     propostaSelecionada: { type: mongoose.Schema.Types.ObjectId, ref: 'oportunidadeSchema.propostas' }
 }, { timestamps: true });
 
-const PagamentoSeguro = mongoose.model('PagamentoSeguro', pagamentoSeguroSchema);
-const Oportunidade = mongoose.model('Oportunidade', oportunidadeSchema);
+const PagamentoSeguro = mongoose.models.PagamentoSeguro || mongoose.model('PagamentoSeguro', pagamentoSeguroSchema);
+const Oportunidade = mongoose.models.Oportunidade || mongoose.model('Oportunidade', oportunidadeSchema);
 
 // 🔔 NOVO: Schema de Notificações
 const notificacaoSchema = new mongoose.Schema({
@@ -322,9 +322,9 @@ const historicoTransacaoSchema = new mongoose.Schema({
     userAgent: { type: String }
 }, { timestamps: true });
 
-const Notificacao = mongoose.model('Notificacao', notificacaoSchema);
-const Disputa = mongoose.model('Disputa', disputaSchema);
-const HistoricoTransacao = mongoose.model('HistoricoTransacao', historicoTransacaoSchema);
+const Notificacao = mongoose.models.Notificacao || mongoose.model('Notificacao', notificacaoSchema);
+const Disputa = mongoose.models.Disputa || mongoose.model('Disputa', disputaSchema);
+const HistoricoTransacao = mongoose.models.HistoricoTransacao || mongoose.model('HistoricoTransacao', historicoTransacaoSchema);
 
 // 🔔 Função auxiliar para criar notificações
 async function criarNotificacao(userId, tipo, titulo, mensagem, dadosAdicionais = {}, link = null) {
@@ -478,10 +478,10 @@ const pedidoUrgenteSchema = new mongoose.Schema({
     notificacoesCriadas: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Notificacao' }] // IDs das notificações geradas
 }, { timestamps: true });
 
-const AvaliacaoVerificada = mongoose.model('AvaliacaoVerificada', avaliacaoVerificadaSchema);
-const TimeLocal = mongoose.model('TimeLocal', timeLocalSchema);
-const ProjetoTime = mongoose.model('ProjetoTime', projetoTimeSchema);
-const PedidoUrgente = mongoose.model('PedidoUrgente', pedidoUrgenteSchema);
+const AvaliacaoVerificada = mongoose.models.AvaliacaoVerificada || mongoose.model('AvaliacaoVerificada', avaliacaoVerificadaSchema);
+const TimeLocal = mongoose.models.TimeLocal || mongoose.model('TimeLocal', timeLocalSchema);
+const ProjetoTime = mongoose.models.ProjetoTime || mongoose.model('ProjetoTime', projetoTimeSchema);
+const PedidoUrgente = mongoose.models.PedidoUrgente || mongoose.model('PedidoUrgente', pedidoUrgenteSchema);
 
 // 🏢 NOVO: Schema de Vaga-Relâmpago (para empresas)
 const vagaRelampagoSchema = new mongoose.Schema({
@@ -517,7 +517,7 @@ const vagaRelampagoSchema = new mongoose.Schema({
     notificacoesEnviadas: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }] // Profissionais notificados
 }, { timestamps: true });
 
-const VagaRelampago = mongoose.model('VagaRelampago', vagaRelampagoSchema);
+const VagaRelampago = mongoose.models.VagaRelampago || mongoose.model('VagaRelampago', vagaRelampagoSchema);
 
 // 🛑 ATUALIZADO: Schema de Usuário
 const userSchema = new mongoose.Schema({
@@ -582,9 +582,9 @@ const userSchema = new mongoose.Schema({
     isAdmin: { type: Boolean, default: false }
 }, { timestamps: true });
 
-const User = mongoose.model('User', userSchema);
-const Postagem = mongoose.model('Postagem', postagemSchema);
-const Servico = mongoose.model('Servico', servicoSchema);
+const User = mongoose.models.User || mongoose.model('User', userSchema);
+const Postagem = mongoose.models.Postagem || mongoose.model('Postagem', postagemSchema);
+const Servico = mongoose.models.Servico || mongoose.model('Servico', servicoSchema);
 //----------------------------------------------------------------------
 
 // Helper para gerar slug único de perfil (baseado no nome)
