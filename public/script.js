@@ -578,11 +578,13 @@ document.addEventListener('DOMContentLoaded', () => {
         function fecharSidebarMobile() {
             categoriasAside.classList.remove('aberta');
             mobileSidebarBackdrop.classList.remove('visible');
+            mobileSidebarToggle.classList.remove('hidden');
         }
 
         function abrirSidebarMobile() {
             categoriasAside.classList.add('aberta');
             mobileSidebarBackdrop.classList.add('visible');
+            mobileSidebarToggle.classList.add('hidden');
         }
 
         mobileSidebarToggle.addEventListener('click', () => {

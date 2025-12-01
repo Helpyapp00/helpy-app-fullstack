@@ -1383,15 +1383,15 @@ app.post('/api/cadastro', upload.single('fotoPerfil'), async (req, res) => {
                             .toBuffer();
                     } else {
                         imageBuffer = await pipeline
-                            .jpeg({ 
-                                quality: 98, 
-                                mozjpeg: true,
-                                progressive: true,
-                                optimizeScans: true,
-                                trellisQuantisation: true,
-                                overshootDeringing: true
-                            })
-                            .toBuffer();
+                        .jpeg({ 
+                            quality: 98, 
+                            mozjpeg: true,
+                            progressive: true,
+                            optimizeScans: true,
+                            trellisQuantisation: true,
+                            overshootDeringing: true
+                        })
+                        .toBuffer();
                     }
                 } else {
                     // Se Sharp não estiver disponível, usa o buffer original
@@ -1759,15 +1759,15 @@ app.put('/api/editar-perfil/:id', authMiddleware, upload.single('avatar'), async
                             .toBuffer();
                     } else {
                         imageBuffer = await pipeline
-                            .jpeg({ 
-                                quality: 98, 
-                                mozjpeg: true,
-                                progressive: true,
-                                optimizeScans: true,
-                                trellisQuantisation: true,
-                                overshootDeringing: true
-                            })
-                            .toBuffer();
+                        .jpeg({ 
+                            quality: 98, 
+                            mozjpeg: true,
+                            progressive: true,
+                            optimizeScans: true,
+                            trellisQuantisation: true,
+                            overshootDeringing: true
+                        })
+                        .toBuffer();
                     }
                 } else {
                     // Se Sharp não estiver disponível, usa o buffer original
