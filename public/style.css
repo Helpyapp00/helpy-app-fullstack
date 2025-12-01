@@ -96,6 +96,17 @@ header {
 .search { flex-grow: 1; max-width: 400px; padding: 8px 15px; border: none; border-radius: 20px; background: var(--bg-input); color: var(--text-primary); margin: 0 20px; }
 .search::placeholder { color: var(--text-placeholder); } 
 
+/* Botão de lupa (usado apenas no mobile) */
+.search-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-header);
+    font-size: 20px;
+    cursor: pointer;
+    margin-left: auto;
+}
+
 #search-results {
   position: absolute;
   top: 70px;
@@ -188,6 +199,39 @@ header {
 #logout-button:hover { background-color: var(--btn-primary-hover); } 
 #feed-button, #profile-button { background-color: var(--btn-primary-bg); color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 16px; transition: background-color 0.2s; line-height: 1; }
 #feed-button:hover, #profile-button:hover { background-color: var(--btn-primary-hover); } 
+
+/* Botão flutuante lateral (mobile) para filtros / ações rápidas / times */
+.mobile-sidebar-toggle {
+    position: fixed;
+    right: 16px;
+    bottom: 80px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #007bff, #00a4ff);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    cursor: pointer;
+    z-index: 1100;
+}
+
+/* Backdrop para o painel lateral no mobile */
+#mobile-sidebar-backdrop {
+    position: fixed;
+    inset: 70px 0 0 0;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1040;
+    display: none;
+}
+
+#mobile-sidebar-backdrop.visible {
+    display: block;
+}
 
 /* Layout, Categorias, Filtros, Configurações... */
 .conteudo { display: flex; justify-content: center; gap: 25px; padding: 25px 20px; max-width: 1200px; margin: 90px auto 0 auto; width: 100%; }
@@ -499,7 +543,14 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 /* --- Resto (Anúncio, Modais, Responsividade) --- */
 .anuncio { flex-basis: 250px; flex-shrink: 0; background: var(--bg-secondary); border-radius: 8px; padding: 20px; box-shadow: 0 2px 5px var(--shadow-color); height: fit-content; position: sticky; top: 90px; } 
 .anuncio h3 { font-size: 1.3em; color: var(--text-primary); margin-bottom: 20px; text-align: center; } 
-.caixa-anuncio { background: var(--bg-anuncio); border: 1px dashed var(--border-anuncio); border-radius: 5px; padding: 30px 15px; text-align: center; color: var(--text-anuncio); font-size: 0.9em; } 
+.caixa-anuncio { background: var(--bg-anuncio); border: 1px dashed var(--border-anuncio); border-radius: 5px; padding: 30px 15px; text-align: center; color: var(--text-anuncio); font-size: 0.9em; overflow: hidden; } 
+.caixa-anuncio img,
+.caixa-anuncio iframe {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 5px;
+}
 .popup-escolha { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; }
 .popup-conteudo { background-color: var(--bg-secondary); padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); max-width: 400px; width: 90%; } 
 .popup-conteudo h3 { margin-bottom: 20px; color: var(--text-primary); } 
@@ -606,6 +657,29 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
         margin-right: auto;
     }
 
+    /* Mostra o botão de lupa e esconde a barra de busca inicialmente */
+    .search-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    header:not(.search-open) .search {
+        display: none;
+    }
+
+    header.search-open {
+        flex-wrap: wrap;
+    }
+
+    header.search-open .search {
+        display: block;
+        width: 100%;
+        margin: 5px 0 0 0;
+        max-width: none;
+        order: 4;
+    }
+
     .search {
         order: 3;
         width: 100%;
@@ -615,10 +689,21 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
     .user-info {
         gap: 8px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
     }
 
     #user-name-header {
         display: none;
+    }
+
+    /* Notificações ficam embaixo dos botões, afastadas do botão Sair */
+    #notificacoes-container {
+        order: 3;
+        width: 100%;
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 6px;
     }
 
     .conteudo {
@@ -634,6 +719,25 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
         top: auto;
         max-width: 100%;
         margin-bottom: 15px;
+    }
+
+    /* Aside vira painel sobreposto quando aberto pelo botão flutuante */
+    .categorias {
+        display: none;
+        position: fixed;
+        inset: 70px 0 0 0; /* abaixo do header */
+        z-index: 1050;
+        max-width: none;
+        border-radius: 0;
+        overflow-y: auto;
+    }
+
+    .categorias.aberta {
+        display: block;
+    }
+
+    .mobile-sidebar-toggle {
+        display: flex;
     }
 
     .publicar,

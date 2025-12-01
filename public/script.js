@@ -35,6 +35,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const profileButton = document.getElementById('profile-button');
     const logoutButton = document.getElementById('logout-button');
     const searchInput = document.querySelector('.search');
+    const searchToggleBtn = document.getElementById('search-toggle');
     let searchResultsContainer = null;
     let searchResultsBackdrop = null;
     
@@ -61,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const filtroCidadeBtn = document.getElementById('filtro-cidade-btn');
     
     const darkModeToggle = document.getElementById('dark-mode-toggle');
+    const mobileSidebarToggle = document.getElementById('mobile-sidebar-toggle');
     const htmlElement = document.documentElement; // O elemento <html>
 
     // ----------------------------------------------------------------------
@@ -146,6 +148,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // ----------------------------------------------------------------------
+    // TOGGLE DE BUSCA NO MOBILE
+    // ----------------------------------------------------------------------
+    if (searchToggleBtn && searchInput) {
+        const headerEl = document.querySelector('header');
+        searchToggleBtn.addEventListener('click', () => {
+            if (!headerEl) return;
+            headerEl.classList.toggle('search-open');
+            if (headerEl.classList.contains('search-open')) {
+                searchInput.focus();
+            } else {
+                // Ao fechar, limpa só o campo (não mexe no filtro ativo)
+                // searchInput.value = '';
+            }
+        });
+    }
+
+    // ----------------------------------------------------------------------
     // --- CARREGAMENTO INICIAL ---
     function loadHeaderInfo() {
         const storedName = localStorage.getItem('userName') || '';
@@ -542,6 +562,30 @@ document.addEventListener('DOMContentLoaded', () => {
     if (filterTodosBtn) filterTodosBtn.addEventListener('click', () => filterFeed('todos'));
     if (filterTrabalhadoresBtn) filterTrabalhadoresBtn.addEventListener('click', () => filterFeed('trabalhador'));
     if (filterClientesBtn) filterClientesBtn.addEventListener('click', () => filterFeed('cliente'));
+
+    // ----------------------------------------------------------------------
+    // BOTÃO LATERAL (MOBILE) PARA ABRIR CATEGORIAS / AÇÕES RÁPIDAS / TIMES
+    // ----------------------------------------------------------------------
+    const categoriasAside = document.querySelector('.categorias');
+    let mobileSidebarBackdrop = null;
+
+    if (mobileSidebarToggle && categoriasAside) {
+        mobileSidebarBackdrop = document.createElement('div');
+        mobileSidebarBackdrop.id = 'mobile-sidebar-backdrop';
+        document.body.appendChild(mobileSidebarBackdrop);
+
+        function fecharSidebarMobile() {
+            categoriasAside.classList.remove('aberta');
+            mobileSidebarBackdrop.classList.remove('visible');
+        }
+
+        mobileSidebarToggle.addEventListener('click', () => {
+            categoriasAside.classList.add('aberta');
+            mobileSidebarBackdrop.classList.add('visible');
+        });
+
+        mobileSidebarBackdrop.addEventListener('click', fecharSidebarMobile);
+    }
 
     if (filtroCidadeBtn && filtroCidadeInput) {
         filtroCidadeBtn.addEventListener('click', () => {
