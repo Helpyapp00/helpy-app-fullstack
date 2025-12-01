@@ -203,7 +203,7 @@ header {
 /* Botão flutuante lateral (mobile) para filtros / ações rápidas / times */
 .mobile-sidebar-toggle {
     position: static;
-    margin: 80px 0 0 10px;
+    margin: 0 0 10px 0;
     width: 44px;
     height: 44px;
     border-radius: 50%;
@@ -758,8 +758,8 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
     .mobile-sidebar-toggle {
         display: flex;
-        margin-top: 80px;
-        margin-left: 10px;
+        align-self: flex-start;
+        margin: 0 0 10px 0;
     }
 
     .mobile-sidebar-close {
