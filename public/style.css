@@ -585,6 +585,12 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 .modal-grande { max-width: 600px; text-align: left; }
 .modal-grande h2 { text-align: center; margin-bottom: 20px; color: var(--text-primary); }
 .modal-grande .form-group { margin-bottom: 15px; }
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
 .modal-grande .form-group label { display: block; margin-bottom: 5px; color: var(--text-primary); font-weight: bold; }
 .modal-grande .form-group input,
 .modal-grande .form-group select,
