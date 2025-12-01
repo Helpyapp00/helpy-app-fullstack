@@ -1326,26 +1326,67 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- INICIALIZAÇÃO ---
-    if (!token || !userId) {
-        const isLoginPath = path.endsWith('/login') || path.endsWith('/login.html');
-        const isCadastroPath = path.endsWith('/cadastro') || path.endsWith('/cadastro.html');
-        // Se está no feed (ou outra página protegida) sem login → manda para /login
-        if (!isLoginPath && !isCadastroPath) {
-             window.location.href = '/login';
-        } else {
-            // Se está na página de login/cadastro, garante header limpo
-            if (userNameHeader) userNameHeader.textContent = '';
-            if (userAvatarHeader) userAvatarHeader.src = 'imagens/default-user.png';
+    // ----------------------------------------------------------------------
+    // VALIDAÇÃO DA SESSÃO (TRATAR TOKEN INVÁLIDO / EXPIRADO)
+    // ----------------------------------------------------------------------
+    async function validarSessaoAtiva() {
+        // Se não houver token ou userId, já consideramos sessão inválida aqui
+        if (!token || !userId) {
+            return false;
         }
-    } else {
-        if (postsContainer) {
-            loadHeaderInfo();
-            fetchPosts(); 
-        }
-        if (timesContainer) {
-            carregarTimesLocais();
+
+        try {
+            const resp = await fetch('/api/usuario/me', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (resp.status === 401) {
+                console.warn('Sessão inválida ou expirada. Limpando dados locais e redirecionando para login.');
+                localStorage.clear();
+                window.location.replace('/login');
+                return false;
+            }
+
+            // Se der outro erro (500, etc.), não vamos derrubar o usuário à força
+            return true;
+        } catch (e) {
+            console.error('Erro ao validar sessão:', e);
+            // Em caso de erro de rede, mantemos o usuário e deixamos as rotas lidarem com isso
+            return true;
         }
     }
+
+    // --- INICIALIZAÇÃO ---
+    (async () => {
+        if (!token || !userId) {
+            const isLoginPath = path.endsWith('/login') || path.endsWith('/login.html');
+            const isCadastroPath = path.endsWith('/cadastro') || path.endsWith('/cadastro.html');
+            // Se está no feed (ou outra página protegida) sem login → manda para /login
+            if (!isLoginPath && !isCadastroPath) {
+                window.location.href = '/login';
+            } else {
+                // Se está na página de login/cadastro, garante header limpo
+                if (userNameHeader) userNameHeader.textContent = '';
+                if (userAvatarHeader) userAvatarHeader.src = 'imagens/default-user.png';
+            }
+        } else {
+            // Antes de carregar o feed e outras informações, valida se o token ainda é aceito pelo backend
+            const sessaoValida = await validarSessaoAtiva();
+            if (!sessaoValida) {
+                // validarSessaoAtiva já faz o redirect se for inválido
+                return;
+            }
+
+            if (postsContainer) {
+                loadHeaderInfo();
+                fetchPosts(); 
+            }
+            if (timesContainer) {
+                carregarTimesLocais();
+            }
+        }
+    })();
 });
 
