@@ -202,11 +202,10 @@ header {
 
 /* Botão flutuante lateral (mobile) para filtros / ações rápidas / times */
 .mobile-sidebar-toggle {
-    position: fixed;
-    right: 16px;
-    bottom: 80px;
-    width: 52px;
-    height: 52px;
+    position: static;
+    margin: 80px 0 0 10px;
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
     border: none;
     background: linear-gradient(135deg, #007bff, #00a4ff);
@@ -231,6 +230,23 @@ header {
 
 #mobile-sidebar-backdrop.visible {
     display: block;
+}
+
+/* Botão de fechar (X) do painel lateral no mobile */
+.mobile-sidebar-close {
+    display: none;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
 }
 
 /* Layout, Categorias, Filtros, Configurações... */
@@ -730,6 +746,8 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
         max-width: none;
         border-radius: 0;
         overflow-y: auto;
+        height: calc(100vh - 70px);
+        padding-top: 40px; /* espaço para o botão X */
     }
 
     .categorias.aberta {
@@ -738,6 +756,14 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
     .mobile-sidebar-toggle {
         display: flex;
+        margin-top: 80px;
+        margin-left: 10px;
+    }
+
+    .mobile-sidebar-close {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .publicar,
@@ -836,8 +862,8 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     }
 
     .user-avatar-header {
-        width: 32px;
-        height: 32px;
+        width: 48px;
+        height: 48px;
     }
 
     .user-info span {

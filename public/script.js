@@ -567,6 +567,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // BOTÃO LATERAL (MOBILE) PARA ABRIR CATEGORIAS / AÇÕES RÁPIDAS / TIMES
     // ----------------------------------------------------------------------
     const categoriasAside = document.querySelector('.categorias');
+    const mobileSidebarClose = document.getElementById('mobile-sidebar-close');
     let mobileSidebarBackdrop = null;
 
     if (mobileSidebarToggle && categoriasAside) {
@@ -579,10 +580,22 @@ document.addEventListener('DOMContentLoaded', () => {
             mobileSidebarBackdrop.classList.remove('visible');
         }
 
-        mobileSidebarToggle.addEventListener('click', () => {
+        function abrirSidebarMobile() {
             categoriasAside.classList.add('aberta');
             mobileSidebarBackdrop.classList.add('visible');
+        }
+
+        mobileSidebarToggle.addEventListener('click', () => {
+            if (categoriasAside.classList.contains('aberta')) {
+                fecharSidebarMobile();
+            } else {
+                abrirSidebarMobile();
+            }
         });
+
+        if (mobileSidebarClose) {
+            mobileSidebarClose.addEventListener('click', fecharSidebarMobile);
+        }
 
         mobileSidebarBackdrop.addEventListener('click', fecharSidebarMobile);
     }
@@ -1035,11 +1048,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- NAVEGAÇÃO DO HEADER ---
+    // Navegação para o perfil: botão (quando existir) e avatar
     if (profileButton) {
         profileButton.addEventListener('click', () => {
-            // Abre diretamente o arquivo perfil.html com o ID,
-            // e o próprio perfil.js vai limpar a URL depois com o slug
             window.location.href = `/perfil.html?id=${userId}`;
+        });
+    }
+    if (userAvatarHeader) {
+        userAvatarHeader.style.cursor = 'pointer';
+        userAvatarHeader.addEventListener('click', () => {
+            if (userId) {
+                window.location.href = `/perfil.html?id=${userId}`;
+            }
         });
     }
 
