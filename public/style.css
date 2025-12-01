@@ -93,6 +93,13 @@ header {
 .logo-box { display: flex; align-items: center; gap: 10px; }
 .logo-box img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: none; }
 .logo-box h1 { font-size: 24px; margin: 0; color: var(--text-header); } 
+.header-actions {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
 .search { flex-grow: 1; max-width: 400px; padding: 8px 15px; border: none; border-radius: 20px; background: var(--bg-input); color: var(--text-primary); margin: 0 20px; }
 .search::placeholder { color: var(--text-placeholder); } 
 
@@ -668,7 +675,6 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
         height: auto;
         gap: 8px;
         align-items: center; /* Logo e avatar alinhados pela linha central */
-        position: relative;  /* Referência para posicionar lupa e sino abaixo da logo */
     }
 
     .logo-box {
@@ -676,39 +682,36 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
         order: 1;
     }
 
-    /* Mostra o botão de lupa (abaixo da logo) e esconde a barra de busca inicialmente */
+    /* Linha extra embaixo: lupa, barra (quando aberta) e sino */
+    .header-actions {
+        order: 3;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 6px;
+    }
+
+    /* Lupa à esquerda */
     .search-toggle {
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        order: 3;
-        /* Linha de baixo, à esquerda, logo abaixo da logo */
-        position: absolute;
-        left: 20px;
-        top: 48px;
-        margin: 0;
+        order: 1;
     }
 
-    header:not(.search-open) .search {
+    /* Campo de busca aparece entre a lupa e o sino */
+    .search {
+        order: 2;
+        flex: 1;
+        max-width: none;
+        margin: 0;
         display: none;
     }
 
-    header.search-open {
-        flex-wrap: wrap;
-    }
-
-    header.search-open .search {
+    header.search-open .header-actions .search {
         display: block;
-        width: 100%;
-        margin: 5px 0 0 0;
-        max-width: none;
-        order: 5;
-    }
-
-    .search {
-        width: 100%;
-        margin: 5px 0 0 0;
-        max-width: none;
     }
 
     .user-info {
@@ -724,15 +727,12 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
     /* Notificações ficam na mesma linha da lupa, à direita */
     #notificacoes-container {
-        order: 4;
+        order: 3;
         width: auto;
         display: flex;
         justify-content: flex-end;
+        margin-left: auto; /* empurra para a direita */
         margin-top: 0;
-        margin-left: 0;
-        position: absolute;
-        right: 20px;
-        top: 48px;           /* Mesma altura vertical da lupa */
     }
 
     .conteudo {

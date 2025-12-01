@@ -24,22 +24,24 @@
         <div class="logo-box">
             <img src="imagens/helpy-feed.png" alt="Logo Helpy"> <h1>Helpy</h1>
         </div>
-        <!-- Botão de busca (mobile) -->
-        <button id="search-toggle" class="search-toggle" aria-label="Buscar">
-            <i class="fas fa-search"></i>
-        </button>
-        <input type="text" class="search" placeholder="Buscar serviços ou profissionais...">
         <div class="user-info">
-            <!-- 🔔 NOVO: Ícone de Notificações -->
+            <img id="user-avatar-header" src="imagens/default-user.png" alt="Avatar do Usuário" class="user-avatar-header">
+            <span id="user-name-header"></span>
+            <button id="logout-button">Sair</button>
+        </div>
+        <div class="header-actions">
+            <!-- Botão de busca (mobile) -->
+            <button id="search-toggle" class="search-toggle" aria-label="Buscar">
+                <i class="fas fa-search"></i>
+            </button>
+            <input type="text" class="search" placeholder="Buscar serviços ou profissionais...">
+            <!-- 🔔 Ícone de Notificações -->
             <div id="notificacoes-container" style="position: relative; margin-right: 15px;">
                 <button id="btn-notificacoes" style="background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text-primary); position: relative;">
                     <i class="fas fa-bell"></i>
                     <span id="badge-notificacoes" style="position: absolute; top: -5px; right: -5px; background: #dc3545; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 11px; display: none; align-items: center; justify-content: center;">0</span>
                 </button>
             </div>
-            <img id="user-avatar-header" src="imagens/default-user.png" alt="Avatar do Usuário" class="user-avatar-header">
-            <span id="user-name-header"></span>
-            <button id="logout-button">Sair</button>
         </div>
     </header>
 
