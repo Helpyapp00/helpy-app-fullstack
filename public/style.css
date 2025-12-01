@@ -663,11 +663,11 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
 @media (max-width: 768px) {
     header {
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         padding: 10px;
         height: auto;
         gap: 8px;
-        align-items: flex-start; /* Alinha logo e user-info pelo topo no mobile */
+        align-items: center;
     }
 
     .logo-box {
@@ -680,7 +680,7 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        order: 4;
+        order: 2;
     }
 
     header:not(.search-open) .search {
