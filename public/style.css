@@ -666,7 +666,8 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
         flex-wrap: wrap;
         padding: 10px;
         height: auto;
-        gap: 10px;
+        gap: 8px;
+        align-items: flex-start; /* Alinha logo e user-info pelo topo no mobile */
     }
 
     .logo-box {
@@ -725,7 +726,8 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     }
 
     .conteudo {
-        margin-top: 20px;
+        /* Espaço maior para não deixar o header cobrir o início do feed */
+        margin-top: 110px;
         flex-direction: column;
         padding: 10px;
     }
@@ -885,6 +887,7 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     }
 
     .conteudo {
+        margin-top: 120px;
         padding: 8px;
     }
 
