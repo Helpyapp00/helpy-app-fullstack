@@ -680,12 +680,8 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        order: 3;
-        /* Posiciona na mesma faixa das notificações, à esquerda */
-        position: absolute;
-        left: 20px;
-        bottom: 8px;
-        margin: 0;
+        order: 3;            /* Linha de baixo, à esquerda */
+        margin: 6px 0 0 0;   /* Pequeno afastamento da logo */
     }
 
     header:not(.search-open) .search {
@@ -714,24 +710,21 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
         gap: 8px;
         flex-wrap: wrap;
         justify-content: flex-end;
-        order: 2; /* Continua na linha de cima, à direita */
+        order: 2; /* Linha de cima, à direita */
     }
 
     #user-name-header {
         display: none;
     }
 
-    /* Notificações ficam embaixo dos botões, afastadas do botão Sair */
+    /* Notificações ficam na mesma linha da lupa, à direita */
     #notificacoes-container {
-        order: 3;
+        order: 4;            /* Após a lupa, na mesma linha */
         width: auto;
         display: flex;
         justify-content: flex-end;
-        margin-top: 0;
-        /* Mesma faixa da lupa, porém à direita */
-        position: absolute;
-        right: 20px;
-        bottom: 8px;
+        margin-top: 6px;
+        margin-left: auto;   /* Empurra para a direita */
     }
 
     .conteudo {
