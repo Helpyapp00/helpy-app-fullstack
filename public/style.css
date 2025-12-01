@@ -668,6 +668,7 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
         height: auto;
         gap: 8px;
         align-items: center; /* Logo e avatar alinhados pela linha central */
+        position: relative;  /* Referência para posicionar lupa e sino abaixo da logo */
     }
 
     .logo-box {
@@ -680,8 +681,12 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        order: 3;            /* Linha de baixo, à esquerda */
-        margin: 6px 0 0 0;   /* Pequeno afastamento da logo */
+        order: 3;
+        /* Linha de baixo, à esquerda, logo abaixo da logo */
+        position: absolute;
+        left: 20px;
+        top: 48px;
+        margin: 0;
     }
 
     header:not(.search-open) .search {
@@ -719,12 +724,15 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
     /* Notificações ficam na mesma linha da lupa, à direita */
     #notificacoes-container {
-        order: 4;            /* Após a lupa, na mesma linha */
+        order: 4;
         width: auto;
         display: flex;
         justify-content: flex-end;
-        margin-top: 6px;
-        margin-left: auto;   /* Empurra para a direita */
+        margin-top: 0;
+        margin-left: 0;
+        position: absolute;
+        right: 20px;
+        top: 48px;           /* Mesma altura vertical da lupa */
     }
 
     .conteudo {
