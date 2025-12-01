@@ -908,6 +908,20 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
         padding: 8px;
     }
 
+    /* Ajuste específico do modal "Profissionais Próximos" para caber em telas estreitas */
+    #modal-preciso-agora .filtro-servico > div {
+        flex-wrap: wrap;
+    }
+
+    #filtro-tipo-servico {
+        flex: 1 1 100%;
+    }
+
+    #modal-preciso-agora .filtro-servico button {
+        width: 100%;
+        text-align: center;
+    }
+
     .publicar h2 {
         font-size: 1.2em;
     }
