@@ -341,34 +341,6 @@ document.addEventListener('DOMContentLoaded', () => {
             // 🌟 NOVO: Carregar avaliações verificadas
             loadAvaliacoesVerificadas(profileId);
             
-            // 🆕 ATUALIZADO: Mostrar Agendador apenas para dono do perfil
-            const agendadorContainer = document.getElementById('agendador-container');
-            if (agendadorContainer && userType === 'trabalhador' && isOwnProfile) {
-                agendadorContainer.style.display = 'flex';
-            } else if (agendadorContainer) {
-                agendadorContainer.style.display = 'none';
-            }
-            
-            // 🆕 NOVO: Mostrar botão "Ver Agenda" para visitantes (sem configurar)
-            if (!isOwnProfile && userType === 'trabalhador') {
-                const btnVerAgendaVisitante = document.createElement('button');
-                btnVerAgendaVisitante.id = 'btn-ver-agenda-visitante';
-                btnVerAgendaVisitante.className = 'btn-ver-agenda';
-                btnVerAgendaVisitante.innerHTML = '<i class="fas fa-calendar-alt"></i> Ver Agenda';
-                btnVerAgendaVisitante.style.marginTop = '15px';
-                
-                const disponibilidadeContainer = document.getElementById('disponibilidade-container');
-                if (disponibilidadeContainer && !document.getElementById('btn-ver-agenda-visitante')) {
-                    disponibilidadeContainer.parentNode.insertBefore(btnVerAgendaVisitante, disponibilidadeContainer.nextSibling);
-                    
-                    btnVerAgendaVisitante.addEventListener('click', async () => {
-                        const modalAgenda = document.getElementById('modal-agenda-visitante') || criarModalAgendaVisitante(userId);
-                        modalAgenda.classList.remove('hidden');
-                        await carregarAgendamentosVisitante(userId);
-                    });
-                }
-            }
-            
             // 🆕 ATUALIZADO: Exibir nível (todos) e XP (só dono)
             const nivelContainer = document.getElementById('nivel-container');
             const gamificacaoContainer = document.getElementById('gamificacao-container');
@@ -1195,34 +1167,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (logoutButton) { logoutButton.addEventListener('click', (e) => { e.preventDefault(); logoutConfirmModal && logoutConfirmModal.classList.remove('hidden'); }); }
     if (confirmLogoutYesBtn) { confirmLogoutYesBtn.addEventListener('click', () => { localStorage.clear(); window.location.href = '/login'; }); }
     if (confirmLogoutNoBtn) { confirmLogoutNoBtn.addEventListener('click', () => { logoutConfirmModal && logoutConfirmModal.classList.add('hidden'); }); }
-    
-    // 🆕 NOVO: Agendador Helpy
-    const btnVerAgenda = document.getElementById('btn-ver-agenda');
-    const btnConfigurarHorarios = document.getElementById('btn-configurar-horarios');
-    const modalAgenda = document.getElementById('modal-agenda');
-    const modalConfigurarHorarios = document.getElementById('modal-configurar-horarios');
-    const formHorarios = document.getElementById('form-horarios');
-    const horariosContainer = document.getElementById('horarios-container');
-    const btnAdicionarHorario = document.getElementById('btn-adicionar-horario');
-    
-    if (btnVerAgenda) {
-        btnVerAgenda.addEventListener('click', async () => {
-            if (modalAgenda) {
-                modalAgenda.classList.remove('hidden');
-                await carregarAgendamentos();
-            }
-        });
-    }
-    
-    if (btnConfigurarHorarios) {
-        btnConfigurarHorarios.addEventListener('click', async () => {
-            // 🆕 ATUALIZADO: Só permite configurar se for o próprio perfil
-            if (modalConfigurarHorarios && isOwnProfile) {
-                modalConfigurarHorarios.classList.remove('hidden');
-                await carregarHorariosExistentes();
-            }
-        });
-    }
     
     // 🆕 NOVO: Fechar modais ao clicar no X ou fora
     document.querySelectorAll('.btn-close-modal').forEach(btn => {

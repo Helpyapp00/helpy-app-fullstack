@@ -150,16 +150,6 @@
                 <span id="disponibilidade-texto">Disponível agora</span>
             </div>
             
-            <!-- 🆕 NOVO: Agendador Helpy -->
-            <div id="agendador-container" class="agendador-container" style="display: none;">
-                <button id="btn-ver-agenda" class="btn-ver-agenda">
-                    <i class="fas fa-calendar-alt"></i> Ver Agenda
-                </button>
-                <button id="btn-configurar-horarios" class="btn-configurar-horarios">
-                    <i class="fas fa-clock"></i> Configurar Horários
-                </button>
-            </div>
-
             <div class="perfil-footer">
                 <button id="editarPerfilBtn" class="edit-btn" style="display: none;">Editar Perfil</button>
                 <div class="botoes-edicao oculto">
@@ -187,38 +177,6 @@
             <div id="galeriaServicos" class="galeria-servicos"></div>
         </div>
         
-        <!-- 🆕 NOVO: Modal de Agenda -->
-        <div id="modal-agenda" class="modal-overlay hidden">
-            <div class="modal-content modal-large">
-                <div class="modal-header">
-                    <h3><i class="fas fa-calendar-alt"></i> Minha Agenda</h3>
-                    <button class="btn-close-modal" data-modal="modal-agenda">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <div id="agendamentos-lista"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 🆕 NOVO: Modal de Configurar Horários -->
-        <div id="modal-configurar-horarios" class="modal-overlay hidden">
-            <div class="modal-content modal-large">
-                <div class="modal-header">
-                    <h3><i class="fas fa-clock"></i> Configurar Horários Disponíveis</h3>
-                    <button class="btn-close-modal" data-modal="modal-configurar-horarios">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <form id="form-horarios">
-                        <div id="horarios-container"></div>
-                        <button type="button" class="btn-secondary" id="btn-adicionar-horario">+ Adicionar Horário</button>
-                        <div class="form-actions">
-                            <button type="submit" class="btn-primary">Salvar Horários</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-
         <!-- 🆕 NOVO: Modal para validar projeto -->
         <div id="modal-validar-projeto" class="modal-overlay hidden">
             <div class="modal-content">

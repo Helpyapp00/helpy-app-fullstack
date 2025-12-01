@@ -2011,13 +2011,51 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (btnNotificacoes) {
-        btnNotificacoes.addEventListener('click', async () => {
-            // Garante que a lista seja carregada antes de abrir o modal
+        // Abre/fecha o dropdown de notificações embaixo do botão
+        btnNotificacoes.addEventListener('click', async (event) => {
+            event.stopPropagation();
+            if (!modalNotificacoes) return;
+
+            const estaOculto = modalNotificacoes.classList.contains('hidden');
+
+            // Se já está aberto, fecha
+            if (!estaOculto) {
+                modalNotificacoes.classList.add('hidden');
+                return;
+            }
+
+            // Abrindo: mostra o dropdown e carrega as notificações
             if (listaNotificacoes) {
                 listaNotificacoes.innerHTML = '<p style="text-align: center; padding: 20px;">Carregando notificações...</p>';
             }
-            modalNotificacoes?.classList.remove('hidden');
+            modalNotificacoes.classList.remove('hidden');
+
             await carregarNotificacoes();
+
+            // Ao abrir o dropdown, marca automaticamente TODAS como lidas
+            try {
+                await fetch('/api/notificacoes/marcar-todas-lidas', {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                // Atualiza badge e lista após marcar como lidas
+                await carregarNotificacoes();
+            } catch (error) {
+                console.error('Erro ao marcar todas notificações como lidas ao abrir:', error);
+            }
+        });
+
+        // Fecha o dropdown ao clicar fora da caixinha de notificações
+        document.addEventListener('click', (e) => {
+            if (!modalNotificacoes || modalNotificacoes.classList.contains('hidden')) return;
+            const cliqueDentroDropdown = modalNotificacoes.contains(e.target);
+            const cliqueNoBotao = btnNotificacoes.contains(e.target);
+            if (!cliqueDentroDropdown && !cliqueNoBotao) {
+                modalNotificacoes.classList.add('hidden');
+            }
         });
     }
 

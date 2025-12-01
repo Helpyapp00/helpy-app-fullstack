@@ -525,6 +525,33 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 .btn-confirm-no:hover { background-color: #5a6268; }
 .hidden { display: none !important; }
 
+/* Dropdown compacto de notificações no header */
+#modal-notificacoes.modal-overlay {
+    /* Remove o fundo escuro e posiciona o conteúdo no topo direito, abaixo do header */
+    background-color: transparent;
+    justify-content: flex-end;
+    align-items: flex-start;
+    padding-top: 80px; /* 70px do header + espaçamento */
+}
+
+#modal-notificacoes .modal-content.modal-grande {
+    max-width: 360px;
+    width: 360px;
+    max-height: 420px;
+    text-align: left;
+    padding: 15px 15px 10px;
+}
+
+#lista-notificacoes {
+    max-height: 340px;
+    overflow-y: auto;
+}
+
+/* Esconde o botão antigo de "Marcar todas como lidas" (agora é automático ao abrir) */
+#btn-marcar-todas-lidas {
+    display: none;
+}
+
 /* Modal de confirmação menor e central */
 .modal-confirmacao {
     max-width: 360px;
