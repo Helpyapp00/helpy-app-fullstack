@@ -72,6 +72,7 @@ body {
     flex-direction: column;
     align-items: center;
     min-height: 100vh;
+    overflow-x: hidden; /* Evita rolagem lateral em qualquer página */
 }
 
 /* Cabeçalho */
@@ -1092,6 +1093,7 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     width: 95%;
     max-height: 90vh;
     overflow-y: auto;
+    overflow-x: hidden; /* Garante que o modal não crie rolagem lateral */
 }
 
 .modal-header {
