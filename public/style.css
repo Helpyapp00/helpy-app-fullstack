@@ -649,11 +649,14 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
 /* Dropdown compacto de notificações no header */
 #modal-notificacoes.modal-overlay {
-    /* Remove o fundo escuro e posiciona o conteúdo no topo direito, abaixo do header */
+    /* Remove o fundo escuro e deixa o overlay em tela cheia,
+       mas o conteúdo será empurrado para baixo do cabeçalho */
     background-color: transparent;
     justify-content: flex-end;
     align-items: flex-start;
-    padding-top: 80px; /* 70px do header + espaçamento */
+    top: 0;
+    height: 100%;
+    padding-top: 0;
 }
 
 #modal-notificacoes .modal-content.modal-grande {
@@ -662,6 +665,14 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     max-height: 420px;
     text-align: left;
     padding: 15px 15px 10px;
+    margin-top: 110px; /* desce mais a caixinha em relação ao cabeçalho */
+}
+
+/* Ajuste extra para telas bem estreitas: empurra um pouco mais para baixo */
+@media (max-width: 480px) {
+    #modal-notificacoes .modal-content.modal-grande {
+        margin-top: 115px;
+    }
 }
 
 #lista-notificacoes {
