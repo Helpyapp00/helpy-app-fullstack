@@ -216,7 +216,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </button>
                                 <button class="btn-recusar-proposta" data-proposta-id="${proposta._id}" data-pedido-id="${pedidoId}" style="background: #dc3545; color: #fff; border: none; padding: 8px 12px; border-radius: 4px; cursor: pointer;">
                                     Recusar
-                                </button>
+                            </button>
                             </div>
                         </div>
                     `;

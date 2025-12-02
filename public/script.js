@@ -180,31 +180,31 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (!storedPhotoUrl.includes('pixabay')) {
                 // Remove src primeiro para forçar reload completo
                 userAvatarHeader.src = '';
-
+                
                 // Adiciona timestamp para evitar cache e garantir carregamento fresco
                 const separator = storedPhotoUrl.includes('?') ? '&' : '?';
                 const freshUrl = storedPhotoUrl + separator + '_t=' + Date.now();
-
+                
                 // Pré-carrega a imagem SEM usar crossOrigin (evita erros de CORS com S3)
                 const preloadImg = new Image();
-
+                
                 preloadImg.onload = function () {
                     userAvatarHeader.src = freshUrl;
                     userAvatarHeader.loading = 'eager';
                     userAvatarHeader.decoding = 'sync';
-
+                    
                     userAvatarHeader.style.opacity = '0';
                     setTimeout(() => {
                         userAvatarHeader.style.opacity = '1';
                         userAvatarHeader.offsetHeight;
                     }, 10);
                 };
-
+                
                 preloadImg.onerror = function () {
                     userAvatarHeader.src = storedPhotoUrl;
                     userAvatarHeader.loading = 'eager';
                 };
-
+                
                 preloadImg.src = freshUrl;
             } else {
                 userAvatarHeader.src = storedPhotoUrl;
@@ -1426,7 +1426,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INICIALIZAÇÃO ---
     (async () => {
-        if (!token || !userId) {
+    if (!token || !userId) {
             const isLoginPath = path.endsWith('/login') || path.endsWith('/login.html');
             const isCadastroPath = path.endsWith('/cadastro') || path.endsWith('/cadastro.html');
             // Se está no feed (ou outra página protegida) sem login → manda para /login
@@ -1436,8 +1436,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Se está na página de login/cadastro, garante header limpo
                 if (userNameHeader) userNameHeader.textContent = '';
                 if (userAvatarHeader) userAvatarHeader.src = 'imagens/default-user.png';
-            }
-        } else {
+        }
+    } else {
             // Antes de carregar o feed e outras informações, valida se o token ainda é aceito pelo backend
             const sessaoValida = await validarSessaoAtiva();
             if (!sessaoValida) {
@@ -1445,14 +1445,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (postsContainer) {
-                loadHeaderInfo();
-                fetchPosts(); 
-            }
-            if (timesContainer) {
-                carregarTimesLocais();
-            }
+        if (postsContainer) {
+            loadHeaderInfo();
+            fetchPosts(); 
         }
+        if (timesContainer) {
+            carregarTimesLocais();
+        }
+    }
     })();
 });
 

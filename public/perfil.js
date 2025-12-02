@@ -148,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
     })();
 
     // A partir daqui, funções normais da página (usadas após resolver profileId)
-    
+
     // --- FUNÇÃO PARA CARREGAR O HEADER ---
     function loadHeaderInfo() {
         const storedName = localStorage.getItem('userName') || 'Usuário';
@@ -167,24 +167,24 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Cria uma nova imagem para pré-carregar, sem crossOrigin (evita erros de CORS com S3)
                 const preloadImg = new Image();
-
+                
                 preloadImg.onload = function() {
                     userAvatarHeader.src = freshUrl;
                     userAvatarHeader.loading = 'eager';
                     userAvatarHeader.decoding = 'sync';
-
+                    
                     userAvatarHeader.style.opacity = '0';
                     setTimeout(() => {
                         userAvatarHeader.style.opacity = '1';
                         userAvatarHeader.offsetHeight;
                     }, 10);
                 };
-
+                
                 preloadImg.onerror = function() {
                     userAvatarHeader.src = storedPhotoUrl;
                     userAvatarHeader.loading = 'eager';
                 };
-
+                
                 preloadImg.src = freshUrl;
             } else {
                 userAvatarHeader.src = 'imagens/default-user.png';

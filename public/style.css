@@ -104,6 +104,47 @@ header {
 .search { flex-grow: 1; max-width: 400px; padding: 8px 15px; border: none; border-radius: 20px; background: var(--bg-input); color: var(--text-primary); margin: 0 20px; }
 .search::placeholder { color: var(--text-placeholder); } 
 
+/* Layout específico do cabeçalho em telas grandes (desktop) */
+@media (min-width: 769px) {
+    /* ordem: logo à esquerda, busca no centro, sino e usuário à direita */
+    .logo-box {
+        order: 1;
+        margin-right: 20px;
+    }
+
+    .header-actions {
+        order: 2;
+    }
+
+    /* Sino fica visualmente ao lado da foto (lado esquerdo dela) */
+    #notificacoes-container {
+        order: 3;
+        position: absolute !important;
+        top: 50% !important;
+        right: 250px !important;     /* ajusta um pouco mais para a direita para alinhar com a foto */
+        transform: translateY(-50%) !important;
+        margin: 0 !important;
+        margin-right: 0 !important;
+        margin-left: 0 !important;
+        display: flex;
+        align-items: center;
+    }
+
+    .user-info {
+        order: 4;
+        margin-left: 10px;
+    }
+
+    /* Desktop sempre mostra a barra de busca, sem precisar da lupa */
+    .search-toggle {
+        display: none;
+    }
+
+    .search {
+        display: block;
+    }
+}
+
 /* Botão de lupa (usado apenas no mobile) */
 .search-toggle {
     display: none;
@@ -778,13 +819,15 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     .mobile-sidebar-toggle {
         display: flex;
         align-self: flex-start;
-        margin: 0 0 10px 0;
+        margin: -5px 0 10px 0; /* sobe um pouco o botão em relação ao conteúdo */
     }
 
     .mobile-sidebar-close {
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        top: 45px;   /* desce mais o X para ficar abaixo da parte superior do painel */
+        right: 15px; /* afasta um pouco da borda direita */
     }
 
     .publicar,
@@ -910,11 +953,12 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
     /* Ajuste específico do modal "Profissionais Próximos" para caber em telas estreitas */
     #modal-preciso-agora .filtro-servico > div {
-        flex-wrap: wrap;
+        flex-direction: column;   /* empilha campo e botão um abaixo do outro */
+        align-items: stretch;
     }
 
     #filtro-tipo-servico {
-        flex: 1 1 100%;
+        width: 100%;
     }
 
     #modal-preciso-agora .filtro-servico button {
