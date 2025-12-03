@@ -245,6 +245,58 @@
 }
 textarea.input-edicao { min-height: 100px; resize: vertical; }
 
+/* Estilização específica do bloco de endereço (Cidade - Estado) na edição */
+#localizacao-item .input-edicao {
+    /* Mesma “caixa” das outras .input-edicao, só que em flex */
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    width: 89%;               /* mesmo comprimento das demais */
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-input);
+    color: var(--text-primary);
+    border-radius: 5px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+#inputCidade,
+#inputEstado {
+    /* Entradas internas ficam “limpas”, usando a caixa externa como fundo */
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 14px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+#inputCidade {
+    flex: 1 1 auto;   /* ocupa todo o espaço que sobrar */
+    min-width: 0;   /* permite encolher sem quebrar o layout */
+}
+
+#inputEstado {
+    /* largura fixa e bem controlada para não vazar em nenhuma tela */
+    flex: 0 0 64px;
+    width: 64px;
+    max-width: 64px;
+    min-width: 50px;
+    /* Tira um pouco a cara “crua” do select padrão */
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--text-secondary) 50%), 
+                      linear-gradient(135deg, var(--text-secondary) 50%, transparent 50%);
+    background-position: calc(100% - 12px) 50%, calc(100% - 7px) 50%;
+    background-size: 6px 6px, 6px 6px;
+    background-repeat: no-repeat;
+    padding-right: 24px;
+}
+
 .perfil-footer { padding-top: 20px; border-top: 1px solid var(--border-color); text-align: center; } /* Aplicado */
 
 .edit-btn, .salvar-btn, .cancelar-btn, .add-btn, .perfil-btn {
@@ -796,6 +848,63 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
 }
 
 /* --- RESPONSIVIDADE DO PERFIL --- */
-@media (max-width: 768px) { .content-perfil { margin-top: 20px; padding: 10px; } .perfil-card { padding: 20px; } .perfil-acoes { display: flex; justify-content: center; } .perfil-btn { padding: 10px 15px; font-size: 14px; flex-grow: 1; max-width: 200px; } .galeria-servicos { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } .gamificacao-container { max-width: 100%; } }
-@media (max-width: 480px) { .perfil-card { padding: 15px; } .perfil-img { width: 100px; height: 100px; } #nomePerfil { font-size: 24px; } .perfil-info li { font-size: 14px; } .perfil-info li i { margin-right: 8px; } .edit-btn, .salvar-btn, .cancelar-btn, .add-btn, .perfil-btn { width: 100%; margin-left: 0; margin-right: 0; } .botoes-edicao { width: 100%; } .galeria-servicos { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; } .foto-servico { height: 120px; } .gamificacao-container { padding: 10px; } .nivel-badge { font-size: 1em; } }
+@media (max-width: 768px) {
+    .content-perfil { margin-top: 20px; padding: 10px; }
+    .perfil-card { padding: 20px; }
+    .perfil-acoes { display: flex; justify-content: center; }
+    /* Título "Projetos" e botão ficam alinhados pelo topo no mobile */
+    .servicos-header { align-items: flex-start; }
+    .perfil-btn { padding: 10px 15px; font-size: 14px; flex-grow: 1; max-width: 200px; }
+    /* Diminui um pouco os botões principais no perfil em telas menores */
+    .edit-btn,
+    .add-btn {
+        padding: 10px 20px;
+        font-size: 15px;
+    }
+    /* Posição base do botão "Adicionar Projeto" para celulares/tablets */
+    #addServicoBtn {
+        align-self: flex-start;  /* gruda no topo junto com o título */
+        margin-top: 0;
+        margin-right: 0;
+    }
+    /* Ajuste do bloco de endereço para telas até 768px */
+    #localizacao-item .input-edicao {
+        gap: 8px;
+    }
+    .galeria-servicos { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+    .gamificacao-container { max-width: 100%; }
+}
+
+@media (max-width: 480px) {
+    .perfil-card { padding: 15px; }
+    .perfil-img { width: 100px; height: 100px; }
+    #nomePerfil { font-size: 24px; }
+    .perfil-info li { font-size: 14px; }
+    .perfil-info li i { margin-right: 8px; }
+    /* Ajuste fino do endereço no mobile para o estado não vazar */
+    #localizacao-item .input-edicao {
+        gap: 6px;
+    }
+    /* Botões de ação de formulário e abas continuam ocupando a largura inteira */
+    .salvar-btn, .cancelar-btn, .perfil-btn {
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
+    }
+    /* Em celulares bem pequenos, deixa Editar Perfil e Adicionar Projeto menores na LARGURA e altura */
+    .edit-btn,
+    .add-btn {
+        width: auto;           /* não ocupa a tela toda */
+        max-width: 220px;      /* limita a largura máxima */
+        margin-left: auto;     /* centraliza horizontalmente */
+        margin-right: auto;
+        padding: 8px 16px;
+        font-size: 14px;
+    }
+    .botoes-edicao { width: 100%; }
+    .galeria-servicos { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
+    .foto-servico { height: 120px; }
+    .gamificacao-container { padding: 10px; }
+    .nivel-badge { font-size: 1em; }
+}
 
