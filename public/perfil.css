@@ -518,6 +518,12 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
     margin-top: 6px;
 }
 
+.projeto-contador-midia {
+    margin-top: 6px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
 .btn-upload-midia {
     padding: 8px 16px;
     font-size: 14px;
@@ -542,6 +548,24 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+.projeto-preview-add {
+    border-style: dashed;
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.projeto-preview-add span {
+    font-size: 26px;
+    font-weight: bold;
+}
+
+.projeto-preview-add:hover {
+    background: var(--bg-secondary);
+    border-color: var(--btn-secondary-bg);
 }
 
 .projeto-preview-item img,

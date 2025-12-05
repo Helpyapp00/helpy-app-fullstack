@@ -935,6 +935,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const projetoUploadBtn = document.getElementById('projeto-upload-btn');
     const projetoImagensInput = document.getElementById('projeto-imagens');
     const projetoPreviewContainer = document.getElementById('projeto-preview-container');
+    const projetoContadorMidia = document.getElementById('projeto-contador-midia');
+    const PROJETO_MAX_MIDIAS = 5;
+    let projetoArquivosSelecionados = [];
+    let isAddingMoreMidia = false;
 
     function resetAdicionarProjetoPreview() {
         if (projetoPreviewContainer) {
@@ -946,6 +950,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if (projetoImagensInput) {
             projetoImagensInput.value = '';
         }
+        if (projetoContadorMidia) {
+            projetoContadorMidia.classList.add('oculto');
+            projetoContadorMidia.textContent = `0/${PROJETO_MAX_MIDIAS}`;
+        }
+        projetoArquivosSelecionados = [];
+        isAddingMoreMidia = false;
     }
 
     if (projetoUploadBtn && projetoImagensInput) {
@@ -961,9 +971,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (!files || files.length === 0) {
             projetoUploadBtn.style.display = 'inline-flex';
+            if (projetoContadorMidia) {
+                projetoContadorMidia.classList.add('oculto');
+                projetoContadorMidia.textContent = `0/${PROJETO_MAX_MIDIAS}`;
+            }
             return;
         }
 
+        if (projetoContadorMidia) {
+            projetoContadorMidia.classList.remove('oculto');
+            projetoContadorMidia.textContent = `${files.length}/${PROJETO_MAX_MIDIAS}`;
+        }
+
+        // Esconde o botão grande e passa a usar o "quadradinho +" dentro das miniaturas
         projetoUploadBtn.style.display = 'none';
 
         Array.from(files).forEach((file, index) => {
@@ -993,11 +1013,14 @@ document.addEventListener('DOMContentLoaded', () => {
             removeBtn.className = 'projeto-preview-remove';
             removeBtn.innerHTML = '&times;';
             removeBtn.addEventListener('click', () => {
+                // Remove o arquivo correspondente da lista em memória
+                projetoArquivosSelecionados = projetoArquivosSelecionados.filter((_, i) => i !== index);
+
+                // Atualiza o FileList do input com os arquivos restantes
                 const dt = new DataTransfer();
-                Array.from(projetoImagensInput.files).forEach((f, i) => {
-                    if (i !== index) dt.items.add(f);
-                });
+                projetoArquivosSelecionados.forEach(f => dt.items.add(f));
                 projetoImagensInput.files = dt.files;
+
                 renderProjetoPreview(projetoImagensInput.files);
             });
 
@@ -1005,10 +1028,47 @@ document.addEventListener('DOMContentLoaded', () => {
             item.appendChild(removeBtn);
             projetoPreviewContainer.appendChild(item);
         });
+
+        // Botão "+" para adicionar mais mídias (apenas se ainda não chegou no limite)
+        if (files.length < PROJETO_MAX_MIDIAS) {
+            const addItem = document.createElement('button');
+            addItem.type = 'button';
+            addItem.className = 'projeto-preview-item projeto-preview-add';
+            addItem.innerHTML = '<span>+</span>';
+            addItem.addEventListener('click', () => {
+                isAddingMoreMidia = true;
+                projetoImagensInput.click();
+            });
+            projetoPreviewContainer.appendChild(addItem);
+        }
     }
 
     if (projetoImagensInput && projetoPreviewContainer) {
-        projetoImagensInput.addEventListener('change', () => {
+        projetoImagensInput.addEventListener('change', (e) => {
+            const novosArquivos = Array.from(e.target.files || []);
+
+            let arquivosCombinados;
+            if (isAddingMoreMidia && projetoArquivosSelecionados.length) {
+                arquivosCombinados = projetoArquivosSelecionados.concat(novosArquivos);
+            } else {
+                arquivosCombinados = novosArquivos;
+            }
+
+            if (arquivosCombinados.length > PROJETO_MAX_MIDIAS) {
+                const excedente = arquivosCombinados.length - PROJETO_MAX_MIDIAS;
+                alert(`Você pode adicionar no máximo ${PROJETO_MAX_MIDIAS} fotos/vídeos por projeto. ${excedente} arquivo(s) extra(s) foram ignorado(s).`);
+                arquivosCombinados = arquivosCombinados.slice(0, PROJETO_MAX_MIDIAS);
+            }
+
+            projetoArquivosSelecionados = arquivosCombinados;
+
+            isAddingMoreMidia = false;
+
+            // Recria o FileList real do input a partir do array acumulado
+            const dt = new DataTransfer();
+            projetoArquivosSelecionados.forEach(f => dt.items.add(f));
+            projetoImagensInput.files = dt.files;
+
             renderProjetoPreview(projetoImagensInput.files);
         });
     }
