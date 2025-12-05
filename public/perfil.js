@@ -931,18 +931,92 @@ document.addEventListener('DOMContentLoaded', () => {
     // 🆕 ATUALIZADO: Usa modal para adicionar projeto
     const modalAdicionarProjeto = document.getElementById('modal-adicionar-projeto');
     const formAdicionarProjeto = document.getElementById('form-adicionar-projeto');
-    const projetoDesafioHelpy = document.getElementById('projeto-desafio-helpy');
-    const tagDesafioGroup = document.getElementById('tag-desafio-group');
-    
-    if (projetoDesafioHelpy && tagDesafioGroup) {
-        projetoDesafioHelpy.addEventListener('change', () => {
-            tagDesafioGroup.style.display = projetoDesafioHelpy.checked ? 'block' : 'none';
+    const projetoTagDesafioInput = document.getElementById('projeto-tag-desafio');
+    const projetoUploadBtn = document.getElementById('projeto-upload-btn');
+    const projetoImagensInput = document.getElementById('projeto-imagens');
+    const projetoPreviewContainer = document.getElementById('projeto-preview-container');
+
+    function resetAdicionarProjetoPreview() {
+        if (projetoPreviewContainer) {
+            projetoPreviewContainer.innerHTML = '';
+        }
+        if (projetoUploadBtn) {
+            projetoUploadBtn.style.display = 'inline-flex';
+        }
+        if (projetoImagensInput) {
+            projetoImagensInput.value = '';
+        }
+    }
+
+    if (projetoUploadBtn && projetoImagensInput) {
+        projetoUploadBtn.addEventListener('click', () => {
+            projetoImagensInput.click();
         });
     }
-    
-    if (addServicoBtn) {
+
+    function renderProjetoPreview(files) {
+        if (!projetoPreviewContainer || !projetoImagensInput || !projetoUploadBtn) return;
+
+        projetoPreviewContainer.innerHTML = '';
+
+        if (!files || files.length === 0) {
+            projetoUploadBtn.style.display = 'inline-flex';
+            return;
+        }
+
+        projetoUploadBtn.style.display = 'none';
+
+        Array.from(files).forEach((file, index) => {
+            const item = document.createElement('div');
+            item.className = 'projeto-preview-item';
+
+            let mediaElement;
+            if (file.type.startsWith('image/')) {
+                mediaElement = document.createElement('img');
+            } else if (file.type.startsWith('video/')) {
+                mediaElement = document.createElement('video');
+                mediaElement.muted = true;
+                mediaElement.playsInline = true;
+            } else {
+                mediaElement = document.createElement('div');
+                mediaElement.textContent = file.name;
+                mediaElement.style.fontSize = '10px';
+                mediaElement.style.textAlign = 'center';
+            }
+
+            if (mediaElement instanceof HTMLImageElement || mediaElement instanceof HTMLVideoElement) {
+                mediaElement.src = URL.createObjectURL(file);
+            }
+
+            const removeBtn = document.createElement('button');
+            removeBtn.type = 'button';
+            removeBtn.className = 'projeto-preview-remove';
+            removeBtn.innerHTML = '&times;';
+            removeBtn.addEventListener('click', () => {
+                const dt = new DataTransfer();
+                Array.from(projetoImagensInput.files).forEach((f, i) => {
+                    if (i !== index) dt.items.add(f);
+                });
+                projetoImagensInput.files = dt.files;
+                renderProjetoPreview(projetoImagensInput.files);
+            });
+
+            item.appendChild(mediaElement);
+            item.appendChild(removeBtn);
+            projetoPreviewContainer.appendChild(item);
+        });
+    }
+
+    if (projetoImagensInput && projetoPreviewContainer) {
+        projetoImagensInput.addEventListener('change', () => {
+            renderProjetoPreview(projetoImagensInput.files);
+        });
+    }
+
+    if (addServicoBtn && modalAdicionarProjeto) {
         addServicoBtn.addEventListener('click', () => {
-            modalAdicionarProjeto?.classList.remove('hidden');
+            modalAdicionarProjeto.classList.remove('hidden');
+            resetAdicionarProjetoPreview();
         });
     }
     
@@ -972,8 +1046,10 @@ document.addEventListener('DOMContentLoaded', () => {
             formData.append('description', document.getElementById('projeto-descricao').value);
             formData.append('desafio', document.getElementById('projeto-desafio').value || '');
             formData.append('tecnologias', document.getElementById('projeto-tecnologias').value || '');
-            formData.append('isDesafioHelpy', projetoDesafioHelpy?.checked || false);
-            formData.append('tagDesafio', document.getElementById('projeto-tag-desafio').value || '');
+
+            const tagDesafioTexto = (projetoTagDesafioInput?.value || '').trim();
+            formData.append('isDesafioHelpy', !!tagDesafioTexto);
+            formData.append('tagDesafio', tagDesafioTexto);
             
             const files = document.getElementById('projeto-imagens').files;
             for (const file of files) {
@@ -992,6 +1068,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 alert('Projeto adicionado ao portfólio com sucesso!');
                 formAdicionarProjeto.reset();
+                resetAdicionarProjetoPreview();
                 modalAdicionarProjeto?.classList.add('hidden');
                 fetchUserProfile();
             } catch (error) {
@@ -1174,7 +1251,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const modalId = btn.dataset.modal;
             if (modalId) {
                 const modal = document.getElementById(modalId);
-                if (modal) modal.classList.add('hidden');
+                if (modal) {
+                    modal.classList.add('hidden');
+                    if (modal.id === 'modal-adicionar-projeto') {
+                        resetAdicionarProjetoPreview();
+                        formAdicionarProjeto && formAdicionarProjeto.reset();
+                    }
+                }
             }
         });
     });
@@ -1184,6 +1267,10 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.addEventListener('click', (e) => {
             if (e.target === modal) {
                 modal.classList.add('hidden');
+                if (modal.id === 'modal-adicionar-projeto') {
+                    resetAdicionarProjetoPreview();
+                    formAdicionarProjeto && formAdicionarProjeto.reset();
+                }
             }
         });
     });

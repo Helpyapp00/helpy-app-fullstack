@@ -400,7 +400,13 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
 /* Fim dos estilos do Spinner */
 
 
-.add-btn { background-color: #17a2b8; color: white; }
+.add-btn {
+    background-color: #17a2b8;
+    color: white;
+    padding: 8px 18px;
+    font-size: 15px;
+    border-radius: 6px;
+}
 .add-btn:hover { background-color: #138496; transform: translateY(-2px); }
 
 .perfil-acoes { text-align: center; margin-bottom: 20px; }
@@ -504,6 +510,98 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
 }
 .btn-remover-foto { position: absolute; top: 5px; right: 5px; background-color: rgba(220, 53, 69, 0.8); color: white; border: none; border-radius: 50%; width: 25px; height: 25px; font-size: 14px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: background-color 0.2s ease; z-index: 2; }
 .btn-remover-foto:hover { background-color: rgba(220, 53, 69, 1); }
+
+.projeto-upload-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.btn-upload-midia {
+    padding: 8px 16px;
+    font-size: 14px;
+    border-radius: 6px;
+}
+
+.projeto-preview-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.projeto-preview-item {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.projeto-preview-item img,
+.projeto-preview-item video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.projeto-preview-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(220, 53, 69, 0.9);
+    color: #fff;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.projeto-preview-remove:hover {
+    background: #dc3545;
+}
+
+#modal-adicionar-projeto .form-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+#modal-adicionar-projeto .form-actions .btn-primary,
+#modal-adicionar-projeto .form-actions .btn-secondary {
+    flex: 1;
+    padding: 8px 0;
+    font-size: 14px;
+}
+
+@media (max-width: 480px) {
+    #modal-adicionar-projeto .modal-content.modal-large {
+        width: 95%;
+        max-height: 90vh;
+    }
+
+    #modal-adicionar-projeto .form-actions {
+        flex-direction: row;
+    }
+
+    #modal-adicionar-projeto .form-actions .btn-primary,
+    #modal-adicionar-projeto .form-actions .btn-secondary {
+        font-size: 13px;
+        padding: 7px 0;
+    }
+}
 
 .mensagem-vazia { color: var(--text-secondary); font-style: italic; text-align: center; width: 100%; padding: 20px 0; } /* Aplicado */
 
@@ -858,8 +956,8 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
     /* Diminui um pouco os botões principais no perfil em telas menores */
     .edit-btn,
     .add-btn {
-        padding: 10px 20px;
-        font-size: 15px;
+        padding: 8px 18px;
+        font-size: 14px;
     }
     /* Posição base do botão "Adicionar Projeto" para celulares/tablets */
     #addServicoBtn {
@@ -895,11 +993,12 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
     .edit-btn,
     .add-btn {
         width: auto;           /* não ocupa a tela toda */
-        max-width: 220px;      /* limita a largura máxima */
+        max-width: 190px;      /* ainda menor no mobile */
         margin-left: auto;     /* centraliza horizontalmente */
         margin-right: auto;
-        padding: 8px 16px;
-        font-size: 14px;
+        padding: 6px 14px;
+        font-size: 13px;
+        border-radius: 5px;
     }
     .botoes-edicao { width: 100%; }
     .galeria-servicos { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; }
