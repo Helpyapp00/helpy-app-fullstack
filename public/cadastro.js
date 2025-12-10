@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const fotoInput = document.getElementById('foto');
     const fotoPreview = document.getElementById('foto-preview');
     const fotoPreviewContainer = document.querySelector('.foto-preview-container');
+    const btnRemoverFotoPerfil = document.querySelector('.btn-remover-foto-perfil');
     const idadeInput = document.getElementById('idade');
     const cidadeInput = document.getElementById('cidade');
     const estadoInput = document.getElementById('estado');
@@ -36,6 +37,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const toggleConfirmarSenhaBtn = document.getElementById('toggle-confirmar-senha');
     const temaInput = document.getElementById('tema');
     const temaOpcoes = document.querySelectorAll('.tema-opcao');
+    const temaContainer = document.querySelector('.tema-selecao-container');
+
+    function setTema(tema) {
+        if (!temaInput) return;
+        temaInput.value = tema;
+
+        // Cartões de preview (desktop e mobile)
+        temaOpcoes.forEach(o => {
+            const optTema = o.getAttribute('data-tema');
+            if (optTema === tema) {
+                o.classList.add('selecionado');
+            } else {
+                o.classList.remove('selecionado');
+            }
+        });
+
+        // Define o estado visual do "slider" (mostra só um card com animação)
+        if (temaContainer) {
+            temaContainer.classList.remove('tema-light-ativo', 'tema-dark-ativo');
+            temaContainer.classList.add(tema === 'dark' ? 'tema-dark-ativo' : 'tema-light-ativo');
+        }
+    }
 
     // Toggle mostrar/ocultar senha
     if (toggleSenhaBtn) {
@@ -71,20 +94,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Seleção visual de tema
+    // Seleção visual de tema (cartão atual funciona como "toggle" com efeito de deslizar)
     temaOpcoes.forEach(opcao => {
         opcao.addEventListener('click', function() {
-            temaOpcoes.forEach(o => o.classList.remove('selecionado'));
-            this.classList.add('selecionado');
-            const tema = this.getAttribute('data-tema');
-            temaInput.value = tema;
+            const atual = temaInput && temaInput.value ? temaInput.value : 'light';
+            // se clicar no card visível, inverte o tema (claro <-> escuro)
+            const proximo = atual === 'light' ? 'dark' : 'light';
+            setTema(proximo);
         });
     });
 
-    // Seleciona tema claro por padrão
-    if (temaOpcoes.length > 0) {
-        temaOpcoes[0].classList.add('selecionado');
-    }
+    // Tema claro por padrão
+    setTema(temaInput && temaInput.value ? temaInput.value : 'light');
 
     // --- Funções de Feedback ---
     function showMessage(message, type) {
@@ -149,20 +170,42 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // --- Lógica da Pré-visualização da Foto ---
-    fotoInput.addEventListener('change', function(event) {
-        const file = event.target.files[0]; 
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                fotoPreview.src = e.target.result;
-                fotoPreviewContainer.classList.add('has-image');
-            };
-            reader.readAsDataURL(file);
-        } else {
+    if (fotoInput) {
+        fotoInput.addEventListener('change', function(event) {
+            const file = event.target.files[0]; 
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    fotoPreview.src = e.target.result;
+                    fotoPreviewContainer.classList.add('has-image');
+                    if (btnRemoverFotoPerfil) btnRemoverFotoPerfil.style.display = 'flex';
+                };
+                reader.readAsDataURL(file);
+            } else {
+                fotoPreview.src = 'imagens/default-user.png';
+                fotoPreviewContainer.classList.remove('has-image');
+                if (btnRemoverFotoPerfil) btnRemoverFotoPerfil.style.display = 'none';
+            }
+        });
+    }
+
+    // Clique na área da foto: sempre abre o seletor de arquivo
+    if (fotoPreviewContainer && fotoInput) {
+        fotoPreviewContainer.addEventListener('click', function() {
+            fotoInput.click();
+        });
+    }
+
+    // Botão "X" para limpar/remover a foto e voltar ao padrão
+    if (btnRemoverFotoPerfil && fotoInput) {
+        btnRemoverFotoPerfil.addEventListener('click', function(event) {
+            event.stopPropagation();
+            fotoInput.value = '';
             fotoPreview.src = 'imagens/default-user.png';
             fotoPreviewContainer.classList.remove('has-image');
-        }
-    });
+            btnRemoverFotoPerfil.style.display = 'none';
+        });
+    }
 
     // --- Lógica do Campo de Atuação Condicional ---
     function toggleAtuacaoField() {

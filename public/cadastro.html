@@ -41,11 +41,13 @@
       </div>
 
       <div class="form-row">
-        <div class="form-group photo-upload-group full-width"> <label for="foto">Foto de perfil</label>
-          <input type="file" id="foto" name="fotoPerfil" accept="image/*">
-          <div class="foto-preview-container">
+        <div class="form-group photo-upload-group full-width">
+          <label for="foto">Foto de perfil</label>
+          <input type="file" id="foto" name="fotoPerfil" accept="image/*" class="input-foto-perfil">
+          <div class="foto-preview-container" id="foto-preview-container">
             <img id="foto-preview" src="imagens/default-user.png" alt="Pré-visualização da foto de perfil">
             <div class="foto-mask"></div>
+            <button type="button" class="btn-remover-foto-perfil">&times;</button>
           </div>
         </div>
       </div>
@@ -175,6 +177,9 @@
                 <i class="fas fa-sun"></i>
                 <span>Claro</span>
               </div>
+              <div class="tema-arrow">
+                <i class="fas fa-chevron-right"></i>
+              </div>
             </div>
             <div class="tema-opcao" data-tema="dark">
               <div class="tema-preview dark-preview">
@@ -193,6 +198,9 @@
               <div class="tema-label">
                 <i class="fas fa-moon"></i>
                 <span>Escuro</span>
+              </div>
+              <div class="tema-arrow">
+                <i class="fas fa-chevron-left"></i>
               </div>
             </div>
           </div>

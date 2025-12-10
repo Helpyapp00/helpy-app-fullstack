@@ -1,7 +1,9 @@
 /* Seu CSS existente para o formulário aqui */
 body {
     font-family: Arial, sans-serif;
-    background-color: #f0f2f5;
+    background: linear-gradient(135deg, rgba(25, 32, 95, 0.8) 0%, rgba(7, 8, 21, 0.9) 100%),
+                url('https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&auto=format&fit=crop&w=1950&q=80')
+                center/cover no-repeat fixed;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -9,6 +11,7 @@ body {
     margin: 0;
     padding: 20px;
     box-sizing: border-box;
+    overflow-x: hidden;
 }
 
 .container {
@@ -126,9 +129,7 @@ form button:hover {
 }
 
 .photo-upload-group input[type="file"] {
-    width: auto;
-    margin: 0 auto 10px auto;
-    display: block;
+    display: none;
 }
 
 /* --- ESTILOS PARA PRÉ-VISUALIZAÇÃO DA FOTO (com ícone de câmera) --- */
@@ -142,21 +143,51 @@ form button:hover {
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
-    /* Adicionado para o ícone da câmera */
-    color: #cccccc; /* Cor do ícone da câmera */
-    font-size: 2em; /* Tamanho base para o ícone */
+    overflow: visible;
+    cursor: pointer;
 }
 
-/* Ícone de câmera básico usando caracteres (requer Font Awesome ou fonte similar) */
+/* Botão "X" para remover/limpar a foto de perfil */
+.btn-remover-foto-perfil {
+    position: absolute;
+    top: -30px;
+    right: -11px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(220, 53, 69, 0.9);
+    color: #fff;
+    font-size: 12px;
+    padding: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+}
+
+.foto-preview-container.has-image .btn-remover-foto-perfil {
+    display: flex;
+}
+
+/* Estado inicial: botão de + grande dentro da área de foto */
 .foto-preview-container::before {
-    content: "\f030"; /* Código Unicode para um ícone de câmera (Font Awesome 5 Free) */
-    font-family: "Font Awesome 5 Free"; /* Certifique-se de ter Font Awesome linkado no seu HTML! */
-    font-weight: 400; /* Estilo regular do Font Awesome */
-    color: #d3d3d3; /* Cinza claro */
-    font-size: 2.5em; /* Tamanho do ícone */
-    position: absolute; /* Para centralizar o ícone se a imagem preencher */
-    z-index: 1; /* Garante que o ícone esteja acima da imagem vazia */
+    content: "+";
+    position: absolute;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(40, 40, 40, 0.35);
+    color: #111;
+    font-size: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 /* Esconde o pseudo-elemento quando uma imagem é carregada */
@@ -284,6 +315,36 @@ form button:hover {
     }
 }
 
+@media (max-width: 650px) {
+    body {
+        padding: 12px;
+    }
+
+    .container-cadastro {
+        max-width: 100% !important;
+        width: 100% !important;
+        margin: 0 8px !important;          /* pequeno espaço lateral */
+        padding: 20px 16px !important;
+        background: rgba(255, 255, 255, 0.96) !important;  /* branco único no mobile */
+        box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4) !important;
+    }
+
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .header-content .header-logo {
+        max-width: 80px;
+        opacity: 0.85;
+    }
+
+    .header-content h1 {
+        font-size: 24px;
+    }
+}
+
 /* Estilos para a seção "Já tem uma conta?" */
 .link-login-container {
     margin-top: 30px;
@@ -361,9 +422,10 @@ form button:hover {
 
 /* Melhorias gerais no formulário */
 .container-cadastro {
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    /* Fundo branco único para não "quebrar" visualmente no meio */
+    background: rgba(255, 255, 255, 0.96);
     border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
     padding: 40px;
     max-width: 900px;
     width: 100%;
@@ -553,25 +615,53 @@ form textarea:focus {
     line-height: 1;
 }
 
-/* Seleção visual de tema */
+/* Seleção visual de tema - slider com um card por vez */
 .tema-selecao-container {
-    display: flex;
-    gap: 20px;
-    justify-content: center;
-    flex-wrap: wrap;
+    position: relative;
+    width: 100%;
     margin-bottom: 20px;
+    overflow: hidden;                 /* esconde o card que está fora */
+    min-height: 260px;                /* garante altura para os cards absolutos */
 }
 
 .tema-opcao {
-    flex: 1;
-    min-width: 200px;
-    max-width: 280px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    max-width: 100%;
     cursor: pointer;
     border: 3px solid #e0e0e0;
     border-radius: 12px;
     padding: 15px;
-    transition: all 0.3s ease;
+    transition: transform 0.35s ease-in-out, opacity 0.35s ease-in-out;
     background: white;
+    opacity: 0;
+    pointer-events: none;             /* por padrão não clicável */
+}
+
+/* Estado: tema claro ativo (card claro visível, escuro à direita) */
+.tema-selecao-container.tema-light-ativo .tema-opcao[data-tema="light"] {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+.tema-selecao-container.tema-light-ativo .tema-opcao[data-tema="dark"] {
+    transform: translateX(100%);
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Estado: tema escuro ativo (card escuro visível, claro à esquerda) */
+.tema-selecao-container.tema-dark-ativo .tema-opcao[data-tema="dark"] {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+}
+.tema-selecao-container.tema-dark-ativo .tema-opcao[data-tema="light"] {
+    transform: translateX(-100%);
+    opacity: 0;
+    pointer-events: none;
 }
 
 .tema-opcao:hover {
@@ -695,11 +785,28 @@ form textarea:focus {
     font-size: 18px;
 }
 
+/* Seta grande transparente dentro da caixa selecionada */
+.tema-arrow {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none; /* clique passa para a caixa */
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.tema-arrow i {
+    font-size: 56px;
+    color: rgba(0, 0, 0, 0.18); /* cinza transparente sobre o fundo */
+}
+
+.tema-opcao.selecionado .tema-arrow {
+    opacity: 1;
+}
+
 @media (max-width: 650px) {
-    .tema-selecao-container {
-        flex-direction: column;
-    }
-    
     .tema-opcao {
         max-width: 100%;
     }
