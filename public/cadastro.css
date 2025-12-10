@@ -275,6 +275,22 @@ form button:hover {
 /* Esconder grupo de atuação (já tratado pelo JS) */
 #atuacao-group {
     transition: all 0.3s ease;
+    flex: 1 1 100%;           /* ocupa a linha inteira */
+    max-width: 100% !important;
+    display: block !important;           /* garante empilhamento em coluna */
+}
+
+/* Dentro de Área de atuação, deixa o label em cima e o input ocupando toda a largura */
+#atuacao-group label {
+    display: block !important;
+    width: 100% !important;
+    margin-bottom: 8px;
+}
+
+#atuacao-group input {
+    display: block !important;
+    width: 100% !important;
+    box-sizing: border-box;
 }
 
 /* Responsividade: Volta para coluna única em telas menores */
@@ -318,12 +334,14 @@ form button:hover {
 @media (max-width: 650px) {
     body {
         padding: 12px;
+        justify-content: center;   /* garante o card centralizado no eixo horizontal */
+        align-items: flex-start;   /* começa do topo da tela em vez de ficar 100% centralizado verticalmente */
     }
 
     .container-cadastro {
-        max-width: 100% !important;
+        max-width: 480px !important;       /* largura máxima confortável para mobile */
         width: 100% !important;
-        margin: 0 8px !important;          /* pequeno espaço lateral */
+        margin: 0 auto !important;         /* centraliza o card dentro da tela */
         padding: 20px 16px !important;
         background: rgba(255, 255, 255, 0.96) !important;  /* branco único no mobile */
         box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4) !important;
@@ -342,6 +360,11 @@ form button:hover {
 
     .header-content h1 {
         font-size: 24px;
+    }
+
+    /* Em telas bem pequenas, deixa a coluna um pouco mais estreita */
+    #form-cadastro {
+        max-width: 440px;
     }
 }
 
@@ -427,10 +450,16 @@ form button:hover {
     border-radius: 16px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
     padding: 40px;
-    max-width: 900px;
+    max-width: 640px; /* deixa a área branca mais compacta e sempre centralizada */
     width: 100%;
     box-sizing: border-box;
     margin: 0 auto;
+}
+
+/* Centraliza a coluna de perguntas dentro do card em todas as telas */
+#form-cadastro {
+    max-width: 520px;
+    margin: 0 auto !important;   /* garante centralização mesmo se houver outra regra */
 }
 
 form input:focus,
@@ -455,6 +484,9 @@ form textarea:focus {
     align-items: center;
     justify-content: center;
     gap: 8px;
+    width: 90%;              /* um pouco menor que 100% */
+    max-width: 360px;        /* limita a largura máxima em telas grandes */
+    margin: 24px auto 0;     /* centraliza o botão dentro do formulário */
 }
 
 .btn-submit-cadastro:hover {
@@ -615,53 +647,26 @@ form textarea:focus {
     line-height: 1;
 }
 
-/* Seleção visual de tema - slider com um card por vez */
+/* Seleção visual de tema - DESKTOP: dois cards lado a lado */
 .tema-selecao-container {
-    position: relative;
-    width: 100%;
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
     margin-bottom: 20px;
-    overflow: hidden;                 /* esconde o card que está fora */
-    min-height: 260px;                /* garante altura para os cards absolutos */
 }
 
 .tema-opcao {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    max-width: 100%;
+    flex: 1;
+    min-width: 200px;
+    max-width: 280px;
     cursor: pointer;
     border: 3px solid #e0e0e0;
     border-radius: 12px;
     padding: 15px;
-    transition: transform 0.35s ease-in-out, opacity 0.35s ease-in-out;
+    transition: all 0.3s ease;
     background: white;
-    opacity: 0;
-    pointer-events: none;             /* por padrão não clicável */
-}
-
-/* Estado: tema claro ativo (card claro visível, escuro à direita) */
-.tema-selecao-container.tema-light-ativo .tema-opcao[data-tema="light"] {
-    transform: translateX(0);
-    opacity: 1;
-    pointer-events: auto;
-}
-.tema-selecao-container.tema-light-ativo .tema-opcao[data-tema="dark"] {
-    transform: translateX(100%);
-    opacity: 0;
-    pointer-events: none;
-}
-
-/* Estado: tema escuro ativo (card escuro visível, claro à esquerda) */
-.tema-selecao-container.tema-dark-ativo .tema-opcao[data-tema="dark"] {
-    transform: translateX(0);
-    opacity: 1;
-    pointer-events: auto;
-}
-.tema-selecao-container.tema-dark-ativo .tema-opcao[data-tema="light"] {
-    transform: translateX(-100%);
-    opacity: 0;
-    pointer-events: none;
+    position: relative;
 }
 
 .tema-opcao:hover {
@@ -806,9 +811,52 @@ form textarea:focus {
     opacity: 1;
 }
 
+/* MOBILE: slider mostrando um card de tema por vez */
 @media (max-width: 650px) {
+    .tema-selecao-container {
+        position: relative;
+        width: 100%;
+        max-width: 100%;                /* ocupa toda a largura da área de informações */
+        margin: 0 0 20px 0;             /* alinha com os outros campos */
+        overflow: hidden;                 /* esconde o card que está fora */
+        min-height: 260px;                /* garante altura para os cards absolutos */
+        display: block;
+    }
+
     .tema-opcao {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
         max-width: 100%;
+        flex: none;
+        transition: transform 0.35s ease-in-out, opacity 0.35s ease-in-out;
+        opacity: 0;
+        pointer-events: none;             /* por padrão não clicável */
+    }
+
+    /* Estado: tema claro ativo (card claro visível, escuro à direita) */
+    .tema-selecao-container.tema-light-ativo .tema-opcao[data-tema="light"] {
+        transform: translateX(0);
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .tema-selecao-container.tema-light-ativo .tema-opcao[data-tema="dark"] {
+        transform: translateX(100%);
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    /* Estado: tema escuro ativo (card escuro visível, claro à esquerda) */
+    .tema-selecao-container.tema-dark-ativo .tema-opcao[data-tema="dark"] {
+        transform: translateX(0);
+        opacity: 1;
+        pointer-events: auto;
+    }
+    .tema-selecao-container.tema-dark-ativo .tema-opcao[data-tema="light"] {
+        transform: translateX(-100%);
+        opacity: 0;
+        pointer-events: none;
     }
 }
 
