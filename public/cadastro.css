@@ -293,14 +293,19 @@ form button:hover {
     box-sizing: border-box;
 }
 
-/* Responsividade: Volta para coluna única em telas menores */
-@media (max-width: 650px) {
+/* Responsividade: em telas menores e tablets, os campos ficam em coluna
+   e centralizados, crescendo a partir do meio da caixa branca */
+@media (max-width: 900px) {
     .form-row {
         flex-direction: column;
-        gap: 0;
+        align-items: center;      /* centraliza os grupos dentro da linha */
+        gap: 10px;
     }
     .form-group {
-        flex: 1 1 100%;
+        flex: 0 0 auto;
+        width: 90%;               /* mesma lógica do botão Próximo */
+        max-width: 520px;
+        min-width: 0;
         margin-bottom: 15px;
     }
     /* Ajustes específicos para a foto preview em telas pequenas */
@@ -349,7 +354,7 @@ form button:hover {
 
     .header-content {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: center;       /* centraliza logo + título dentro da caixa branca */
         gap: 12px;
     }
 
@@ -360,11 +365,6 @@ form button:hover {
 
     .header-content h1 {
         font-size: 24px;
-    }
-
-    /* Em telas bem pequenas, deixa a coluna um pouco mais estreita */
-    #form-cadastro {
-        max-width: 440px;
     }
 }
 
@@ -456,10 +456,12 @@ form button:hover {
     margin: 0 auto;
 }
 
-/* Centraliza a coluna de perguntas dentro do card em todas as telas */
+/* Formulário acompanha a largura interna da caixa branca.
+   Os grupos de campos é que controlam a largura visível em cada linha. */
 #form-cadastro {
-    max-width: 520px;
-    margin: 0 auto !important;   /* garante centralização mesmo se houver outra regra */
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
 }
 
 form input:focus,
@@ -480,13 +482,15 @@ form textarea:focus {
     border: none;
     color: white;
     cursor: pointer;
-    display: inline-flex;
+    display: flex;            /* container flex em bloco, permite centralizar com margin:auto */
     align-items: center;
     justify-content: center;
     gap: 8px;
-    width: 90%;              /* um pouco menor que 100% */
-    max-width: 360px;        /* limita a largura máxima em telas grandes */
-    margin: 24px auto 0;     /* centraliza o botão dentro do formulário */
+    /* Mesmo comportamento visual das outras informações:
+       - cresce a partir do centro até um limite confortável */
+    width: 80%;
+    max-width: 360px;        /* limite para não ficar gigante em telas maiores */
+    margin: 20px auto 0;     /* centraliza o botão dentro do formulário */
 }
 
 .btn-submit-cadastro:hover {
@@ -822,7 +826,7 @@ form textarea:focus {
         min-height: 260px;                /* garante altura para os cards absolutos */
         display: block;
     }
-
+    
     .tema-opcao {
         position: absolute;
         top: 0;

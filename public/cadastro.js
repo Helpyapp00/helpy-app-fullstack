@@ -171,17 +171,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Lógica da Pré-visualização da Foto ---
     if (fotoInput) {
-        fotoInput.addEventListener('change', function(event) {
-            const file = event.target.files[0]; 
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    fotoPreview.src = e.target.result;
-                    fotoPreviewContainer.classList.add('has-image');
+    fotoInput.addEventListener('change', function(event) {
+        const file = event.target.files[0]; 
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                fotoPreview.src = e.target.result;
+                fotoPreviewContainer.classList.add('has-image');
                     if (btnRemoverFotoPerfil) btnRemoverFotoPerfil.style.display = 'flex';
-                };
-                reader.readAsDataURL(file);
-            } else {
+            };
+            reader.readAsDataURL(file);
+        } else {
                 fotoPreview.src = 'imagens/default-user.png';
                 fotoPreviewContainer.classList.remove('has-image');
                 if (btnRemoverFotoPerfil) btnRemoverFotoPerfil.style.display = 'none';
@@ -205,7 +205,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fotoPreviewContainer.classList.remove('has-image');
             btnRemoverFotoPerfil.style.display = 'none';
         });
-    }
+        }
 
     // --- Lógica do Campo de Atuação Condicional ---
     function toggleAtuacaoField() {
