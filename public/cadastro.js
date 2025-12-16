@@ -94,13 +94,26 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Seleção visual de tema (cartão atual funciona como "toggle" com efeito de deslizar)
+    // Seleção visual de tema
+    // - DESKTOP / TELAS MAIORES: dois cards lado a lado, clique escolhe diretamente aquele tema
+    // - MOBILE (max-width: 650px): efeito de "slider", clicar funciona como toggle (claro <-> escuro)
+    function isTemaMobile() {
+        return window.matchMedia('(max-width: 650px)').matches;
+    }
+
     temaOpcoes.forEach(opcao => {
         opcao.addEventListener('click', function() {
-            const atual = temaInput && temaInput.value ? temaInput.value : 'light';
-            // se clicar no card visível, inverte o tema (claro <-> escuro)
-            const proximo = atual === 'light' ? 'dark' : 'light';
-            setTema(proximo);
+            const temaDaOpcao = opcao.getAttribute('data-tema') || 'light';
+
+            if (isTemaMobile()) {
+                // MOBILE: comportamento de toggle (slide entre claro e escuro)
+                const atual = temaInput && temaInput.value ? temaInput.value : 'light';
+                const proximo = atual === 'light' ? 'dark' : 'light';
+                setTema(proximo);
+            } else {
+                // DESKTOP: clica diretamente no card que quer (sem alternar sozinho)
+                setTema(temaDaOpcao);
+            }
         });
     });
 
