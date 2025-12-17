@@ -146,7 +146,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (confirmLogoutYesBtn) {
         confirmLogoutYesBtn.addEventListener('click', () => {
+            const jaLogou = localStorage.getItem('helpy-ja-logou');
             localStorage.clear();
+            if (jaLogou) {
+                localStorage.setItem('helpy-ja-logou', jaLogou);
+            }
             window.location.href = 'login.html';
         });
     }

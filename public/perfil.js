@@ -1336,7 +1336,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }); 
     }
     if (logoutButton) { logoutButton.addEventListener('click', (e) => { e.preventDefault(); logoutConfirmModal && logoutConfirmModal.classList.remove('hidden'); }); }
-    if (confirmLogoutYesBtn) { confirmLogoutYesBtn.addEventListener('click', () => { localStorage.clear(); window.location.href = '/login'; }); }
+    if (confirmLogoutYesBtn) { 
+        confirmLogoutYesBtn.addEventListener('click', () => { 
+            const jaLogou = localStorage.getItem('helpy-ja-logou');
+            localStorage.clear(); 
+            if (jaLogou) {
+                localStorage.setItem('helpy-ja-logou', jaLogou);
+            }
+            window.location.href = '/login'; 
+        }); 
+    }
     if (confirmLogoutNoBtn) { confirmLogoutNoBtn.addEventListener('click', () => { logoutConfirmModal && logoutConfirmModal.classList.add('hidden'); }); }
     
     // 🆕 NOVO: Fechar modais ao clicar no X ou fora

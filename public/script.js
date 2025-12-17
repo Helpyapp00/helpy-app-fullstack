@@ -1098,7 +1098,12 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (confirmLogoutYesBtn) {
         confirmLogoutYesBtn.addEventListener('click', () => {
+            // Preserva a informação se este dispositivo já fez login alguma vez
+            const jaLogou = localStorage.getItem('helpy-ja-logou');
             localStorage.clear();
+            if (jaLogou) {
+                localStorage.setItem('helpy-ja-logou', jaLogou);
+            }
             // Usa replace para evitar que o usuário volte para o feed com o botão "voltar"
             window.location.replace('/login');
         });
@@ -1435,7 +1440,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (resp.status === 401) {
                 console.warn('Sessão inválida ou expirada. Limpando dados locais e redirecionando para login.');
+                const jaLogou = localStorage.getItem('helpy-ja-logou');
                 localStorage.clear();
+                if (jaLogou) {
+                    localStorage.setItem('helpy-ja-logou', jaLogou);
+                }
                 window.location.replace('/login');
                 return false;
             }
