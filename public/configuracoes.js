@@ -18,6 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const feedButton = document.getElementById('feed-button');
     const profileButton = document.getElementById('profile-button');
     const logoutButton = document.getElementById('logout-button');
+    const logoBox = document.querySelector('.logo-box');
     
     // 🛑 NOVO: Botão Voltar
     const btnVoltar = document.getElementById('btn-voltar');
@@ -26,6 +27,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutConfirmModal = document.getElementById('logout-confirm-modal');
     const confirmLogoutYesBtn = document.getElementById('confirm-logout-yes');
     const confirmLogoutNoBtn = document.getElementById('confirm-logout-no');
+
+    // --- Clique no logo/nome "Helpy" vai para o feed (e recarrega se já estiver no feed) ---
+    function irParaFeedOuRecarregar() {
+        const currentPath = window.location.pathname;
+        if (currentPath === '/' || currentPath === '/index.html') {
+            window.location.reload();
+        } else {
+            window.location.href = '/';
+        }
+    }
+
+    if (logoBox) {
+        logoBox.addEventListener('click', irParaFeedOuRecarregar);
+    }
 
     // --- Função para carregar o Header ---
     function loadHeaderInfo() {
@@ -93,6 +108,25 @@ document.addEventListener('DOMContentLoaded', () => {
         profileButton.addEventListener('click', (e) => {
             e.preventDefault();
             window.location.href = `perfil.html?id=${loggedInUserId}`;
+        });
+    }
+
+    // Avatar + nome no header levam SEMPRE para o próprio perfil
+    if (userAvatarHeader) {
+        userAvatarHeader.style.cursor = 'pointer';
+        userAvatarHeader.addEventListener('click', () => {
+            if (loggedInUserId) {
+                window.location.href = `perfil.html?id=${loggedInUserId}`;
+            }
+        });
+    }
+
+    if (userNameHeader) {
+        userNameHeader.style.cursor = 'pointer';
+        userNameHeader.addEventListener('click', () => {
+            if (loggedInUserId) {
+                window.location.href = `perfil.html?id=${loggedInUserId}`;
+            }
         });
     }
 

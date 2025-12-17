@@ -38,6 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const feedButton = document.getElementById('feed-button');
     const logoutButton = document.getElementById('logout-button');
     const profileButton = document.getElementById('profile-button'); 
+    const logoBox = document.querySelector('.logo-box');
 
     // --- Elementos do DOM (Card Principal) ---
     const fotoPerfil = document.getElementById('fotoPerfil');
@@ -108,6 +109,39 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutConfirmModal = document.getElementById('logout-confirm-modal');
     const confirmLogoutYesBtn = document.getElementById('confirm-logout-yes');
     const confirmLogoutNoBtn = document.getElementById('confirm-logout-no');
+
+    // --- Clique no logo/nome "Helpy" vai para o feed (e recarrega se já estiver no feed) ---
+    function irParaFeedOuRecarregar() {
+        const currentPath = window.location.pathname;
+        if (currentPath === '/' || currentPath === '/index.html') {
+            window.location.reload();
+        } else {
+            window.location.href = '/';
+        }
+    }
+
+    if (logoBox) {
+        logoBox.addEventListener('click', irParaFeedOuRecarregar);
+    }
+
+    // --- Avatar + nome no header levam SEMPRE para o próprio perfil ---
+    if (userAvatarHeader) {
+        userAvatarHeader.style.cursor = 'pointer';
+        userAvatarHeader.addEventListener('click', () => {
+            if (loggedInUserId) {
+                window.location.href = `/perfil.html?id=${loggedInUserId}`;
+            }
+        });
+    }
+
+    if (userNameHeader) {
+        userNameHeader.style.cursor = 'pointer';
+        userNameHeader.addEventListener('click', () => {
+            if (loggedInUserId) {
+                window.location.href = `/perfil.html?id=${loggedInUserId}`;
+            }
+        });
+    }
 
 
     // --- Buscar dados do usuário quando acessado por slug ---

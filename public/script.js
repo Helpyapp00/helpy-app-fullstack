@@ -36,6 +36,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const logoutButton = document.getElementById('logout-button');
     const searchInput = document.querySelector('.search');
     const searchToggleBtn = document.getElementById('search-toggle');
+    const logoBox = document.querySelector('.logo-box');
     let searchResultsContainer = null;
     let searchResultsBackdrop = null;
     
@@ -64,6 +65,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const darkModeToggle = document.getElementById('dark-mode-toggle');
     const mobileSidebarToggle = document.getElementById('mobile-sidebar-toggle');
     const htmlElement = document.documentElement; // O elemento <html>
+
+    // --- Clique no logo/nome "Helpy" vai para o feed (e recarrega se já estiver no feed) ---
+    function irParaFeedOuRecarregar() {
+        const currentPath = window.location.pathname;
+        if (currentPath === '/' || currentPath === '/index.html') {
+            window.location.reload();
+        } else {
+            window.location.href = '/';
+        }
+    }
+
+    if (logoBox) {
+        logoBox.addEventListener('click', irParaFeedOuRecarregar);
+    }
 
     // ----------------------------------------------------------------------
     // LÓGICA DO TEMA (DARK MODE)
@@ -1059,6 +1074,16 @@ document.addEventListener('DOMContentLoaded', () => {
     if (userAvatarHeader) {
         userAvatarHeader.style.cursor = 'pointer';
         userAvatarHeader.addEventListener('click', () => {
+            if (userId) {
+                window.location.href = `/perfil.html?id=${userId}`;
+            }
+        });
+    }
+
+    // Nome do usuário no cabeçalho também leva para o próprio perfil
+    if (userNameHeader) {
+        userNameHeader.style.cursor = 'pointer';
+        userNameHeader.addEventListener('click', () => {
             if (userId) {
                 window.location.href = `/perfil.html?id=${userId}`;
             }
