@@ -49,9 +49,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const postForm = document.getElementById('new-post-form');
     const postContentInput = document.getElementById('post-content-input');
     const postMediaInput = document.getElementById('post-media-input');
-    const mediaFilename = document.getElementById('media-filename');
-    const imagePreview = document.getElementById('image-preview'); 
-    const videoPreview = document.getElementById('video-preview');
     const postFormMessage = document.getElementById('post-form-message');
     const postsContainer = document.getElementById('posts-container');
     
@@ -472,18 +469,98 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
 
+    // --- Estado de imagens selecionadas na criação de post ---
+    const btnSelecionarFotoPost = document.getElementById('btn-selecionar-foto-post');
+    const btnAdicionarFotoPost = document.getElementById('btn-adicionar-foto-post');
+    const previewFotosPost = document.getElementById('preview-fotos-post');
+    const fotosPostSelecionadas = [];
+
+    function atualizarVisibilidadeBotoesPost() {
+        const temFotos = fotosPostSelecionadas.length > 0;
+        if (btnSelecionarFotoPost) {
+            btnSelecionarFotoPost.style.display = temFotos ? 'none' : 'inline-flex';
+        }
+        if (btnAdicionarFotoPost) {
+            btnAdicionarFotoPost.style.display = temFotos ? 'inline-flex' : 'none';
+        }
+    }
+
+    function criarThumbnailPost(file) {
+        if (!previewFotosPost) return;
+
+        const item = document.createElement('div');
+        item.className = 'post-foto-item';
+
+        const img = document.createElement('img');
+        const btnRemover = document.createElement('button');
+        btnRemover.type = 'button';
+        btnRemover.className = 'post-foto-remove';
+        btnRemover.innerHTML = '&times;';
+
+        item.appendChild(img);
+        item.appendChild(btnRemover);
+        previewFotosPost.appendChild(item);
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+
+        btnRemover.addEventListener('click', () => {
+            const idx = fotosPostSelecionadas.indexOf(file);
+            if (idx !== -1) {
+                fotosPostSelecionadas.splice(idx, 1);
+            }
+            item.remove();
+            atualizarVisibilidadeBotoesPost();
+            if (postMediaInput && fotosPostSelecionadas.length === 0) {
+                postMediaInput.value = '';
+            }
+        });
+    }
+
+    if (postMediaInput && btnSelecionarFotoPost) {
+        const abrirSeletorPost = () => postMediaInput.click();
+
+        btnSelecionarFotoPost.addEventListener('click', abrirSeletorPost);
+        if (btnAdicionarFotoPost) {
+            btnAdicionarFotoPost.addEventListener('click', abrirSeletorPost);
+        }
+
+        postMediaInput.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files || []);
+            if (!files.length) return;
+
+            files.forEach((file) => {
+                if (!file.type.startsWith('image/')) return;
+                if (!fotosPostSelecionadas.includes(file)) {
+                    fotosPostSelecionadas.push(file);
+                    criarThumbnailPost(file);
+                }
+            });
+
+            atualizarVisibilidadeBotoesPost();
+        });
+    }
+
     if (postForm) {
         postForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const content = postContentInput.value;
-            const mediaFile = postMediaInput.files[0];
-            if (!content && !mediaFile) {
-                showMessage(postFormMessage, 'Você precisa adicionar um texto ou uma mídia.', 'error');
+            const temMidia = fotosPostSelecionadas.length > 0 || (postMediaInput && postMediaInput.files && postMediaInput.files.length > 0);
+
+            if (!content && !temMidia) {
+                showMessage(postFormMessage, 'Você precisa adicionar um texto ou uma foto.', 'error');
                 return;
             }
             const formData = new FormData();
             formData.append('content', content);
-            if (mediaFile) formData.append('media', mediaFile);
+            // Envia apenas a primeira imagem como mídia principal (backend atual aceita um campo 'media')
+            const fotoPrincipal = fotosPostSelecionadas[0] || (postMediaInput.files && postMediaInput.files[0]) || null;
+            if (fotoPrincipal) {
+                formData.append('media', fotoPrincipal);
+            }
             
             showMessage(postFormMessage, 'Publicando...', 'info');
             
@@ -497,10 +574,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (response.ok && data.success) {
                     showMessage(postFormMessage, 'Postagem criada com sucesso!', 'success');
                     postForm.reset();
-                    if (mediaFilename) mediaFilename.textContent = 'Nenhuma mídia selecionada';
-                    if (imagePreview) imagePreview.classList.add('oculto');
-                    if (videoPreview) videoPreview.classList.add('oculto');
-                    if (mediaPreviewContainer) mediaPreviewContainer.classList.add('oculto');
+                    // Limpa seleção de fotos e thumbnails
+                    fotosPostSelecionadas.length = 0;
+                    if (previewFotosPost) {
+                        previewFotosPost.innerHTML = '';
+                    }
+                    if (postMediaInput) {
+                        postMediaInput.value = '';
+                    }
+                    atualizarVisibilidadeBotoesPost();
                     if (postContentInput) postContentInput.style.height = 'auto';
                     fetchPosts(); // Recarrega o feed
                 } else {
@@ -510,49 +592,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Erro ao criar postagem:', error);
                 showMessage(postFormMessage, error.message, 'error');
             }
-        });
-    }
-    
-    // 🆕 ATUALIZADO: Preview de mídia melhorado
-    const mediaPreviewContainer = document.getElementById('media-preview-container');
-    const btnRemoverPreview = document.getElementById('btn-remover-preview');
-    
-    if (postMediaInput && mediaFilename && imagePreview && videoPreview) {
-        postMediaInput.addEventListener('change', () => {
-            const file = postMediaInput.files[0];
-            if (file) {
-                mediaFilename.textContent = file.name;
-                if (mediaPreviewContainer) mediaPreviewContainer.classList.remove('oculto');
-                
-                if (file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        imagePreview.src = e.target.result;
-                        imagePreview.classList.remove('oculto');
-                        videoPreview.classList.add('oculto');
-                    };
-                    reader.readAsDataURL(file);
-                } else if (file.type.startsWith('video/')) {
-                    videoPreview.src = URL.createObjectURL(file);
-                    videoPreview.classList.remove('oculto');
-                    imagePreview.classList.add('oculto');
-                }
-            } else {
-                if (mediaPreviewContainer) mediaPreviewContainer.classList.add('oculto');
-                mediaFilename.textContent = 'Nenhuma mídia selecionada';
-                imagePreview.classList.add('oculto');
-                videoPreview.classList.add('oculto');
-            }
-        });
-    }
-    
-    if (btnRemoverPreview) {
-        btnRemoverPreview.addEventListener('click', () => {
-            postMediaInput.value = '';
-            if (mediaPreviewContainer) mediaPreviewContainer.classList.add('oculto');
-            imagePreview.classList.add('oculto');
-            videoPreview.classList.add('oculto');
-            if (mediaFilename) mediaFilename.textContent = 'Nenhuma mídia selecionada';
         });
     }
     

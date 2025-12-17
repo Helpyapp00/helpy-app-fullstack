@@ -28,36 +28,82 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Preview de foto do pedido urgente
+    // Preview de fotos do pedido urgente (múltiplas imagens)
     const inputFotoPedido = document.getElementById('pedido-foto');
     const btnSelecionarFotoPedido = document.getElementById('btn-selecionar-foto-pedido');
-    const previewFotoPedido = document.getElementById('preview-foto-pedido');
-    const imgPreviewPedido = document.getElementById('img-preview-pedido');
-    const btnRemoverFotoPedido = document.getElementById('btn-remover-foto-pedido');
+    const btnAdicionarFotoPedido = document.getElementById('btn-adicionar-foto-pedido');
+    const previewFotosContainer = document.getElementById('preview-fotos-pedido');
+    const fotosSelecionadas = [];
 
-    if (btnSelecionarFotoPedido && inputFotoPedido) {
-        btnSelecionarFotoPedido.addEventListener('click', () => {
-            inputFotoPedido.click();
-        });
+    function atualizarVisibilidadeBotoesFoto() {
+        const temFotos = fotosSelecionadas.length > 0;
+        if (btnSelecionarFotoPedido) {
+            btnSelecionarFotoPedido.style.display = temFotos ? 'none' : 'inline-flex';
+        }
+        if (btnAdicionarFotoPedido) {
+            btnAdicionarFotoPedido.style.display = temFotos ? 'inline-flex' : 'none';
+        }
+    }
 
-        inputFotoPedido.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    imgPreviewPedido.src = event.target.result;
-                    previewFotoPedido.style.display = 'block';
-                };
-                reader.readAsDataURL(file);
+    function criarThumbnailFoto(file, index) {
+        if (!previewFotosContainer) return;
+
+        const item = document.createElement('div');
+        item.className = 'pedido-foto-item';
+        item.dataset.index = String(index);
+
+        const img = document.createElement('img');
+        img.alt = 'Foto do serviço';
+
+        const btnRemover = document.createElement('button');
+        btnRemover.type = 'button';
+        btnRemover.className = 'pedido-foto-remove';
+        btnRemover.innerHTML = '&times;';
+
+        item.appendChild(img);
+        item.appendChild(btnRemover);
+        previewFotosContainer.appendChild(item);
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+
+        btnRemover.addEventListener('click', () => {
+            const fileIndex = fotosSelecionadas.indexOf(file);
+            if (fileIndex !== -1) {
+                fotosSelecionadas.splice(fileIndex, 1);
+            }
+            item.remove();
+            atualizarVisibilidadeBotoesFoto();
+            if (inputFotoPedido && fotosSelecionadas.length === 0) {
+                inputFotoPedido.value = '';
             }
         });
     }
 
-    if (btnRemoverFotoPedido) {
-        btnRemoverFotoPedido.addEventListener('click', () => {
-            if (inputFotoPedido) inputFotoPedido.value = '';
-            if (previewFotoPedido) previewFotoPedido.style.display = 'none';
-            if (imgPreviewPedido) imgPreviewPedido.src = '';
+    if (btnSelecionarFotoPedido && inputFotoPedido) {
+        const abrirSeletor = () => inputFotoPedido.click();
+
+        btnSelecionarFotoPedido.addEventListener('click', abrirSeletor);
+        if (btnAdicionarFotoPedido) {
+            btnAdicionarFotoPedido.addEventListener('click', abrirSeletor);
+        }
+
+        inputFotoPedido.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files || []);
+            if (!files.length) return;
+
+            files.forEach((file) => {
+                // Evita duplicar a mesma referência de arquivo
+                if (!fotosSelecionadas.includes(file)) {
+                    fotosSelecionadas.push(file);
+                    criarThumbnailFoto(file, fotosSelecionadas.length - 1);
+                }
+            });
+
+            atualizarVisibilidadeBotoesFoto();
         });
     }
 
@@ -66,7 +112,8 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             
             const servico = document.getElementById('pedido-servico').value;
-            const categoria = document.getElementById('pedido-categoria').value;
+            // Categoria foi removida da interface; usamos um valor padrão para manter compatibilidade com o backend
+            const categoria = 'outros';
             const descricao = document.getElementById('pedido-descricao').value;
             const rua = document.getElementById('pedido-rua').value;
             const numero = document.getElementById('pedido-numero').value;
@@ -75,7 +122,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const cidade = document.getElementById('pedido-cidade').value;
             const estado = document.getElementById('pedido-estado').value;
             const prazoHoras = document.getElementById('pedido-prazo')?.value || '1';
-            const fotoFile = inputFotoPedido?.files[0];
+            const fotoFile = fotosSelecionadas[0] || inputFotoPedido?.files?.[0] || null;
 
             try {
                 // Usa FormData para enviar arquivo

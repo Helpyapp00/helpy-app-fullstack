@@ -126,17 +126,17 @@
                     <textarea id="post-content-input" placeholder="No que você está pensando?"></textarea>
                     <div class="botoes-postar">
                         <div class="upload-area">
-                            <label for="post-media-input" class="upload-button">
-                                <i class="fas fa-camera"></i> Adicionar Mídia
-                            </label>
-                            <input type="file" id="post-media-input" accept="image/*,video/mp4,video/webm,video/quicktime">
-                            
-                            <!-- 🆕 NOVO: Preview de mídia melhorado -->
-                            <div id="media-preview-container" class="media-preview-container oculto">
-                                <button type="button" class="btn-remover-preview" id="btn-remover-preview">&times;</button>
-                                <img id="image-preview" class="image-preview oculto" src="#" alt="Pré-visualização">
-                                <video id="video-preview" class="video-preview oculto" controls muted></video>
-                                <span id="media-filename" class="filename-display"></span>
+                            <input type="file" id="post-media-input" accept="image/*" multiple style="display: none;">
+                            <div class="post-fotos-wrapper">
+                                <button type="button" id="btn-selecionar-foto-post" class="upload-button post-foto-principal-btn">
+                                    <i class="fas fa-camera"></i>
+                                </button>
+                                <div id="preview-fotos-post" class="post-fotos-container">
+                                    <!-- Thumbnails das fotos serão inseridas via JS -->
+                                </div>
+                                <button type="button" id="btn-adicionar-foto-post" class="post-foto-add-btn" style="display: none;">
+                                    <i class="fas fa-plus"></i>
+                                </button>
                             </div>
                         </div>
                         <button type="submit" class="btn-enviar">Publicar</button>
@@ -290,53 +290,39 @@
                     
                     <div class="pedido-form-grid">
                         <div class="pedido-form-col">
-                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-                    <div class="form-group">
-                        <label><i class="fas fa-tags"></i> Categoria</label>
-                        <select id="pedido-categoria" required>
-                            <option value="">Selecione...</option>
-                            <option value="montagem">Montagem</option>
-                            <option value="pintura">Pintura</option>
-                            <option value="eletricista">Eletricista</option>
-                            <option value="encanador">Encanador</option>
-                            <option value="jardinagem">Jardinagem</option>
-                            <option value="limpeza">Limpeza</option>
-                            <option value="outros">Outros</option>
-                        </select>
-                                </div>
-
-                                <div class="form-group">
-                                    <label><i class="fas fa-clock"></i> Prazo para atendimento</label>
-                                    <select id="pedido-prazo" required>
-                                        <option value="1">Urgente (até 1 hora)</option>
-                                        <option value="2">Até 2 horas</option>
-                                        <option value="5">Até 5 horas</option>
-                                        <option value="9">Até 9 horas</option>
-                                        <option value="12">Até 12 horas</option>
-                                        <option value="24">Até 24 horas</option>
-                                    </select>
-                                </div>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label><i class="fas fa-align-left"></i> Descrição (opcional)</label>
+                            <div class="form-group">
+                                <label><i class="fas fa-clock"></i> Prazo para atendimento</label>
+                                <select id="pedido-prazo" required>
+                                    <option value="1">Urgente (até 1 hora)</option>
+                                    <option value="2">Até 2 horas</option>
+                                    <option value="5">Até 5 horas</option>
+                                    <option value="9">Até 9 horas</option>
+                                    <option value="12">Até 12 horas</option>
+                                    <option value="24">Até 24 horas</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label><i class="fas fa-align-left"></i> Descrição (opcional)</label>
                                 <textarea id="pedido-descricao" placeholder="Descreva melhor o que precisa..." rows="2"></textarea>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label><i class="fas fa-image"></i> Foto do Serviço (opcional)</label>
-                        <input type="file" id="pedido-foto" accept="image/*" style="display: none;">
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <button type="button" id="btn-selecionar-foto-pedido" class="btn-secondary" style="flex-shrink: 0;">
-                                <i class="fas fa-upload"></i> Selecionar Foto
-                            </button>
-                            <div id="preview-foto-pedido" style="display: none; position: relative;">
-                                        <img id="img-preview-pedido" src="" alt="Preview" style="max-width: 120px; max-height: 120px; border-radius: 8px; border: 2px solid var(--border-color);">
-                                        <button type="button" id="btn-remover-foto-pedido" style="position: absolute; top: -8px; right: -8px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px;">&times;</button>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label><i class="fas fa-image"></i> Foto do Serviço (opcional)</label>
+                                <input type="file" id="pedido-foto" accept="image/*" style="display: none;" multiple>
+                                <div class="pedido-fotos-wrapper">
+                                    <button type="button" id="btn-selecionar-foto-pedido" class="btn-secondary pedido-foto-principal-btn">
+                                        <i class="fas fa-upload"></i> Selecionar Foto
+                                    </button>
+                                    <div id="preview-fotos-pedido" class="pedido-fotos-container">
+                                        <!-- Thumbnails das fotos serão inseridas via JS -->
                                     </div>
+                                    <button type="button" id="btn-adicionar-foto-pedido" class="pedido-foto-add-btn" style="display: none;">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
                     
                         <div class="pedido-form-col">
                             <div style="border-top: 2px solid var(--border-color); padding-top: 16px; margin-top: 4px;">
@@ -413,7 +399,7 @@
                             Cancelar
                         </button>
                         <button type="submit" class="btn-primary">
-                            <i class="fas fa-paper-plane"></i> Enviar Pedido
+                            <i class="fas fa-paper-plane"></i> Enviar
                         </button>
                     </div>
                 </form>

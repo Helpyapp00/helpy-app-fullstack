@@ -29,6 +29,9 @@
     --border-anuncio: #ced4da;
     --shadow-color: rgba(0, 0, 0, 0.1);
 
+    /* Cor da borda do botão de câmera (tema claro = preto) */
+    --camera-border-color: #000;
+
     --btn-primary-bg: #5cb85c;
     --btn-primary-hover: #4cae4c;
     --btn-secondary-bg: #007bff;
@@ -60,6 +63,9 @@ html.dark-mode {
     --shadow-color: rgba(0, 0, 0, 0.3);
 
     --btn-filter-active-bg: #4599ff;
+
+    /* No tema escuro, borda do botão de câmera fica branca */
+    --camera-border-color: #ffffff;
 }
 /* Fim das Variáveis */
 
@@ -360,13 +366,13 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
 .botoes-postar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
 .upload-area { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.upload-button { background-color: var(--btn-primary-bg); color: white; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: background-color 0.2s; white-space: nowrap; flex-shrink: 0; } 
-.upload-button i { margin-right: 5px; }
+.upload-button { background-color: var(--btn-primary-bg); color: white; padding: 8px 12px; border-radius: 50%; cursor: pointer; font-size: 16px; transition: background-color 0.2s; flex-shrink: 0; width: 38px; height: 38px; display: inline-flex; align-items: center; justify-content: center; border: 2px solid var(--camera-border-color); } 
+.upload-button i { margin: 0; }
 .upload-button:hover { background-color: var(--btn-primary-hover); } 
 #post-media-input { display: none !important; }
-.filename-display { font-size: 14px; color: var(--text-secondary); flex-grow: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } 
-.image-preview { max-height: 80px; max-width: 100px; border: 1px solid var(--border-color); border-radius: 5px; object-fit: cover; margin-top: 5px; } 
-.video-preview { max-height: 120px; max-width: 100%; border: 1px solid var(--border-color); border-radius: 5px; margin-top: 5px; background: #000; }
+
+/* Removido: nome de arquivo e previews antigos de imagem/vídeo na criação de post */
+
 .btn-enviar { background-color: var(--btn-secondary-bg); color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 1em; transition: background-color 0.2s; } 
 .btn-enviar:hover { background-color: var(--btn-secondary-hover); } 
 .form-message { padding: 10px; border-radius: 5px; margin-top: 15px; font-size: 0.9em; text-align: center; }
@@ -708,6 +714,150 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     margin-bottom: 10px;
 }
 
+/* Área de fotos do pedido urgente */
+.pedido-fotos-wrapper {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.pedido-fotos-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: 100%;
+}
+
+.pedido-foto-item {
+    position: relative;
+    width: 90px;
+    height: 90px;
+    border-radius: 8px;
+    border: 2px solid var(--border-color);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.pedido-foto-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.pedido-foto-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: none;
+    background: #dc3545;
+    color: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pedido-foto-principal-btn,
+.pedido-foto-add-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+}
+
+.pedido-foto-add-btn i {
+    margin: 0;
+}
+
+/* Estilo transparente para o botão de adicionar mais imagens (combina com “Adicionar Projeto”) */
+.pedido-foto-add-btn {
+    background: transparent;
+    border: 1px dashed var(--border-color);
+    color: var(--text-secondary);
+}
+
+.pedido-foto-add-btn:hover {
+    border-color: var(--btn-filter-active-bg);
+    color: var(--btn-filter-active-bg);
+}
+
+/* Área de fotos na criação de publicação do feed */
+.post-fotos-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.post-fotos-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    max-width: 100%;
+}
+
+.post-foto-item {
+    position: relative;
+    width: 85px;
+    height: 85px;
+    border-radius: 8px;
+    border: 2px solid var(--border-color);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.post-foto-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.post-foto-remove {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: none;
+    background: #dc3545;
+    color: #fff;
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.post-foto-principal-btn {
+    /* Reaproveita visual do botão de upload (apenas ícone de câmera) */
+}
+
+.post-foto-add-btn {
+    background: transparent;
+    border: 1px dashed var(--border-color);
+    color: var(--text-secondary);
+    padding: 6px 10px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.post-foto-add-btn:hover {
+    border-color: var(--btn-filter-active-bg);
+    color: var(--btn-filter-active-bg);
+}
+
 @media (max-width: 900px) {
     .pedido-form-grid {
         grid-template-columns: 1fr;
@@ -852,32 +1002,22 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
         padding: 15px;
     }
 
+    /* Em telas menores, manter os botões fixos nos cantos da área (como em telas maiores) */
     .botoes-postar {
-        flex-direction: column;
-        align-items: stretch;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
     }
 
     .upload-area {
-        width: 100%;
-        justify-content: center;
+        width: auto;
     }
 
     .upload-button,
     .btn-enviar {
-        width: 100%;
-        text-align: center;
-    }
-
-    .filename-display,
-    .image-preview {
-        text-align: center;
-        margin-top: 5px;
-        width: 100%;
-    }
-
-    .image-preview {
-        max-height: 120px;
         width: auto;
+        text-align: center;
     }
 
     .filtro-botoes {
