@@ -37,7 +37,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const userNameHeader = document.getElementById('user-name-header');
     const feedButton = document.getElementById('feed-button');
     const logoutButton = document.getElementById('logout-button');
-    const profileButton = document.getElementById('profile-button'); 
     const logoBox = document.querySelector('.logo-box');
 
     // --- Elementos do DOM (Card Principal) ---
@@ -104,6 +103,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const notaSelecionada = document.getElementById('notaSelecionada');
     const comentarioAvaliacaoInput = document.getElementById('comentarioAvaliacaoInput');
     const btnEnviarAvaliacao = document.getElementById('btnEnviarAvaliacao');
+
+    // --- Elementos do Modal de Pré-visualização de Avatar ---
+    const modalPreviewAvatar = document.getElementById('modal-preview-avatar');
+    const avatarPreviewArea = document.getElementById('avatar-preview-area');
+    const avatarPreviewImg = document.getElementById('avatar-preview-img');
+    const avatarPreviewCancelBtn = document.getElementById('avatar-preview-cancel');
+    const avatarPreviewSaveBtn = document.getElementById('avatar-preview-save');
     
     // --- Elementos do DOM (Logout Modal) ---
     const logoutConfirmModal = document.getElementById('logout-confirm-modal');
@@ -829,41 +835,176 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // ----------------------------------------------------------------------
-    // LÓGICA DE UPLOAD RÁPIDO DE FOTO
+    // PRÉ-VISUALIZAÇÃO E EDIÇÃO DA FOTO DE PERFIL
     // ----------------------------------------------------------------------
-    async function handleImmediatePhotoSave(file) {
-        if (!file || !isOwnProfile) return;
-        const formData = new FormData();
-        formData.append('avatar', file);
-        
-        if(labelInputFotoPerfil) labelInputFotoPerfil.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+    const AVATAR_FRAME_SIZE = 220; // mesmo tamanho visual do círculo de preview
+    let avatarPreviewImage = null;
+    let avatarPreviewScale = 1;
+    let avatarPreviewOffsetX = 0;
+    let avatarPreviewOffsetY = 0;
+    let avatarIsDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
 
-        try {
-            const response = await fetch(`/api/editar-perfil/${loggedInUserId}`, {
-                method: 'PUT',
-                headers: { 'Authorization': `Bearer ${token}` },
-                body: formData
-            });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message);
-            
-            const novaFoto = data.user.avatarUrl || data.user.foto;
-            localStorage.setItem('userPhotoUrl', novaFoto);
-            // Atualiza o cabeçalho imediatamente com a nova foto
-            loadHeaderInfo();
-            fetchUserProfile(); 
-            
-        } catch (error) {
-            console.error('Erro ao salvar foto:', error);
-            alert('Erro ao salvar foto: ' + error.message);
-        } finally {
-            if(labelInputFotoPerfil) labelInputFotoPerfil.innerHTML = '<i class="fas fa-camera"></i> Alterar Foto';
-        }
+    function atualizarTransformPreviewAvatar() {
+        if (!avatarPreviewImg) return;
+        avatarPreviewImg.style.transform =
+            `translate(calc(-50% + ${avatarPreviewOffsetX}px), calc(-50% + ${avatarPreviewOffsetY}px)) scale(${avatarPreviewScale})`;
     }
-    
+
+    function abrirModalPreviewAvatar(file) {
+        if (!file || !modalPreviewAvatar || !avatarPreviewImg) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            avatarPreviewImage = new Image();
+            avatarPreviewImage.onload = () => {
+                const w = avatarPreviewImage.width;
+                const h = avatarPreviewImage.height;
+                const frame = AVATAR_FRAME_SIZE;
+                // Escala para cobrir todo o círculo
+                avatarPreviewScale = Math.max(frame / w, frame / h);
+                avatarPreviewOffsetX = 0;
+                avatarPreviewOffsetY = 0;
+                atualizarTransformPreviewAvatar();
+                modalPreviewAvatar.classList.remove('hidden');
+            };
+            avatarPreviewImage.src = e.target.result;
+            avatarPreviewImg.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function fecharModalPreviewAvatar() {
+        if (modalPreviewAvatar) {
+            modalPreviewAvatar.classList.add('hidden');
+        }
+        if (inputFotoPerfil) {
+            inputFotoPerfil.value = '';
+        }
+        avatarPreviewImage = null;
+        avatarIsDragging = false;
+    }
+
+    // Arrastar para mover a imagem dentro do círculo
+    if (avatarPreviewArea && avatarPreviewImg) {
+        const iniciarDrag = (clientX, clientY) => {
+            avatarIsDragging = true;
+            dragStartX = clientX;
+            dragStartY = clientY;
+            avatarPreviewImg.classList.add('dragging');
+        };
+
+        const moverDrag = (clientX, clientY) => {
+            if (!avatarIsDragging) return;
+            const dx = clientX - dragStartX;
+            const dy = clientY - dragStartY;
+            dragStartX = clientX;
+            dragStartY = clientY;
+            avatarPreviewOffsetX += dx;
+            avatarPreviewOffsetY += dy;
+            atualizarTransformPreviewAvatar();
+        };
+
+        const finalizarDrag = () => {
+            avatarIsDragging = false;
+            avatarPreviewImg.classList.remove('dragging');
+        };
+
+        avatarPreviewArea.addEventListener('mousedown', (e) => {
+            e.preventDefault();
+            iniciarDrag(e.clientX, e.clientY);
+        });
+        window.addEventListener('mousemove', (e) => moverDrag(e.clientX, e.clientY));
+        window.addEventListener('mouseup', finalizarDrag);
+
+        avatarPreviewArea.addEventListener('touchstart', (e) => {
+            const touch = e.touches[0];
+            iniciarDrag(touch.clientX, touch.clientY);
+        }, { passive: true });
+        window.addEventListener('touchmove', (e) => {
+            if (!avatarIsDragging) return;
+            const touch = e.touches[0];
+            moverDrag(touch.clientX, touch.clientY);
+        }, { passive: true });
+        window.addEventListener('touchend', finalizarDrag);
+        window.addEventListener('touchcancel', finalizarDrag);
+    }
+
+    // Salvar foto recortada (usando canvas)
+    async function salvarPreviewAvatar() {
+        if (!avatarPreviewImage || !isOwnProfile) return;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = AVATAR_FRAME_SIZE;
+        canvas.height = AVATAR_FRAME_SIZE;
+        const ctx = canvas.getContext('2d');
+
+        // Fundo preto para evitar áreas vazias
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, AVATAR_FRAME_SIZE, AVATAR_FRAME_SIZE);
+
+        const w = avatarPreviewImage.width;
+        const h = avatarPreviewImage.height;
+
+        ctx.save();
+        ctx.translate(AVATAR_FRAME_SIZE / 2 + avatarPreviewOffsetX, AVATAR_FRAME_SIZE / 2 + avatarPreviewOffsetY);
+        ctx.scale(avatarPreviewScale, avatarPreviewScale);
+        ctx.drawImage(avatarPreviewImage, -w / 2, -h / 2);
+        ctx.restore();
+
+        return new Promise((resolve) => {
+            canvas.toBlob(async (blob) => {
+                if (!blob) {
+                    resolve(false);
+                    return;
+                }
+                const formData = new FormData();
+                formData.append('avatar', blob, 'avatar.jpg');
+
+                try {
+                    const response = await fetch(`/api/editar-perfil/${loggedInUserId}`, {
+                        method: 'PUT',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: formData
+                    });
+                    const data = await response.json();
+                    if (!response.ok) throw new Error(data.message);
+
+                    const novaFoto = data.user.avatarUrl || data.user.foto;
+                    localStorage.setItem('userPhotoUrl', novaFoto);
+                    loadHeaderInfo();
+                    fetchUserProfile();
+                    resolve(true);
+                } catch (error) {
+                    console.error('Erro ao salvar foto:', error);
+                    alert('Erro ao salvar foto: ' + error.message);
+                    resolve(false);
+                } finally {
+                    fecharModalPreviewAvatar();
+                }
+            }, 'image/jpeg', 0.9);
+        });
+    }
+
     if (inputFotoPerfil) {
         inputFotoPerfil.addEventListener('change', () => {
-            handleImmediatePhotoSave(inputFotoPerfil.files[0]);
+            const file = inputFotoPerfil.files[0];
+            if (file) {
+                abrirModalPreviewAvatar(file);
+            }
+        });
+    }
+
+    if (avatarPreviewCancelBtn) {
+        avatarPreviewCancelBtn.addEventListener('click', () => {
+            fecharModalPreviewAvatar();
+        });
+    }
+
+    if (avatarPreviewSaveBtn) {
+        avatarPreviewSaveBtn.addEventListener('click', () => {
+            salvarPreviewAvatar();
         });
     }
 

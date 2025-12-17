@@ -28,9 +28,6 @@
             <img id="user-avatar-header" src="imagens/default-user.png" alt="Avatar" class="user-avatar-header">
             <span id="user-name-header">Carregando...</span>
             
-            <button id="profile-button" title="Meu Perfil">
-                <i class="fas fa-user"></i>
-            </button>
             <button id="feed-button" title="Voltar ao Feed">
                 <i class="fas fa-home"></i>
             </button>
@@ -175,6 +172,23 @@
                 <input type="file" id="inputFotoServico" accept="image/*,video/*" multiple style="display: none;">
             </div>
             <div id="galeriaServicos" class="galeria-servicos"></div>
+        </div>
+
+        <!-- 🆕 NOVO: Modal de Pré-visualização da Foto de Perfil -->
+        <div id="modal-preview-avatar" class="modal-overlay hidden">
+            <div class="modal-content modal-preview-avatar">
+                <h3>Pré-visualizar foto de perfil</h3>
+                <p style="margin-bottom: 10px; color: var(--text-secondary); font-size: 14px;">
+                    Arraste a imagem dentro do círculo para ajustar o enquadramento.
+                </p>
+                <div id="avatar-preview-area" class="avatar-preview-area">
+                    <img id="avatar-preview-img" src="" alt="Pré-visualização da foto">
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" id="avatar-preview-cancel" class="btn-secondary">Cancelar</button>
+                    <button type="button" id="avatar-preview-save" class="btn-primary">Salvar foto</button>
+                </div>
+            </div>
         </div>
 
         <!-- 🆕 NOVO: Modal para validar projeto -->
