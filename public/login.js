@@ -4,6 +4,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const senhaInput = document.getElementById('senha');
     const formMessage = document.getElementById('form-message');
     const toggleSenhaBtn = document.getElementById('toggle-senha-login');
+    const loginTitle = document.getElementById('login-title');
+
+    // Define saudação dinâmica: "Bem-vindo!" ou "Bem-vindo de volta!"
+    // Usa uma marcação no localStorage para saber se esse navegador já fez login antes.
+    const jaLogouNesteDispositivo = localStorage.getItem('helpy-ja-logou') === 'true';
+    if (loginTitle) {
+        loginTitle.textContent = jaLogouNesteDispositivo ? 'Bem-vindo de volta!' : 'Bem-vindo!';
+    }
 
     // Toggle mostrar/ocultar senha
     if (toggleSenhaBtn) {
@@ -82,6 +90,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 localStorage.setItem('userType', data.userType);
                 localStorage.setItem('userName', data.userName || 'Usuário');
                 localStorage.setItem('userPhotoUrl', data.userPhotoUrl || 'https://via.placeholder.com/50?text=User');
+                // Marca que esse dispositivo já efetuou login pelo menos uma vez
+                localStorage.setItem('helpy-ja-logou', 'true');
                 // Salva o tema do usuário no localStorage
                 if (data.userTheme) {
                     localStorage.setItem('theme', data.userTheme);
