@@ -455,7 +455,9 @@ const pedidoUrgenteSchema = new mongoose.Schema({
         longitude: { type: Number }
     },
     categoria: { type: String, required: true }, // Para filtrar profissionais
+    tipoAtendimento: { type: String, enum: ['urgente', 'agendado'], default: 'urgente' }, // urgente (agora) ou agendado
     prazoHoras: { type: Number, default: 1 }, // Prazo escolhido (1, 2, 5, 9, 12, 24)
+    dataAgendada: { type: Date }, // Quando o cliente agendou o serviço (opcional)
     propostas: [{
         profissionalId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
         valor: { type: Number, required: true },
@@ -3011,7 +3013,7 @@ app.get('/api/projetos-time', async (req, res) => {
 // Criar Pedido Urgente
 app.post('/api/pedidos-urgentes', authMiddleware, upload.single('foto'), async (req, res) => {
     try {
-        const { servico, descricao, localizacao, categoria, prazoHoras } = req.body;
+        const { servico, descricao, localizacao, categoria, prazoHoras, tipoAtendimento, dataAgendada } = req.body;
         const clienteId = req.user.id;
 
         // Processa a foto se foi enviada
@@ -3063,6 +3065,16 @@ app.post('/api/pedidos-urgentes', authMiddleware, upload.single('foto'), async (
             }
         }
 
+        // Normaliza tipo de atendimento e data agendada (quando existir)
+        const tipoAt = tipoAtendimento === 'agendado' ? 'agendado' : 'urgente';
+        let dataAgendadaDate = null;
+        if (tipoAt === 'agendado' && dataAgendada) {
+            const parsed = new Date(dataAgendada);
+            if (!isNaN(parsed.getTime())) {
+                dataAgendadaDate = parsed;
+            }
+        }
+
         // Define expiração conforme prazo escolhido (padrão: 1h)
         const horasValidas = [1, 2, 5, 9, 12, 24];
         let horas = parseInt(prazoHoras, 10);
@@ -3070,17 +3082,34 @@ app.post('/api/pedidos-urgentes', authMiddleware, upload.single('foto'), async (
             horas = 1;
         }
 
-        const dataExpiracao = new Date();
+        let dataExpiracao = new Date();
         dataExpiracao.setHours(dataExpiracao.getHours() + horas);
+
+        // Para pedidos agendados, a expiração passa a ser a própria data agendada (quando válida)
+        if (tipoAt === 'agendado' && dataAgendadaDate) {
+            dataExpiracao = dataAgendadaDate;
+        }
+
+        // Garante objeto de localização consistente
+        let localizacaoObj = localizacao;
+        if (typeof localizacao === 'string') {
+            try {
+                localizacaoObj = JSON.parse(localizacao);
+            } catch (e) {
+                localizacaoObj = {};
+            }
+        }
 
         const novoPedido = new PedidoUrgente({
             clienteId,
             servico,
             descricao,
             foto: fotoUrl,
-            localizacao: typeof localizacao === 'string' ? JSON.parse(localizacao) : localizacao,
+            localizacao: localizacaoObj,
             categoria,
+            tipoAtendimento: tipoAt,
             prazoHoras: horas,
+            dataAgendada: dataAgendadaDate,
             dataExpiracao
         });
 
@@ -3108,8 +3137,29 @@ app.post('/api/pedidos-urgentes', authMiddleware, upload.single('foto'), async (
         for (const prof of profissionais) {
             try {
                 const titulo = 'Pedido urgente próximo a você';
-                const mensagem = `Um cliente solicitou: ${servico} em ${localizacao.cidade} - ${localizacao.estado}. Verifique agora.`;
-                const notif = await criarNotificacao(prof._id, 'pedido_urgente', titulo, mensagem, { pedidoId: novoPedido._id, servico, cidade: localizacao.cidade, estado: localizacao.estado });
+                let detalhesHorario = '';
+                if (tipoAt === 'agendado' && dataAgendadaDate) {
+                    const dataBR = dataAgendadaDate.toLocaleDateString('pt-BR');
+                    const horaBR = dataAgendadaDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                    detalhesHorario = ` (agendado para ${dataBR} às ${horaBR})`;
+                }
+                const cidadeLocal = localizacaoObj?.cidade || '';
+                const estadoLocal = localizacaoObj?.estado || '';
+                const mensagem = `Um cliente solicitou: ${servico} em ${cidadeLocal} - ${estadoLocal}${detalhesHorario}. Verifique agora.`;
+                const notif = await criarNotificacao(
+                    prof._id,
+                    'pedido_urgente',
+                    titulo,
+                    mensagem,
+                    { 
+                        pedidoId: novoPedido._id,
+                        servico,
+                        cidade: cidadeLocal,
+                        estado: estadoLocal,
+                        tipoAtendimento: tipoAt,
+                        dataAgendada: dataAgendadaDate
+                    }
+                );
                 if (notif) notificacoesCriadas.push(notif._id);
             } catch (err) {
                 console.error('Erro ao criar notificação para profissional', prof._id, err);
@@ -3238,7 +3288,9 @@ app.get('/api/pedidos-urgentes/:pedidoId/propostas', authMiddleware, async (req,
                 descricao: pedido.descricao,
                 foto: pedido.foto,
                 categoria: pedido.categoria,
-                localizacao: pedido.localizacao
+                localizacao: pedido.localizacao,
+                tipoAtendimento: pedido.tipoAtendimento,
+                dataAgendada: pedido.dataAgendada
             }
         });
     } catch (error) {
@@ -3314,10 +3366,12 @@ app.post('/api/pedidos-urgentes/:pedidoId/aceitar-proposta', authMiddleware, asy
         pedido.propostaSelecionada = propostaId;
 
         // Cria agendamento automaticamente
+        const dataHoraServico = pedido.dataAgendada || new Date(); // Se tiver horário agendado, usa ele
+
         const agendamento = new Agendamento({
             profissionalId: proposta.profissionalId,
             clienteId,
-            dataHora: new Date(), // Serviço urgente começa imediatamente
+            dataHora: dataHoraServico,
             servico: pedido.servico,
             observacoes: `Pedido urgente: ${pedido.descricao || ''}. ${proposta.observacoes || ''}`,
             endereco: pedido.localizacao,

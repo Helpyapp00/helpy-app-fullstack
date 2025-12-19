@@ -290,17 +290,68 @@
                     
                     <div class="pedido-form-grid">
                         <div class="pedido-form-col">
-                            <div class="form-group">
-                                <label><i class="fas fa-clock"></i> Prazo para atendimento</label>
-                                <select id="pedido-prazo" required>
-                                    <option value="1">Urgente (até 1 hora)</option>
-                                    <option value="2">Até 2 horas</option>
-                                    <option value="5">Até 5 horas</option>
-                                    <option value="9">Até 9 horas</option>
-                                    <option value="12">Até 12 horas</option>
-                                    <option value="24">Até 24 horas</option>
-                                </select>
+                    <div class="form-group">
+                        <label><i class="fas fa-calendar-alt"></i> Quando você precisa?</label>
+                        <div class="pedido-tipo-atendimento">
+                            <label>
+                                <input type="radio" name="pedido-tipo-atendimento" id="pedido-tipo-urgente" value="urgente" checked>
+                                Urgente
+                            </label>
+                            <label>
+                                <input type="radio" name="pedido-tipo-atendimento" id="pedido-tipo-agendado" value="agendado">
+                                Agendar
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="grupo-prazo-urgente">
+                        <label><i class="fas fa-clock"></i> Prazo para atendimento</label>
+                        <select id="pedido-prazo">
+                            <option value="1">Urgente (até 1 hora)</option>
+                            <option value="2">Até 2 horas</option>
+                            <option value="5">Até 5 horas</option>
+                            <option value="9">Até 9 horas</option>
+                            <option value="12">Até 12 horas</option>
+                            <option value="24">Até 24 horas</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" id="grupo-agendamento" style="display: none;">
+                        <label><i class="fas fa-calendar-day"></i> Data do serviço</label>
+                        <!-- Campo visível, estilizado -->
+                        <input type="text" id="pedido-data-display" readonly placeholder="Selecione a data">
+                        <!-- Campo oculto, usado apenas para envio -->
+                        <input type="hidden" id="pedido-data">
+
+                        <label style="margin-top: 8px;"><i class="fas fa-clock"></i> Horário</label>
+                        <!-- Campo visível, estilizado -->
+                        <input type="text" id="pedido-hora-display" readonly placeholder="Selecione o horário">
+                        <!-- Campo oculto, usado apenas para envio -->
+                        <input type="hidden" id="pedido-hora">
+
+                        <!-- Popup de calendário customizado -->
+                        <div id="popup-calendario-agendamento" class="agendamento-popup agendamento-popup-calendario hidden">
+                            <div class="agendamento-popup-header">
+                                <button type="button" id="cal-prev-mes" class="agendamento-nav-btn">&laquo;</button>
+                                <span id="cal-label-mes"></span>
+                                <button type="button" id="cal-next-mes" class="agendamento-nav-btn">&raquo;</button>
                             </div>
+                            <div class="agendamento-calendario-corpo">
+                                <div class="agendamento-calendario-semana">
+                                    <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+                                </div>
+                                <div id="cal-dias-container" class="agendamento-calendario-dias"></div>
+                            </div>
+                        </div>
+
+                        <!-- Popup de horários customizado -->
+                        <div id="popup-horario-agendamento" class="agendamento-popup agendamento-popup-horario hidden">
+                            <div class="agendamento-popup-header">
+                                <span>Escolha um horário</span>
+                            </div>
+                            <div id="lista-horarios-agendamento" class="agendamento-horarios-lista"></div>
+                        </div>
+                    </div>
                             
                             <div class="form-group">
                                 <label><i class="fas fa-align-left"></i> Descrição (opcional)</label>
@@ -452,11 +503,11 @@
         </div>
     </div>
 
-    <!-- 🚨 NOVO: Modal Ver Pedidos Urgentes (para profissionais) -->
+    <!-- 🚨 NOVO: Modal Procurar Pedidos Urgentes (para profissionais) -->
     <div id="modal-pedidos-urgentes-profissional" class="modal-overlay hidden">
         <div class="modal-content modal-grande">
             <div class="modal-header">
-                <h3><i class="fas fa-bolt"></i> Pedidos Urgentes Disponíveis</h3>
+                <h3><i class="fas fa-bolt"></i> Procurar Pedidos</h3>
                 <button class="btn-close-modal" data-modal="modal-pedidos-urgentes-profissional">&times;</button>
             </div>
             <div class="modal-body">

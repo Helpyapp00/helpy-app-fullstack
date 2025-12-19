@@ -2127,6 +2127,161 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     font-size: 14px;
 }
 
+.pedido-info-atendimento {
+    color: var(--text-secondary);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 6px 0;
+}
+
+.pedido-tipo-atendimento {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.pedido-tipo-atendimento label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+/* Estilo dos campos de data e horário do agendamento (visíveis) */
+#pedido-data-display,
+#pedido-hora-display {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-input);
+    color: var(--text-primary);
+    font-size: 14px;
+    cursor: pointer;
+}
+
+#pedido-data-display:focus,
+#pedido-hora-display:focus {
+    outline: none;
+    border-color: var(--btn-filter-active-bg);
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2);
+}
+
+/* Popup base para calendário / horários */
+.agendamento-popup {
+    position: absolute;
+    z-index: 1200;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--border-color);
+    margin-top: 6px;
+    min-width: 260px;
+}
+
+.agendamento-popup.hidden {
+    display: none;
+}
+
+.agendamento-popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-primary);
+    border-radius: 8px 8px 0 0;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.agendamento-nav-btn {
+    border: none;
+    background: transparent;
+    color: var(--text-primary);
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.agendamento-nav-btn:hover {
+    background: var(--bg-hover);
+}
+
+.agendamento-calendario-corpo {
+    padding: 8px 10px 10px 10px;
+}
+
+.agendamento-calendario-semana {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    font-size: 11px;
+    text-align: center;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+.agendamento-calendario-dias {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.agendamento-dia {
+    padding: 6px 0;
+    text-align: center;
+    font-size: 13px;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-primary);
+}
+
+.agendamento-dia.outro-mes {
+    opacity: 0.3;
+}
+
+.agendamento-dia.hoje {
+    border: 1px solid var(--btn-filter-active-bg);
+}
+
+.agendamento-dia.selecionado {
+    background: var(--btn-filter-active-bg);
+    color: #fff;
+}
+
+.agendamento-dia:hover {
+    background: var(--bg-hover);
+}
+
+.agendamento-popup-horario {
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.agendamento-horarios-lista {
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 6px 0;
+}
+
+.agendamento-horario-item {
+    padding: 6px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    color: var(--text-primary);
+}
+
+.agendamento-horario-item:hover,
+.agendamento-horario-item.selecionado {
+    background: var(--btn-filter-active-bg);
+    color: #fff;
+}
+
 .pedido-descricao {
     color: var(--text-secondary);
     margin: 10px 0;

@@ -13,6 +13,205 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnProcurarClientes = document.getElementById('btn-procurar-clientes');
     const modalPrecisoAgora = document.getElementById('modal-preciso-agora');
 
+    // Controles de tipo de atendimento (Urgente x Agendado)
+    const radioTipoUrgente = document.getElementById('pedido-tipo-urgente');
+    const radioTipoAgendado = document.getElementById('pedido-tipo-agendado');
+    const grupoPrazoUrgente = document.getElementById('grupo-prazo-urgente');
+    const grupoAgendamento = document.getElementById('grupo-agendamento');
+    const inputDataAgendamento = document.getElementById('pedido-data'); // hidden
+    const inputHoraAgendamento = document.getElementById('pedido-hora'); // hidden
+    const inputDataDisplay = document.getElementById('pedido-data-display');
+    const inputHoraDisplay = document.getElementById('pedido-hora-display');
+    const popupCalendario = document.getElementById('popup-calendario-agendamento');
+    const popupHorario = document.getElementById('popup-horario-agendamento');
+    const calLabelMes = document.getElementById('cal-label-mes');
+    const calDiasContainer = document.getElementById('cal-dias-container');
+    const listaHorariosAgendamento = document.getElementById('lista-horarios-agendamento');
+    const btnCalPrevMes = document.getElementById('cal-prev-mes');
+    const btnCalNextMes = document.getElementById('cal-next-mes');
+
+    let calDataAtual = new Date();
+    let calDataSelecionada = null;
+    let horarioSelecionado = null;
+
+    function atualizarVisibilidadeTipoAtendimento() {
+        const modoAgendado = !!(radioTipoAgendado && radioTipoAgendado.checked);
+        if (grupoPrazoUrgente) {
+            grupoPrazoUrgente.style.display = modoAgendado ? 'none' : 'block';
+        }
+        if (grupoAgendamento) {
+            grupoAgendamento.style.display = modoAgendado ? 'block' : 'none';
+        }
+    }
+
+    if (radioTipoUrgente && radioTipoAgendado) {
+        radioTipoUrgente.addEventListener('change', atualizarVisibilidadeTipoAtendimento);
+        radioTipoAgendado.addEventListener('change', atualizarVisibilidadeTipoAtendimento);
+        atualizarVisibilidadeTipoAtendimento();
+    }
+
+    // ===== Calendário e horários customizados =====
+    function formatarDataISO(date) {
+        const ano = date.getFullYear();
+        const mes = String(date.getMonth() + 1).padStart(2, '0');
+        const dia = String(date.getDate()).padStart(2, '0');
+        return `${ano}-${mes}-${dia}`;
+    }
+
+    function formatarDataBR(date) {
+        return date.toLocaleDateString('pt-BR');
+    }
+
+    function renderizarCalendario() {
+        if (!popupCalendario || !calDiasContainer || !calLabelMes) return;
+
+        const ano = calDataAtual.getFullYear();
+        const mes = calDataAtual.getMonth(); // 0-11
+
+        calLabelMes.textContent = calDataAtual.toLocaleDateString('pt-BR', {
+            month: 'long',
+            year: 'numeric'
+        });
+
+        calDiasContainer.innerHTML = '';
+
+        const primeiroDiaMes = new Date(ano, mes, 1);
+        const diaSemanaPrimeiro = primeiroDiaMes.getDay(); // 0=Dom
+
+        const ultimoDiaMes = new Date(ano, mes + 1, 0).getDate();
+
+        const hoje = new Date();
+        const hojeISO = formatarDataISO(hoje);
+        const selecionadaISO = calDataSelecionada ? formatarDataISO(calDataSelecionada) : null;
+
+        // Preenche espaços vazios antes do dia 1
+        for (let i = 0; i < diaSemanaPrimeiro; i++) {
+            const span = document.createElement('div');
+            span.className = 'agendamento-dia outro-mes';
+            calDiasContainer.appendChild(span);
+        }
+
+        for (let dia = 1; dia <= ultimoDiaMes; dia++) {
+            const dataDia = new Date(ano, mes, dia);
+            const dataISO = formatarDataISO(dataDia);
+
+            const span = document.createElement('div');
+            span.className = 'agendamento-dia';
+            span.textContent = String(dia);
+
+            if (dataISO === hojeISO) {
+                span.classList.add('hoje');
+            }
+            if (selecionadaISO && dataISO === selecionadaISO) {
+                span.classList.add('selecionado');
+            }
+
+            span.addEventListener('click', () => {
+                calDataSelecionada = dataDia;
+                if (inputDataAgendamento) {
+                    inputDataAgendamento.value = dataISO;
+                }
+                if (inputDataDisplay) {
+                    inputDataDisplay.value = formatarDataBR(dataDia);
+                }
+                popupCalendario?.classList.add('hidden');
+                renderizarCalendario();
+            });
+
+            calDiasContainer.appendChild(span);
+        }
+    }
+
+    function gerarHorarios() {
+        if (!listaHorariosAgendamento) return;
+        listaHorariosAgendamento.innerHTML = '';
+
+        const horarios = [];
+        for (let hora = 6; hora <= 22; hora++) {
+            ['00', '30'].forEach(min => {
+                horarios.push(`${String(hora).padStart(2, '0')}:${min}`);
+            });
+        }
+
+        horarios.forEach(horario => {
+            const div = document.createElement('div');
+            div.className = 'agendamento-horario-item';
+            div.textContent = horario;
+
+            if (horarioSelecionado === horario) {
+                div.classList.add('selecionado');
+            }
+
+            div.addEventListener('click', () => {
+                horarioSelecionado = horario;
+                if (inputHoraAgendamento) {
+                    inputHoraAgendamento.value = horario;
+                }
+                if (inputHoraDisplay) {
+                    inputHoraDisplay.value = horario;
+                }
+
+                document
+                    .querySelectorAll('.agendamento-horario-item.selecionado')
+                    .forEach(el => el.classList.remove('selecionado'));
+                div.classList.add('selecionado');
+
+                popupHorario?.classList.add('hidden');
+            });
+
+            listaHorariosAgendamento.appendChild(div);
+        });
+    }
+
+    // Navegação do calendário
+    if (btnCalPrevMes) {
+        btnCalPrevMes.addEventListener('click', () => {
+            calDataAtual.setMonth(calDataAtual.getMonth() - 1);
+            renderizarCalendario();
+        });
+    }
+    if (btnCalNextMes) {
+        btnCalNextMes.addEventListener('click', () => {
+            calDataAtual.setMonth(calDataAtual.getMonth() + 1);
+            renderizarCalendario();
+        });
+    }
+
+    // Abertura dos popups ao clicar nos campos visíveis
+    if (inputDataDisplay && popupCalendario) {
+        inputDataDisplay.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const rect = inputDataDisplay.getBoundingClientRect();
+            popupCalendario.style.left = rect.left + 'px';
+            popupCalendario.style.top = (rect.bottom + window.scrollY) + 'px';
+            popupCalendario.classList.remove('hidden');
+            renderizarCalendario();
+            popupHorario?.classList.add('hidden');
+        });
+    }
+
+    if (inputHoraDisplay && popupHorario) {
+        inputHoraDisplay.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const rect = inputHoraDisplay.getBoundingClientRect();
+            popupHorario.style.left = rect.left + 'px';
+            popupHorario.style.top = (rect.bottom + window.scrollY) + 'px';
+            popupHorario.classList.remove('hidden');
+            gerarHorarios();
+            popupCalendario?.classList.add('hidden');
+        });
+    }
+
+    // Fechar popups ao clicar fora
+    document.addEventListener('click', (e) => {
+        if (popupCalendario && !popupCalendario.contains(e.target) && e.target !== inputDataDisplay) {
+            popupCalendario.classList.add('hidden');
+        }
+        if (popupHorario && !popupHorario.contains(e.target) && e.target !== inputHoraDisplay) {
+            popupHorario.classList.add('hidden');
+        }
+    });
+
     // Botão "Procurar Clientes" dentro do modal de profissionais próximos
     // Disponível para todos os usuários (profissionais também podem precisar de outros profissionais)
     if (btnProcurarClientes) {
@@ -24,6 +223,9 @@ document.addEventListener('DOMContentLoaded', () => {
             // Abre o modal de pedido urgente
             if (modalPedidoUrgente) {
                 modalPedidoUrgente.classList.remove('hidden');
+                if (typeof atualizarVisibilidadeTipoAtendimento === 'function') {
+                    atualizarVisibilidadeTipoAtendimento();
+                }
             }
         });
     }
@@ -124,6 +326,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const prazoHoras = document.getElementById('pedido-prazo')?.value || '1';
             const fotoFile = fotosSelecionadas[0] || inputFotoPedido?.files?.[0] || null;
 
+            const tipoAtendimento = (radioTipoAgendado && radioTipoAgendado.checked) ? 'agendado' : 'urgente';
+            let dataAgendadaIso = '';
+            if (tipoAtendimento === 'agendado') {
+                const data = inputDataAgendamento?.value;
+                const hora = inputHoraAgendamento?.value;
+
+                if (!data || !hora) {
+                    alert('Por favor, selecione a data e o horário em que você precisa do serviço.');
+                    return;
+                }
+
+                const combinado = new Date(`${data}T${hora}:00`);
+                if (isNaN(combinado.getTime())) {
+                    alert('Data ou horário inválidos. Tente novamente.');
+                    return;
+                }
+
+                dataAgendadaIso = combinado.toISOString();
+            }
+
             try {
                 // Usa FormData para enviar arquivo
                 const formData = new FormData();
@@ -131,6 +353,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 formData.append('categoria', categoria);
                 formData.append('descricao', descricao);
                 formData.append('prazoHoras', prazoHoras);
+                formData.append('tipoAtendimento', tipoAtendimento);
+                if (dataAgendadaIso) {
+                    formData.append('dataAgendada', dataAgendadaIso);
+                }
                 const enderecoCompleto = `${rua}, ${numero} - ${bairro}`;
                 formData.append('localizacao', JSON.stringify({
                     endereco: enderecoCompleto,
@@ -166,6 +392,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     setTimeout(() => toast.remove(), 2500);
 
                     formPedidoUrgente.reset();
+                    if (typeof atualizarVisibilidadeTipoAtendimento === 'function') {
+                        atualizarVisibilidadeTipoAtendimento();
+                    }
                     if (previewFotoPedido) previewFotoPedido.style.display = 'none';
                     if (imgPreviewPedido) imgPreviewPedido.src = '';
                     modalPedidoUrgente?.classList.add('hidden');
@@ -483,6 +712,29 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Converte para string se necessário
                     clienteId = clienteId ? String(clienteId) : '';
                     const tempoRestante = Math.max(0, Math.ceil((new Date(pedido.dataExpiracao) - new Date()) / 60000));
+                    const tipoAtendimento = pedido.tipoAtendimento || 'urgente';
+
+                    let infoAtendimentoHtml = '';
+                    if (tipoAtendimento === 'agendado' && pedido.dataAgendada) {
+                        const dataAgendada = new Date(pedido.dataAgendada);
+                        if (!isNaN(dataAgendada.getTime())) {
+                            const dataBR = dataAgendada.toLocaleDateString('pt-BR');
+                            const horaBR = dataAgendada.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                            infoAtendimentoHtml = `
+                                <div class="pedido-info-atendimento">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <span>Atendimento agendado para ${dataBR} às ${horaBR}</span>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        infoAtendimentoHtml = `
+                            <div class="pedido-info-atendimento">
+                                <i class="fas fa-bolt"></i>
+                                <span>Atendimento urgente</span>
+                            </div>
+                        `;
+                    }
                     
                     return `
                         <div class="pedido-urgente-card">
@@ -500,7 +752,9 @@ document.addEventListener('DOMContentLoaded', () => {
                                     </div>
                                     <div style="font-size: 12px; color: var(--text-secondary);">${pedido.localizacao.cidade} - ${pedido.localizacao.estado}</div>
                                 </div>
-                                <span class="tempo-restante">⏱️ ${tempoRestante} min</span>
+                                <span class="tempo-restante">
+                                    ${tipoAtendimento === 'agendado' ? '<i class="fas fa-calendar-alt"></i> Agendado' : `⏱️ ${tempoRestante} min`}
+                                </span>
                             </div>
                             
                             ${pedido.foto ? `
@@ -516,6 +770,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </div>
                             </div>
                             
+                            ${infoAtendimentoHtml}
+
                             ${pedido.descricao ? `<p class="pedido-descricao">${pedido.descricao}</p>` : ''}
                             
                             <div class="pedido-localizacao">
@@ -568,14 +824,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Adicionar botão na lateral se for profissional (apenas para "Ver Pedidos Urgentes")
+    // Adicionar botão na lateral se for profissional (apenas para "Procurar pedidos")
     if (userType === 'trabalhador' && !btnVerPedidosUrgentes) {
         const acoesRapidas = document.querySelector('.filtro-acoes-rapidas');
         if (acoesRapidas) {
             const btnNovo = document.createElement('button');
             btnNovo.id = 'btn-ver-pedidos-urgentes';
             btnNovo.className = 'btn-acao-lateral';
-            btnNovo.innerHTML = '<i class="fas fa-bolt"></i> Ver Pedidos Urgentes';
+            btnNovo.innerHTML = '<i class="fas fa-bolt"></i> Procurar pedidos';
             btnNovo.style.marginTop = '10px';
             acoesRapidas.appendChild(btnNovo);
             
