@@ -3,7 +3,7 @@
 
 .content-perfil {
     width: 100%;
-    max-width: 1000px;
+    max-width: 1150px;
     padding: 20px;
     box-sizing: border-box;
     margin-top: 90px;
@@ -19,7 +19,7 @@
 
 .perfil-card {
     background-color: var(--bg-secondary); /* Aplicado */
-    padding: 40px;
+    padding: 30px;
     border-radius: 10px;
     box-shadow: 0 4px 15px var(--shadow-color); /* Aplicado */
     width: 100%;
@@ -720,6 +720,7 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
     align-items: center;
     padding: 15px 0;
     border-bottom: 1px solid var(--border-color); /* Aplicado */
+    cursor: pointer;
 }
 .config-item-toggle:last-of-type {
     border-bottom: none;
@@ -732,6 +733,91 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
     font-size: 13px;
     color: var(--text-secondary); /* Aplicado */
     margin-top: 3px;
+}
+
+/* Layout geral das configurações (menu lateral + conteúdo) */
+.config-layout {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 20px;
+    align-items: flex-start;
+}
+
+.config-sidebar {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 10px 0;
+    border: 1px solid var(--border-color);
+}
+
+.config-menu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.config-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 16px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+.config-menu-item i {
+    width: 18px;
+    text-align: center;
+}
+
+.config-menu-item:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.config-menu-item.active {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+}
+
+.config-content {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 20px;
+    border: 1px solid var(--border-color);
+}
+
+.config-section {
+    display: none;
+}
+
+.config-section.active {
+    display: block;
+}
+
+@media (max-width: 768px) {
+    .config-layout {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .config-sidebar {
+        display: block;
+        overflow-x: visible;
+        padding: 0;
+    }
+
+    .config-menu {
+        display: block;
+    }
+
+    .config-menu-item {
+        white-space: normal;
+        border-radius: 6px;
+        padding: 10px 12px;
+    }
 }
 
 

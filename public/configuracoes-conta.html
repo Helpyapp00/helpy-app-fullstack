@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configurações da Conta - Helpy</title>
+    <title>Configurações - Helpy</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/perfil.css">
@@ -36,33 +36,160 @@
     <div class="content-perfil">
         <div class="perfil-card">
             <div class="perfil-header">
-                <h2 id="nomePerfil">Configurações da Conta</h2>
+                <h2 id="nomePerfil">Configurações</h2>
             </div>
             
-            <div class="perfil-body">
+            <div class="perfil-body config-layout">
                 <!-- 🛑 NOVO: Botão Voltar -->
                 <button id="btn-voltar" class="edit-btn" style="background-color: #6c757d; margin-bottom: 20px;">
                     <i class="fas fa-arrow-left"></i> Voltar
                 </button>
 
-                <h3>Gerenciamento da Conta</h3>
-                
-                <form class="config-form">
-                    <label for="senha-atual">Senha Atual</label>
-                    <input type="password" id="senha-atual" class="input-edicao" placeholder="Sua senha atual">
-                    
-                    <label for="nova-senha">Nova Senha</label>
-                    <input type="password" id="nova-senha" class="input-edicao" placeholder="Mínimo 8 caracteres">
-                    
-                    <label for="confirma-nova-senha">Confirmar Nova Senha</label>
-                    <input type="password" id="confirma-nova-senha" class="input-edicao" placeholder="Repita a nova senha">
-                    
-                    <button type="submit" class="salvar-btn" style="margin-top: 10px;">Salvar Nova Senha</button>
-                </form>
-                <hr class="config-divider">
-                <h3>Área de Perigo</h3>
-                <p class="config-descricao">Ações permanentes. Tenha cuidado.</p>
-                <button class="cancelar-btn">Desativar minha conta</button>
+                <aside class="config-sidebar">
+                    <ul class="config-menu">
+                        <li class="config-menu-item active" data-section="sec-dados-pessoais">
+                            <i class="fas fa-id-card"></i>
+                            <span>Dados pessoais</span>
+                        </li>
+                        <li class="config-menu-item" data-section="sec-senha">
+                            <i class="fas fa-shield-alt"></i>
+                            <span>Senha e segurança</span>
+                        </li>
+                        <li class="config-menu-item" data-section="sec-anuncios">
+                            <i class="fas fa-bullhorn"></i>
+                            <span>Preferências de anúncios</span>
+                        </li>
+                        <li class="config-menu-item" data-section="sec-selo">
+                            <i class="fas fa-certificate"></i>
+                            <span>Selo</span>
+                        </li>
+                        <li class="config-menu-item" data-section="sec-notificacoes">
+                            <i class="fas fa-bell"></i>
+                            <span>Notificações</span>
+                        </li>
+                        <li class="config-menu-item" data-section="sec-personalizacao">
+                            <i class="fas fa-sliders-h"></i>
+                            <span>Personalização</span>
+                        </li>
+                    </ul>
+                </aside>
+
+                <section class="config-content">
+                    <!-- Seção: Dados pessoais -->
+                    <div id="sec-dados-pessoais" class="config-section active">
+                        <h3>Dados pessoais</h3>
+                        <p class="config-descricao">
+                            Em breve você poderá editar todos os seus dados pessoais por aqui. 
+                            Por enquanto, use a tela de perfil para ajustar suas informações básicas.
+                        </p>
+                    </div>
+
+                    <!-- Seção: Senha e segurança -->
+                    <div id="sec-senha" class="config-section">
+                        <h3>Senha e segurança</h3>
+                        <form class="config-form">
+                            <label for="senha-atual">Senha atual</label>
+                            <input type="password" id="senha-atual" class="input-edicao" placeholder="Sua senha atual">
+                            
+                            <label for="nova-senha">Nova senha</label>
+                            <input type="password" id="nova-senha" class="input-edicao" placeholder="Mínimo 8 caracteres">
+                            
+                            <label for="confirma-nova-senha">Confirmar nova senha</label>
+                            <input type="password" id="confirma-nova-senha" class="input-edicao" placeholder="Repita a nova senha">
+                            
+                            <button type="submit" class="salvar-btn" style="margin-top: 10px;">Salvar nova senha</button>
+                        </form>
+                        <hr class="config-divider">
+                        <h3>Área de perigo</h3>
+                        <p class="config-descricao">Ações permanentes. Tenha cuidado.</p>
+                        <button class="cancelar-btn">Desativar minha conta</button>
+                    </div>
+
+                    <!-- Seção: Preferências de anúncios -->
+                    <div id="sec-anuncios" class="config-section">
+                        <h3>Preferências de anúncios</h3>
+                        <div class="config-form">
+                            <div class="config-item-toggle">
+                                <div class="config-item-texto">
+                                    <strong>Anúncios personalizados</strong>
+                                    <p>Permitir que a Helpy use suas interações para sugerir anúncios mais relevantes.</p>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="cfg-anuncios-personalizados" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            <div class="config-item-toggle">
+                                <div class="config-item-texto">
+                                    <strong>E-mails promocionais</strong>
+                                    <p>Receber novidades e oportunidades de serviços por e-mail.</p>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="cfg-emails-promocionais">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Selo -->
+                    <div id="sec-selo" class="config-section">
+                        <h3>Selo Helpy</h3>
+                        <div class="config-form">
+                            <p class="config-descricao">
+                                O <strong>Selo Helpy</strong> destaca profissionais com boas avaliações, histórico confiável 
+                                e documentos verificados.
+                            </p>
+                            <p class="config-descricao">
+                                Em breve você poderá enviar seus documentos e acompanhar o status do seu selo diretamente por aqui.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Notificações -->
+                    <div id="sec-notificacoes" class="config-section">
+                        <h3>Notificações</h3>
+                        <div class="config-form">
+                            <div class="config-item-toggle">
+                                <div class="config-item-texto">
+                                    <strong>Pedidos e propostas</strong>
+                                    <p>Receber alertas quando houver novas propostas ou atualizações dos seus pedidos.</p>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="cfg-notif-pedidos" checked>
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                            <div class="config-item-toggle">
+                                <div class="config-item-texto">
+                                    <strong>Notificações por e-mail</strong>
+                                    <p>Receber um resumo das atividades importantes da sua conta por e-mail.</p>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="cfg-notif-email">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Seção: Personalização -->
+                    <div id="sec-personalizacao" class="config-section">
+                        <h3>Personalização</h3>
+                        <div class="config-form">
+                            <div class="config-item-toggle">
+                                <div class="config-item-texto">
+                                    <strong>Modo escuro</strong>
+                                    <p>Deixe o Helpy mais confortável para os olhos, especialmente à noite.</p>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" id="dark-mode-toggle-config">
+                                    <span class="slider round"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
     </div>

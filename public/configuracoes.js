@@ -160,7 +160,111 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Inicialização ---
+    // --- Inicialização do Header ---
     loadHeaderInfo();
+
+    // ============================================
+    // Navegação lateral das configurações
+    // ============================================
+    const menuItems = document.querySelectorAll('.config-menu-item');
+    const sections = document.querySelectorAll('.config-section');
+
+    function ativarSecao(sectionId) {
+        sections.forEach(sec => {
+            sec.classList.toggle('active', sec.id === sectionId);
+        });
+    }
+
+    menuItems.forEach(item => {
+        item.addEventListener('click', () => {
+            menuItems.forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+            const alvo = item.getAttribute('data-section');
+            if (alvo) {
+                ativarSecao(alvo);
+            }
+        });
+    });
+
+    // Mantém "Dados pessoais" como padrão se nada estiver selecionado
+    if (!document.querySelector('.config-menu-item.active') && menuItems[0]) {
+        menuItems[0].classList.add('active');
+        const alvo = menuItems[0].getAttribute('data-section');
+        if (alvo) ativarSecao(alvo);
+    }
+
+    // ============================================
+    // Personalização - Tema (Modo Escuro)
+    // ============================================
+    const darkModeToggleConfig = document.getElementById('dark-mode-toggle-config');
+    const htmlElement = document.documentElement;
+
+    function applyTheme(theme) {
+        if (theme === 'dark') {
+            htmlElement.classList.add('dark-mode');
+            if (darkModeToggleConfig) darkModeToggleConfig.checked = true;
+        } else {
+            htmlElement.classList.remove('dark-mode');
+            if (darkModeToggleConfig) darkModeToggleConfig.checked = false;
+        }
+    }
+
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    applyTheme(savedTheme);
+
+    if (darkModeToggleConfig) {
+        darkModeToggleConfig.addEventListener('change', async () => {
+            const theme = darkModeToggleConfig.checked ? 'dark' : 'light';
+            applyTheme(theme);
+            localStorage.setItem('theme', theme);
+
+            // Atualiza preferência no servidor (mesma lógica do feed)
+            if (loggedInUserId && token) {
+                try {
+                    const response = await fetch('/api/user/theme', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ tema: theme })
+                    });
+
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(result.message || 'Erro ao atualizar o tema');
+                    }
+                } catch (error) {
+                    console.error('Erro ao atualizar preferência de tema:', error);
+                    const revertedTheme = theme === 'dark' ? 'light' : 'dark';
+                    applyTheme(revertedTheme);
+                    localStorage.setItem('theme', revertedTheme);
+                    darkModeToggleConfig.checked = revertedTheme === 'dark';
+                    alert('Não foi possível salvar sua preferência de tema. Tente novamente.');
+                }
+            }
+        });
+    }
+
+    // ============================================
+    // Melhorar clique dos toggles (linha inteira clicável)
+    // ============================================
+    const toggleRows = document.querySelectorAll('.config-item-toggle');
+    toggleRows.forEach(row => {
+        row.addEventListener('click', (e) => {
+            // Se o clique foi diretamente no input ou no próprio switch,
+            // deixa o comportamento padrão do navegador (para não dar toggle duplo)
+            if (e.target && e.target.tagName === 'INPUT') return;
+            if (e.target && e.target.closest && e.target.closest('label.switch')) return;
+
+            const checkbox = row.querySelector('input[type="checkbox"]');
+            if (!checkbox) return;
+
+            checkbox.checked = !checkbox.checked;
+            // Dispara evento change para qualquer lógica extra (ex: tema)
+            checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+    });
 });
 
