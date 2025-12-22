@@ -105,6 +105,7 @@ const servicoSchema = new mongoose.Schema({
     desafio: { type: String }, // Descrição do desafio enfrentado
     tecnologias: [{ type: String }], // Tecnologias/habilidades usadas
     images: [{ type: String }],
+    thumbUrls: [{ type: String }], // Miniaturas otimizadas para o feed
     videoUrl: { type: String }, // Vídeo explicando o processo (Selo Humano)
     validacoesPares: [validacaoParSchema], // Validações de outros profissionais
     totalValidacoes: { type: Number, default: 0 },
@@ -2263,6 +2264,61 @@ app.get('/api/servicos/:userId', authMiddleware, async (req, res) => {
     }
 });
 
+// 🆕 Destaques de serviços (mini vitrine tipo "Instagram do trabalho")
+app.get('/api/destaques-servicos', authMiddleware, async (req, res) => {
+    try {
+        const user = await User.findById(req.user.id).select('cidade estado');
+
+        // Filtro base: serviços com imagens
+        const filter = { images: { $exists: true, $not: { $size: 0 } } };
+
+        // Se o usuário tem cidade/estado, restringe aos profissionais próximos
+        if (user?.cidade) {
+            const cidadeRegex = new RegExp(user.cidade, 'i');
+            const estadoRegex = user.estado ? new RegExp(`^${user.estado}$`, 'i') : null;
+
+            const usuariosProximos = await User.find({
+                ...(estadoRegex ? { estado: estadoRegex } : {}),
+                $or: [
+                    { cidade: cidadeRegex },
+                    ...(estadoRegex ? [{ estado: estadoRegex }] : [])
+                ]
+            }).select('_id');
+
+            const idsProximos = usuariosProximos.map(u => u._id);
+            if (idsProximos.length > 0) {
+                filter.userId = { $in: idsProximos };
+            }
+        }
+
+        const destaques = await Servico.find(filter)
+            .sort({ mediaAvaliacao: -1, totalValidacoes: -1, createdAt: -1 })
+            .limit(30)
+            .populate('userId', 'nome cidade estado foto avatarUrl mediaAvaliacao totalAvaliacoes tipo');
+
+        const resposta = destaques.map(servico => {
+            const images = (servico.images || []).slice(0, 6);
+            const thumbs = (servico.thumbUrls || []).slice(0, 6);
+            return {
+                id: servico._id,
+                title: servico.title,
+                description: servico.description,
+                images,
+                thumbUrls: thumbs.length ? thumbs : images,
+                user: servico.userId,
+                mediaAvaliacao: servico.mediaAvaliacao,
+                totalValidacoes: servico.totalValidacoes,
+                createdAt: servico.createdAt
+            };
+        });
+
+        res.json({ success: true, destaques: resposta });
+    } catch (error) {
+        console.error('Erro ao buscar destaques de serviços:', error);
+        res.status(500).json({ success: false, message: 'Erro ao buscar destaques de serviços.' });
+    }
+});
+
 // 🆕 ATUALIZADO: Criar Serviço/Projeto do Portfólio
 app.post('/api/servico', authMiddleware, upload.array('images', 5), async (req, res) => {
     try {
@@ -2277,6 +2333,7 @@ app.post('/api/servico', authMiddleware, upload.array('images', 5), async (req, 
         }
         
         let imageUrls = [];
+        let thumbUrls = [];
         if (files && files.length > 0 && s3Client) {
             const sharp = getSharp();
             if (!sharp) {
@@ -2284,11 +2341,21 @@ app.post('/api/servico', authMiddleware, upload.array('images', 5), async (req, 
             } else {
                 await Promise.all(files.map(async (file) => {
                     try {
+                        // Imagem principal (800x600)
                         const imageBuffer = await sharp(file.buffer).resize(800, 600, { fit: 'cover' }).toFormat('jpeg').toBuffer();
-                        const key = `servicos/${userId}/${Date.now()}_${path.basename(file.originalname)}`;
+                        const baseName = `${Date.now()}_${path.basename(file.originalname)}`;
+                        const key = `servicos/${userId}/${baseName}`;
                         const uploadCommand = new PutObjectCommand({ Bucket: bucketName, Key: key, Body: imageBuffer, ContentType: 'image/jpeg' });
                         await s3Client.send(uploadCommand);
-                        imageUrls.push(`https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`);
+                        const fullUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+                        imageUrls.push(fullUrl);
+
+                        // Miniatura leve (400x300) para o feed de destaques
+                        const thumbBuffer = await sharp(file.buffer).resize(400, 300, { fit: 'cover' }).toFormat('jpeg').toBuffer();
+                        const thumbKey = `servicos/${userId}/thumbs/${baseName}`;
+                        const thumbUpload = new PutObjectCommand({ Bucket: bucketName, Key: thumbKey, Body: thumbBuffer, ContentType: 'image/jpeg' });
+                        await s3Client.send(thumbUpload);
+                        thumbUrls.push(`https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${thumbKey}`);
                     } catch (error) {
                         console.error('Erro ao processar imagem:', error);
                     }
@@ -2315,6 +2382,7 @@ app.post('/api/servico', authMiddleware, upload.array('images', 5), async (req, 
             images: imageUrls,
             isDesafioHelpy: isDesafioHelpy === 'true' || isDesafioHelpy === true,
             tagDesafio: tagDesafio || null,
+            thumbUrls,
             validacoesPares: [],
             totalValidacoes: 0,
             avaliacoes: [],

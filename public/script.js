@@ -58,6 +58,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const filterClientesBtn = document.getElementById('filter-clientes');
     const filtroCidadeInput = document.getElementById('filtro-cidade');
     const filtroCidadeBtn = document.getElementById('filtro-cidade-btn');
+    const destaquesScroll = document.getElementById('destaques-scroll');
+    const modalDestaqueServico = document.getElementById('modal-destaque-servico');
+    const destaqueModalImagens = document.getElementById('destaque-modal-imagens');
+    const destaqueModalInfo = document.getElementById('destaque-modal-info');
+    const destaqueModalPerfil = document.getElementById('destaque-modal-perfil');
+    const btnDestaquesAvancar = document.getElementById('btn-destaques-avancar');
+    const btnDestaquesVoltar = document.getElementById('btn-destaques-voltar');
+    let destaquesCache = [];
     
     const darkModeToggle = document.getElementById('dark-mode-toggle');
     const mobileSidebarToggle = document.getElementById('mobile-sidebar-toggle');
@@ -222,6 +230,111 @@ document.addEventListener('DOMContentLoaded', () => {
                 userAvatarHeader.src = storedPhotoUrl;
             }
         }
+    }
+
+    // ----------------------------------------------------------------------
+    // DESTAQUES MINI (faixa tipo stories)
+    // ----------------------------------------------------------------------
+    function buildDemoDestaques() {
+        const nomes = ['Ana', 'Bruno', 'Carla', 'Diego', 'Eva', 'Fábio', 'Gabi', 'Hugo', 'Iris', 'João'];
+        return nomes.map((nome, idx) => {
+            const img = `https://via.placeholder.com/300x200?text=Trabalho+${idx+1}`;
+            return {
+                id: `demo-${idx}`,
+                title: `Projeto ${idx + 1}`,
+                description: 'Trabalho de demonstração',
+                images: [img, img, img, img, img, img],
+                thumbUrls: [img],
+                user: {
+                    _id: `demo-user-${idx}`,
+                    nome: nome,
+                    cidade: 'Sua cidade',
+                    estado: 'BR',
+                    mediaAvaliacao: 5
+                },
+                mediaAvaliacao: 5,
+                totalValidacoes: 10,
+                createdAt: new Date()
+            };
+        });
+    }
+
+    async function fetchDestaques() {
+        if (!destaquesScroll) return;
+        destaquesScroll.innerHTML = '<p class="mensagem-vazia" style="padding:8px 10px;margin:0;">Carregando...</p>';
+        try {
+            const response = await fetch('/api/destaques-servicos', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Erro ao carregar destaques');
+            }
+            const recebidos = data.destaques || [];
+            destaquesCache = recebidos.length > 0 ? recebidos : buildDemoDestaques();
+            renderDestaquesMini(destaquesCache);
+            setTimeout(atualizarBotoesDestaques, 120);
+        } catch (error) {
+            console.error('Erro ao buscar destaques:', error);
+            destaquesCache = buildDemoDestaques();
+            renderDestaquesMini(destaquesCache);
+            setTimeout(atualizarBotoesDestaques, 120);
+        }
+    }
+
+    function renderDestaquesMini(lista) {
+        if (!destaquesScroll) return;
+        if (!lista || lista.length === 0) {
+            destaquesScroll.innerHTML = '<p class="mensagem-vazia" style="padding:8px 10px;margin:0;">Ainda sem destaques. Poste fotos dos serviços!</p>';
+            return;
+        }
+
+        destaquesScroll.innerHTML = '';
+        lista.forEach(item => {
+            const imagens = (item.thumbUrls && item.thumbUrls.length > 0) ? item.thumbUrls : (item.images || []);
+            const primeira = imagens[0] || 'imagens/default-user.png';
+            const extra = Math.max((imagens.length - 1), 0);
+            const profissional = item.user || {};
+            const nota = item.mediaAvaliacao || profissional.mediaAvaliacao || 0;
+
+            const card = document.createElement('div');
+            card.className = 'thumb-destaque';
+            card.innerHTML = `
+                <img src="${primeira}" alt="Destaque do serviço">
+                <div class="thumb-overlay"></div>
+                ${extra > 0 ? `<span class="thumb-more">+${extra}</span>` : ''}
+                <span class="thumb-badge">${(profissional.nome || 'Profissional').split(' ')[0]}</span>
+                <span class="thumb-note"><i class="fas fa-star" style="color:#f5a623;"></i> ${(nota || 0).toFixed(1)}</span>
+            `;
+            card.addEventListener('click', () => openDestaqueModal(item));
+            destaquesScroll.appendChild(card);
+        });
+    }
+
+    function openDestaqueModal(item) {
+        if (!modalDestaqueServico || !destaqueModalImagens || !destaqueModalInfo) return;
+        const imagens = (item.images || []).slice(0, 6);
+        const thumbs = (item.thumbUrls || []).slice(0, 6);
+        const fotos = thumbs.length ? thumbs : imagens;
+        const profissional = item.user || {};
+        const cidadeEstado = [profissional.cidade, profissional.estado].filter(Boolean).join(' - ');
+        const nota = item.mediaAvaliacao || profissional.mediaAvaliacao || 0;
+
+        destaqueModalImagens.innerHTML = fotos.map(img => `<img src="${img}" alt="Foto do serviço">`).join('');
+        destaqueModalInfo.innerHTML = `
+            <p class="destaque-prof" style="margin:0; font-weight:700;">${item.title || 'Serviço'}</p>
+            <p class="destaque-local" style="margin:4px 0 0 0;">${profissional.nome || 'Profissional'} ${cidadeEstado ? '• ' + cidadeEstado : ''}</p>
+            <p class="destaque-nota" style="margin:6px 0 0 0;"><i class="fas fa-star" style="color:#f5a623;"></i> ${(nota || 0).toFixed(1)}</p>
+        `;
+
+        const perfilId = profissional._id || item.userId || item.idUser;
+        if (destaqueModalPerfil) {
+            destaqueModalPerfil.onclick = () => {
+                if (perfilId) window.location.href = `/perfil.html?id=${perfilId}`;
+            };
+        }
+
+        modalDestaqueServico.classList.remove('hidden');
     }
 
     async function fetchPosts(cidade = null) {
@@ -1461,6 +1574,86 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    function atualizarBotoesDestaques() {
+        if (!destaquesScroll || !btnDestaquesVoltar || !btnDestaquesAvancar) return;
+        const maxScrollLeft = Math.max(0, destaquesScroll.scrollWidth - destaquesScroll.clientWidth);
+        const atStart = destaquesScroll.scrollLeft <= 4;
+        const atEnd = destaquesScroll.scrollLeft >= maxScrollLeft - 4;
+        const hasOverflow = (destaquesScroll.scrollWidth - destaquesScroll.clientWidth) > 12;
+
+        if (hasOverflow && !atStart) {
+            btnDestaquesVoltar.classList.add('show');
+        } else {
+            btnDestaquesVoltar.classList.remove('show');
+        }
+
+        if (hasOverflow && !atEnd) {
+            btnDestaquesAvancar.classList.add('show');
+        } else {
+            btnDestaquesAvancar.classList.remove('show');
+        }
+    }
+
+    // Botões de rolagem lateral dos destaques
+    if (btnDestaquesAvancar && destaquesScroll) {
+        btnDestaquesAvancar.addEventListener('click', () => {
+            const delta = destaquesScroll.clientWidth * 0.8;
+            destaquesScroll.scrollBy({ left: delta, behavior: 'smooth' });
+            setTimeout(atualizarBotoesDestaques, 220);
+        });
+    }
+    if (btnDestaquesVoltar && destaquesScroll) {
+        btnDestaquesVoltar.addEventListener('click', () => {
+            const delta = destaquesScroll.clientWidth * 0.8;
+            destaquesScroll.scrollBy({ left: -delta, behavior: 'smooth' });
+            setTimeout(atualizarBotoesDestaques, 220);
+        });
+    }
+    if (destaquesScroll) {
+        destaquesScroll.addEventListener('scroll', atualizarBotoesDestaques);
+        window.addEventListener('resize', () => setTimeout(atualizarBotoesDestaques, 80));
+        setTimeout(atualizarBotoesDestaques, 80);
+    }
+
+    // Drag-to-scroll na faixa de destaques
+    if (destaquesScroll) {
+        let isDragging = false;
+        let startX = 0;
+        let scrollStart = 0;
+
+        const startDrag = (x) => {
+            isDragging = true;
+            startX = x;
+            scrollStart = destaquesScroll.scrollLeft;
+        };
+        const moveDrag = (x) => {
+            if (!isDragging) return;
+            const dx = x - startX;
+            destaquesScroll.scrollLeft = scrollStart - dx;
+        };
+        const endDrag = () => {
+            if (!isDragging) return;
+            isDragging = false;
+            atualizarBotoesDestaques();
+        };
+
+        destaquesScroll.addEventListener('mousedown', (e) => startDrag(e.pageX));
+        window.addEventListener('mousemove', (e) => moveDrag(e.pageX));
+        window.addEventListener('mouseup', endDrag);
+        destaquesScroll.addEventListener('mouseleave', endDrag);
+
+        destaquesScroll.addEventListener('touchstart', (e) => {
+            const x = e.touches[0]?.pageX || 0;
+            startDrag(x);
+        }, { passive: true });
+        destaquesScroll.addEventListener('touchmove', (e) => {
+            const x = e.touches[0]?.pageX || 0;
+            moveDrag(x);
+        }, { passive: true });
+        destaquesScroll.addEventListener('touchend', endDrag);
+        destaquesScroll.addEventListener('touchcancel', endDrag);
+    }
+
     // ----------------------------------------------------------------------
     // VALIDAÇÃO DA SESSÃO (TRATAR TOKEN INVÁLIDO / EXPIRADO)
     // ----------------------------------------------------------------------
@@ -1499,7 +1692,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INICIALIZAÇÃO ---
     (async () => {
-    if (!token || !userId) {
+        if (!token || !userId) {
             const isLoginPath = path.endsWith('/login') || path.endsWith('/login.html');
             const isCadastroPath = path.endsWith('/cadastro') || path.endsWith('/cadastro.html');
             // Se está no feed (ou outra página protegida) sem login → manda para /login
@@ -1509,8 +1702,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Se está na página de login/cadastro, garante header limpo
                 if (userNameHeader) userNameHeader.textContent = '';
                 if (userAvatarHeader) userAvatarHeader.src = 'imagens/default-user.png';
-        }
-    } else {
+            }
+        } else {
             // Antes de carregar o feed e outras informações, valida se o token ainda é aceito pelo backend
             const sessaoValida = await validarSessaoAtiva();
             if (!sessaoValida) {
@@ -1518,14 +1711,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-        if (postsContainer) {
-            loadHeaderInfo();
-            fetchPosts(); 
+            if (postsContainer) {
+                loadHeaderInfo();
+                fetchPosts(); 
+            }
+            if (destaquesScroll) {
+                fetchDestaques();
+            }
+            if (timesContainer) {
+                carregarTimesLocais();
+            }
         }
-        if (timesContainer) {
-            carregarTimesLocais();
-        }
-    }
     })();
 });
 

@@ -277,7 +277,7 @@ header {
     justify-content: center;
     font-size: 22px;
     cursor: pointer;
-    z-index: 1100;
+    z-index: 1;
 }
 
 /* Backdrop para o painel lateral no mobile */
@@ -449,6 +449,169 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 /* --- Seção de Comentários (Base) --- */
 .post-comments { padding: 10px 0 0 0; border-top: 1px solid var(--border-color); margin-top: 10px; display: none; } 
 .post-comments.visible { display: block; }
+
+/* 🆕 Faixa de miniaturas sobre o feed (estilo stories, menor) */
+.top-strip {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+.top-strip .mobile-sidebar-toggle {
+    flex: 0 0 auto;
+}
+.top-strip .barra-destaques {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-bottom: 0;
+}
+
+.barra-destaques {
+    margin-bottom: 12px;
+    position: relative;
+}
+.destaques-scroll {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 10px 10px 8px 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    scrollbar-width: thin;
+    min-height: 96px;
+    max-height: 120px;
+    mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
+    scrollbar-width: none; /* Firefox */
+}
+.destaques-scroll::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+.btn-scroll-destaques {
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 38px;
+    height: 78px;
+    border: none;
+    background: linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.35) 100%);
+    color: #fff;
+    font-size: 18px;
+    cursor: pointer;
+    border-radius: 10px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.12s ease;
+    opacity: 0.7;
+    display: none; /* controlado via JS */
+    z-index: 2;
+}
+.btn-scroll-destaques.show { display: flex; }
+.btn-scroll-destaques:hover {
+    opacity: 1;
+}
+.btn-scroll-destaques:focus { outline: none; }
+
+.btn-scroll-esq {
+    left: 4px;
+    right: auto;
+    transform: translateY(-50%);
+}
+
+.thumb-destaque {
+    position: relative;
+    width: clamp(72px, 18vw, 110px);
+    height: clamp(72px, 18vw, 110px);
+    border-radius: 12px;
+    overflow: hidden;
+    flex: 0 0 auto;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    background: var(--bg-primary);
+}
+.thumb-destaque:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+}
+.thumb-destaque img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.thumb-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 35%, rgba(0,0,0,0.55) 100%);
+    pointer-events: none;
+}
+.thumb-more {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.65);
+    color: #fff;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+}
+.thumb-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(255,255,255,0.9);
+    color: var(--text-primary);
+    padding: 4px 8px;
+    border-radius: 11px;
+    font-weight: 700;
+    font-size: 12px;
+    max-width: 88%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.thumb-note {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    background: rgba(0,0,0,0.65);
+    color: #fff;
+    padding: 3px 7px;
+    border-radius: 11px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Modal de destaque */
+.destaque-modal-info {
+    margin-bottom: 12px;
+}
+.destaque-modal-imagens {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+}
+.destaque-modal-imagens img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+.destaque-modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+}
 .comment-list { margin-top: 10px; max-height: 400px; overflow-y: auto; padding-right: 5px; } 
 .comment-form { display: flex; gap: 5px; margin-top: 10px; }
 .comment-input { flex-grow: 1; border: 1px solid var(--border-color); background-color: var(--bg-input); color: var(--text-primary); border-radius: 20px; padding: 8px 12px; font-size: 14px; } 
@@ -885,6 +1048,24 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
 .post-foto-principal-btn {
     /* Reaproveita visual do botão de upload (apenas ícone de câmera) */
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    padding: 0 !important;
+    border-radius: 50%;
+    font-size: 24px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    aspect-ratio: 1 / 1;
+    flex: 0 0 auto;
+}
+.post-foto-principal-btn i {
+    font-size: 24px;
+    line-height: 1;
 }
 
 .post-foto-add-btn {
@@ -1031,7 +1212,8 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     .mobile-sidebar-toggle {
         display: flex;
         align-self: flex-start;
-        margin: -5px 0 10px 0; /* sobe um pouco o botão em relação ao conteúdo */
+        margin: 0 0 10px 0;
+        z-index: 1;
     }
 
     .mobile-sidebar-close {
