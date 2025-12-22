@@ -595,16 +595,20 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 .destaque-modal-info {
     margin-bottom: 12px;
 }
+#modal-destaque-servico .modal-content {
+    max-width: 900px;
+    width: 96%;
+}
 .destaque-modal-imagens {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
 }
 .destaque-modal-imagens img {
     width: 100%;
-    height: 150px;
+    height: clamp(200px, 32vw, 280px);
     object-fit: cover;
-    border-radius: 8px;
+    border-radius: 10px;
     border: 1px solid var(--border-color);
 }
 .destaque-modal-actions {
