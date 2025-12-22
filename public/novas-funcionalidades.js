@@ -266,11 +266,11 @@ document.addEventListener('DOMContentLoaded', () => {
         item.appendChild(btnRemover);
         previewFotosContainer.appendChild(item);
 
-        const reader = new FileReader();
-        reader.onload = (event) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
             img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
+                };
+                reader.readAsDataURL(file);
 
         btnRemover.addEventListener('click', () => {
             const fileIndex = fotosSelecionadas.indexOf(file);
@@ -771,7 +771,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             </div>
                             
                             ${infoAtendimentoHtml}
-
+                            
                             ${pedido.descricao ? `<p class="pedido-descricao">${pedido.descricao}</p>` : ''}
                             
                             <div class="pedido-localizacao">

@@ -962,31 +962,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 const formData = new FormData();
                 formData.append('avatar', blob, 'avatar.jpg');
 
-                try {
-                    const response = await fetch(`/api/editar-perfil/${loggedInUserId}`, {
-                        method: 'PUT',
-                        headers: { 'Authorization': `Bearer ${token}` },
-                        body: formData
-                    });
-                    const data = await response.json();
-                    if (!response.ok) throw new Error(data.message);
-
-                    const novaFoto = data.user.avatarUrl || data.user.foto;
-                    localStorage.setItem('userPhotoUrl', novaFoto);
-                    loadHeaderInfo();
-                    fetchUserProfile();
+        try {
+            const response = await fetch(`/api/editar-perfil/${loggedInUserId}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `Bearer ${token}` },
+                body: formData
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.message);
+            
+            const novaFoto = data.user.avatarUrl || data.user.foto;
+            localStorage.setItem('userPhotoUrl', novaFoto);
+            loadHeaderInfo();
+            fetchUserProfile(); 
                     resolve(true);
-                } catch (error) {
-                    console.error('Erro ao salvar foto:', error);
-                    alert('Erro ao salvar foto: ' + error.message);
+        } catch (error) {
+            console.error('Erro ao salvar foto:', error);
+            alert('Erro ao salvar foto: ' + error.message);
                     resolve(false);
-                } finally {
+        } finally {
                     fecharModalPreviewAvatar();
-                }
+        }
             }, 'image/jpeg', 0.9);
         });
     }
-
+    
     if (inputFotoPerfil) {
         inputFotoPerfil.addEventListener('change', () => {
             const file = inputFotoPerfil.files[0];
@@ -1485,7 +1485,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 localStorage.setItem('helpy-ja-logou', jaLogou);
             }
             window.location.href = '/login'; 
-        }); 
+        });
     }
     if (confirmLogoutNoBtn) { confirmLogoutNoBtn.addEventListener('click', () => { logoutConfirmModal && logoutConfirmModal.classList.add('hidden'); }); }
     

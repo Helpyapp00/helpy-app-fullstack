@@ -1720,7 +1720,8 @@ app.put('/api/editar-perfil/:id', authMiddleware, upload.single('avatar'), async
     try {
         const { id } = req.params;
         // 🛑 ATUALIZAÇÃO: Recebe 'cidade' e 'estado', remove 'endereco'
-        const { nome, idade, cidade, estado, telefone, atuacao, descricao } = req.body;
+        // 🆕 Inclui campo 'tipo' (cliente / trabalhador / empresa)
+        const { nome, idade, cidade, estado, telefone, atuacao, descricao, tipo } = req.body;
         const avatarFile = req.file;
 
         if (req.user.id !== id) {
@@ -1822,7 +1823,7 @@ app.put('/api/editar-perfil/:id', authMiddleware, upload.single('avatar'), async
         }
         
         // 🛑 ATUALIZAÇÃO: Objeto de updates
-        const updates = { nome, idade, cidade, estado, telefone, atuacao, descricao };
+        const updates = { nome, idade, cidade, estado, telefone, atuacao, descricao, tipo };
         if (fotoUrl) {
             updates.foto = fotoUrl;
             updates.avatarUrl = fotoUrl;

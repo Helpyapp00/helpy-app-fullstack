@@ -24,9 +24,6 @@
         <div class="user-info">
             <img id="user-avatar-header" src="imagens/default-user.png" alt="Avatar" class="user-avatar-header">
             <span id="user-name-header">Carregando...</span>
-            <button id="profile-button" title="Meu Perfil">
-                <i class="fas fa-user"></i>
-            </button>
             <button id="feed-button" title="Voltar ao Feed">
                 <i class="fas fa-home"></i>
             </button>
@@ -78,10 +75,69 @@
                     <!-- Seção: Dados pessoais -->
                     <div id="sec-dados-pessoais" class="config-section active">
                         <h3>Dados pessoais</h3>
-                        <p class="config-descricao">
-                            Em breve você poderá editar todos os seus dados pessoais por aqui. 
-                            Por enquanto, use a tela de perfil para ajustar suas informações básicas.
-                        </p>
+                        <form id="form-dados-pessoais" class="config-form">
+                            <div class="form-group">
+                                <label for="cfg-nome">Nome completo</label>
+                                <input type="text" id="cfg-nome" class="input-edicao" placeholder="Seu nome" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cfg-email">E-mail</label>
+                                <input type="email" id="cfg-email" class="input-edicao" placeholder="Seu e-mail" disabled>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cfg-idade">Idade</label>
+                                <input type="number" id="cfg-idade" class="input-edicao" min="0" max="120" placeholder="Sua idade">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cfg-telefone">Telefone / WhatsApp</label>
+                                <input type="text" id="cfg-telefone" class="input-edicao" placeholder="DDD + número">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cfg-cidade">Cidade</label>
+                                <input type="text" id="cfg-cidade" class="input-edicao" placeholder="Sua cidade">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="cfg-estado">Estado</label>
+                                <input type="text" id="cfg-estado" class="input-edicao" placeholder="UF (ex: SP)">
+                            </div>
+
+                            <hr class="config-divider">
+
+                            <div class="form-group">
+                                <label>Como você usa a Helpy?</label>
+                                <div class="config-item-texto">
+                                    <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                        <input type="radio" name="cfg-tipo" id="cfg-tipo-cliente" value="cliente">
+                                        Cliente (peço serviços)
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                        <input type="radio" name="cfg-tipo" id="cfg-tipo-trabalhador" value="trabalhador">
+                                        Prestador de serviços
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 8px;">
+                                        <input type="radio" name="cfg-tipo" id="cfg-tipo-empresa" value="empresa">
+                                        Empresa
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group" id="cfg-atuacao-group" style="display: none;">
+                                <label for="cfg-atuacao">Área de atuação</label>
+                                <input type="text" id="cfg-atuacao" class="input-edicao" placeholder="Ex: Pedreiro, Designer, Empresa de reformas...">
+                            </div>
+
+                            <button type="submit" class="salvar-btn" style="margin-top: 10px;">
+                                <span class="btn-text">Salvar alterações</span>
+                                <span class="btn-spinner"></span>
+                            </button>
+
+                            <p id="msg-dados-pessoais" class="config-descricao" style="margin-top: 10px;"></p>
+                        </form>
                     </div>
 
                     <!-- Seção: Senha e segurança -->

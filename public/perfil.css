@@ -3,10 +3,10 @@
 
 .content-perfil {
     width: 100%;
-    max-width: 1150px;
+    max-width: 1200px; /* base para telas médias/grandes */
     padding: 20px;
     box-sizing: border-box;
-    margin-top: 90px;
+    margin-top: 20px;
     margin-left: auto;
     margin-right: auto;
 }
@@ -25,6 +25,7 @@
     width: 100%;
     box-sizing: border-box;
     margin-bottom: 20px;
+    margin-top: 40px;
 }
 
 .perfil-header {
@@ -691,10 +692,19 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
 
 /* 🛑 NOVO: Estilos para as páginas de Configuração (do seu CSS) */
 .config-form {
+    width: 100%;
+    max-width: 100%;
     border: 1px solid var(--border-color); /* Aplicado */
     border-radius: 8px;
     padding: 20px;
     background-color: var(--bg-primary); /* Aplicado */
+    box-sizing: border-box;
+}
+.config-form .salvar-btn {
+    width: auto;
+    max-width: 240px;
+    padding: 10px 20px;
+    align-self: flex-start;
 }
 .config-form label {
     font-weight: bold;
@@ -718,6 +728,8 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap; /* evita vazamento em telas menores */
+    gap: 8px 12px;
     padding: 15px 0;
     border-bottom: 1px solid var(--border-color); /* Aplicado */
     cursor: pointer;
@@ -734,16 +746,54 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
     color: var(--text-secondary); /* Aplicado */
     margin-top: 3px;
 }
+/* Alinhamento dos rádios (Como você usa a Helpy?) */
+.config-item-texto {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 12px;
+    align-items: flex-start;
+}
+.config-item-texto label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    line-height: 1.3;
+    color: var(--text-primary);
+    padding: 6px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--bg-primary);
+    cursor: pointer;
+}
+.config-item-texto input[type="radio"] {
+    flex-shrink: 0;
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: var(--btn-secondary-bg);
+}
 
 /* Layout geral das configurações (menu lateral + conteúdo) */
 .config-layout {
     display: grid;
-    grid-template-columns: 260px minmax(0, 1fr);
-    gap: 20px;
-    align-items: flex-start;
+    grid-template-columns: 240px minmax(0, 1fr);
+    grid-template-areas:
+        "btn btn"
+        "side content";
+    gap: 24px;
+    align-items: stretch;
+    width: 100%;
+}
+
+#btn-voltar {
+    grid-area: btn;
+    justify-self: flex-start;
+    width: auto;
 }
 
 .config-sidebar {
+    grid-area: side;
     background: var(--bg-secondary);
     border-radius: 8px;
     padding: 10px 0;
@@ -783,10 +833,73 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
 }
 
 .config-content {
+    grid-area: content;
     background: var(--bg-secondary);
     border-radius: 8px;
-    padding: 20px;
-    border: 1px solid var(--border-color);
+    padding: 24px;
+    display: block;
+    width: 100%;
+    max-width: 1500px;
+    min-width: 0;
+    margin: 0 auto;
+}
+
+/* Desktop amplo (único breakpoint para grandes telas) */
+@media (min-width: 1200px) {
+    .content-perfil {
+        max-width: 1480px;
+    }
+
+    .config-layout {
+        grid-template-columns: 280px minmax(0, 2fr);
+        gap: 32px;
+    }
+
+    .config-content {
+        padding: 30px 40px;
+    }
+
+    .config-section .config-form {
+        max-width: none;
+        width: 100%;
+        margin: 0;
+    }
+}
+
+/* Layout mais amplo do formulário de dados pessoais em telas grandes */
+#form-dados-pessoais {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    width: 100%;
+}
+
+#form-dados-pessoais .form-group {
+    margin: 0;
+}
+
+@media (min-width: 900px) {
+    #form-dados-pessoais {
+        /* Adapta mantendo largura mínima confortável */
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        column-gap: 24px;
+        row-gap: 18px;
+    }
+
+    #form-dados-pessoais .config-divider,
+    #form-dados-pessoais .config-item-toggle,
+    #form-dados-pessoais .config-item-texto,
+    #form-dados-pessoais .salvar-btn,
+    #form-dados-pessoais #msg-dados-pessoais {
+        grid-column: 1 / -1; /* itens que precisam ocupar toda a largura */
+    }
+}
+
+@media (max-width: 1100px) {
+    /* Em larguras intermediárias, força 1 coluna para não vazar */
+    #form-dados-pessoais {
+        grid-template-columns: 1fr;
+    }
 }
 
 .config-section {
@@ -797,9 +910,47 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
     display: block;
 }
 
+/* Fundo para a área que contém o título "Dados pessoais" */
+.config-section {
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    padding: 24px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    align-self: stretch;
+    box-sizing: border-box;
+    border: 1px solid var(--border-color);
+}
+
+/* Expandir largura do formulário nas seções de config em desktop */
+@media (min-width: 1024px) {
+    .config-section .config-form {
+        max-width: none;
+        width: 100%;
+        margin: 0;
+    }
+
+    /* Seção de Dados Pessoais com grid mais largo */
+    #sec-dados-pessoais .config-form {
+        padding-left: 28px;
+        padding-right: 28px;
+    }
+}
+
 @media (max-width: 768px) {
+    /* Mais respiro abaixo do header fixo em telas pequenas */
+    .content-perfil {
+        margin-top: 140px;
+        padding-top: 20px;
+    }
+
     .config-layout {
         grid-template-columns: 1fr;
+        grid-template-areas:
+            "btn"
+            "side"
+            "content";
         gap: 12px;
     }
 
@@ -817,6 +968,64 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
         white-space: normal;
         border-radius: 6px;
         padding: 10px 12px;
+    }
+
+    /* Ajustes mobile: caixas mais compactas */
+    .config-content {
+        padding: 16px;
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+    }
+
+    .config-section {
+        padding: 16px;
+        width: 100%;
+        max-width: 100%;
+        margin: 0;
+    }
+
+    .config-form {
+        padding: 16px;
+        max-width: 100%;
+    }
+    .config-form .salvar-btn {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    /* Inputs ocupam toda a largura em telas pequenas */
+    .config-form input,
+    .config-form textarea,
+    .config-form .input-edicao {
+        width: 100%;
+    }
+
+    #form-dados-pessoais .form-group {
+        width: 100%;
+        min-width: 0;
+    }
+
+    #form-dados-pessoais {
+        gap: 10px;
+    }
+
+    .config-form label {
+        font-size: 13px;
+    }
+
+    .config-form input,
+    .config-form textarea {
+        font-size: 14px;
+    }
+
+    /* Rádios em coluna no mobile para não quebrar */
+    .config-item-texto {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .config-item-texto label {
+        width: 100%;
     }
 }
 
