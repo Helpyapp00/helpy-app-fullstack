@@ -104,7 +104,7 @@ header {
     cursor: pointer;           /* Mostra a “mãozinha/seta de link” ao passar o mouse */
     user-select: none;         /* Evita parecer apenas texto selecionável */
 }
-.logo-box img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; border: none; }
+.logo-box img { width: 58px; height: 58px; border-radius: 50%; object-fit: cover; border: none; }
 .logo-box h1 { font-size: 24px; margin: 0; color: var(--text-header); } 
 .header-actions {
     flex-grow: 1;
@@ -525,8 +525,8 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
 .thumb-destaque {
     position: relative;
-    width: clamp(72px, 18vw, 110px);
-    height: clamp(72px, 18vw, 110px);
+    width: clamp(80px, 20vw, 122px);
+    height: clamp(80px, 20vw, 122px);
     border-radius: 12px;
     overflow: hidden;
     flex: 0 0 auto;
@@ -1301,8 +1301,8 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     }
 
     .logo-box img {
-        width: 40px;
-        height: 40px;
+        width: 52px;
+        height: 52px;
     }
 
     .logo-box h1 {
@@ -1310,8 +1310,8 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     }
 
     .user-avatar-header {
-        width: 48px;
-        height: 48px;
+        width: 62px;
+        height: 62px;
     }
 
     .user-info span {
@@ -1323,6 +1323,11 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     #feed-button {
         padding: 6px 8px;
         font-size: 0.8em;
+    }
+
+    .thumb-destaque {
+        width: clamp(86px, 24vw, 128px);
+        height: clamp(86px, 24vw, 128px);
     }
 
     .search {
