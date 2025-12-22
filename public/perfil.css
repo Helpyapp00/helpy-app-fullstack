@@ -782,7 +782,7 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
         "btn btn"
         "side content";
     gap: 24px;
-    align-items: stretch;
+    align-items: start;
     width: 100%;
 }
 
@@ -798,6 +798,9 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
     border-radius: 8px;
     padding: 10px 0;
     border: 1px solid var(--border-color);
+    min-width: 200px;
+    max-width: 220px;
+    align-self: start; /* não estica com o conteúdo da direita */
 }
 
 .config-menu {
@@ -851,7 +854,8 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
     }
 
     .config-layout {
-        grid-template-columns: 280px minmax(0, 2fr);
+        /* Largura fixa para o menu, conteúdo flexível */
+        grid-template-columns: 260px minmax(0, 1fr);
         gap: 32px;
     }
 
@@ -879,6 +883,10 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
 }
 
 @media (min-width: 900px) {
+    .config-sidebar {
+        width: 200px;
+        max-width: 220px;
+    }
     #form-dados-pessoais {
         /* Adapta mantendo largura mínima confortável */
         grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -958,6 +966,8 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
         display: block;
         overflow-x: visible;
         padding: 0;
+        min-height: auto;
+        align-self: start;
     }
 
     .config-menu {
