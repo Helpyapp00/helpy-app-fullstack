@@ -152,7 +152,17 @@
         <aside class="anuncio">
             <h3>Anúncios</h3>
             <div class="caixa-anuncio">
-                Espaço para Anúncios
+                <div class="anuncio-card anuncio-nativo" onclick="window.location.href='/perfil.html?id=empresa-demo'">
+                    <img src="https://via.placeholder.com/640x320?text=Loja+de+Tintas+ColorMix" alt="" class="anuncio-nativo-img">
+                    <div class="anuncio-nativo-overlay">
+                        <div class="anuncio-nativo-titulo">Oferta para sua obra</div>
+                        <div class="anuncio-nativo-loja">Loja de Tintas ColorMix</div>
+                        <div class="anuncio-nativo-endereco">Av. Central, 123 - Centro</div>
+                        <button class="btn-como-chegar" onclick="event.stopPropagation(); window.open('https://www.google.com/maps/search/Loja+de+Tintas+ColorMix+Av+Central+123', '_blank')">
+                            <i class="fas fa-map-marker-alt"></i> Como chegar
+                        </button>
+                    </div>
+                </div>
             </div>
         </aside>
     </div>

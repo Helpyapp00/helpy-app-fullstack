@@ -438,6 +438,7 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 .delete-post-btn:hover { background-color: var(--bg-hover); color: #dc3545; } 
 .post-content { margin-bottom: 10px; color: var(--text-primary); line-height: 1.5; } 
 .post-image { max-width: 100%; height: auto; border-radius: 8px; margin-top: 10px; display: block; }
+.post-image { max-height: 600px; width: 100%; object-fit: contain; }
 .post-video { max-width: 100%; height: auto; border-radius: 8px; margin-top: 10px; display: block; background-color: #000; }
 .post-actions { display: flex; gap: 10px; padding: 10px 0; border-top: 1px solid var(--border-color); margin-top: 10px; } 
 .action-btn { background-color: var(--bg-action); border: none; border-radius: 5px; padding: 8px 12px; cursor: pointer; color: var(--text-secondary); font-weight: bold; display: flex; align-items: center; gap: 5px; transition: background-color 0.2s; font-size: 14px; } 
@@ -472,16 +473,16 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 }
 .destaques-scroll {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     overflow-x: auto;
     overflow-y: hidden;
-    padding: 10px 10px 8px 10px;
+    padding: 12px 12px 14px 12px;
     background: var(--bg-secondary);
     border: 1px solid var(--border-color);
     border-radius: 12px;
     scrollbar-width: thin;
-    min-height: 96px;
-    max-height: 120px;
+    min-height: 130px;
+    max-height: 160px;
     mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
     -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 12px, #000 calc(100% - 12px), transparent 100%);
     scrollbar-width: none; /* Firefox */
@@ -591,6 +592,136 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     gap: 4px;
 }
 
+.thumb-destaque.anuncio-nativo {
+    background: linear-gradient(145deg, #0f172a, #1e293b);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #e2e8f0;
+    padding: 10px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 6px;
+}
+.anuncio-nativo-titulo {
+    font-weight: 800;
+    font-size: 13px;
+    color: #38bdf8;
+}
+.anuncio-nativo-loja {
+    font-weight: 700;
+    font-size: 12px;
+}
+.anuncio-nativo-endereco {
+    font-size: 11px;
+    color: #cbd5e1;
+    line-height: 1.3;
+}
+.btn-como-chegar {
+    margin-top: auto;
+    background: #22c55e;
+    color: #0b121f;
+    border: none;
+    border-radius: 10px;
+    padding: 6px 8px;
+    font-weight: 700;
+    font-size: 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.btn-como-chegar:hover {
+    background: #16a34a;
+}
+
+.anuncio-card {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    border: none;
+    color: #e2e8f0;
+    display: flex;
+    min-height: 220px;
+    width: min(520px, 100%);
+    height: 100%;
+    cursor: pointer;
+}
+.anuncio-nativo-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+.anuncio-nativo-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.7) 100%);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    justify-content: flex-end;
+    box-sizing: border-box;
+}
+.anuncio-nativo-badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(0,0,0,0.55);
+    color: #e2e8f0;
+    padding: 3px 7px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 700;
+    z-index: 3;
+    pointer-events: none;
+}
+.anuncio-nativo-overlay.feed {
+    background: linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.75) 100%);
+}
+.anuncio-nativo-feed {
+    position: relative;
+    overflow: hidden;
+    padding: 0;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+.anuncio-nativo-feed .anuncio-nativo-img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    display: block;
+}
+.anuncio-nativo-feed .anuncio-nativo-overlay {
+    position: absolute;
+    inset: 0;
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    justify-content: flex-end;
+    box-sizing: border-box;
+}
+.anuncio-nativo-feed .btn-como-chegar {
+    width: auto;
+    align-self: flex-start;
+    margin-top: 6px;
+}
+.anuncio-nativo-titulo {
+    font-weight: 800;
+    font-size: 14px;
+    color: #38bdf8;
+}
+.anuncio-nativo-loja {
+    font-weight: 700;
+    font-size: 13px;
+}
+.anuncio-nativo-endereco {
+    font-size: 12px;
+    color: #cbd5e1;
+    line-height: 1.3;
+}
 /* Modal de destaque */
 .destaque-modal-info {
     margin-bottom: 12px;
@@ -830,9 +961,9 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
 
 /* --- Resto (Anúncio, Modais, Responsividade) --- */
-.anuncio { flex-basis: 250px; flex-shrink: 0; background: var(--bg-secondary); border-radius: 8px; padding: 20px; box-shadow: 0 2px 5px var(--shadow-color); height: fit-content; position: sticky; top: 90px; } 
-.anuncio h3 { font-size: 1.3em; color: var(--text-primary); margin-bottom: 20px; text-align: center; } 
-.caixa-anuncio { background: var(--bg-anuncio); border: 1px dashed var(--border-anuncio); border-radius: 5px; padding: 30px 15px; text-align: center; color: var(--text-anuncio); font-size: 0.9em; overflow: hidden; } 
+.anuncio { width: min(360px, 100%); flex: 0 0 auto; background: transparent; border-radius: 0; padding: 0; box-shadow: none; height: auto; position: static; top: auto; } 
+.anuncio h3 { display: none; } 
+.caixa-anuncio { background: transparent; border: none; border-radius: 0; padding: 0; text-align: center; color: var(--text-anuncio); font-size: 0.9em; overflow: hidden; display: flex; width: 100%; justify-content: center; } 
 .caixa-anuncio img,
 .caixa-anuncio iframe {
     width: 100%;

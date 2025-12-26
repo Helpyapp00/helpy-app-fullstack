@@ -289,14 +289,86 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        destaquesScroll.innerHTML = '';
-        lista.forEach(item => {
+        const isMobileAds = window.innerWidth <= 992;
+
+        // Pool de anúncios (visível para todos). Para adicionar/remover, edite aqui.
+        const anunciosPool = [
+            {
+                titulo: 'Oferta para sua obra',
+                loja: 'Loja de Tintas ColorMix',
+                endereco: 'Av. Central, 123 - Centro',
+                linkPerfil: '/perfil.html?id=empresa-demo',
+                linkMapa: 'https://www.google.com/maps/search/Loja+de+Tintas+ColorMix+Av+Central+123',
+                imagem: 'https://via.placeholder.com/400x240?text=Tintas+ColorMix'
+            },
+            {
+                titulo: 'Ferramentas em Promoção',
+                loja: 'Casa do Construtor',
+                endereco: 'Rua das Ferramentas, 50 - Centro',
+                linkPerfil: '/perfil.html?id=empresa-ferramentas',
+                linkMapa: 'https://www.google.com/maps/search/Casa+do+Construtor+Rua+das+Ferramentas+50',
+                imagem: 'https://via.placeholder.com/400x240?text=Ferramentas'
+            },
+            {
+                titulo: 'Entrega de Material Rápida',
+                loja: 'Depósito Constrular',
+                endereco: 'Av. das Indústrias, 200',
+                linkPerfil: '/perfil.html?id=empresa-material',
+                linkMapa: 'https://www.google.com/maps/search/Deposito+Constrular+Av+das+Industrias+200',
+                imagem: 'https://via.placeholder.com/400x240?text=Material+de+Obra'
+            }
+        ];
+
+        const baseItems = lista.map(item => {
             const imagens = (item.thumbUrls && item.thumbUrls.length > 0) ? item.thumbUrls : (item.images || []);
             const primeira = imagens[0] || 'imagens/default-user.png';
             const extra = Math.max((imagens.length - 1), 0);
             const profissional = item.user || {};
             const nota = item.mediaAvaliacao || profissional.mediaAvaliacao || 0;
+            return { tipo: 'destaque', data: { item, primeira, extra, profissional, nota } };
+        });
 
+        let itemsComAnuncio = [...baseItems];
+
+        if (isMobileAds && baseItems.length > 0 && anunciosPool.length > 0) {
+            const anunciosShuffled = [...anunciosPool].sort(() => Math.random() - 0.5);
+            let idxAnuncio = 0;
+            let insertAt = Math.min(5 + Math.floor(Math.random() * 6), itemsComAnuncio.length);
+
+            while (idxAnuncio < anunciosShuffled.length && itemsComAnuncio.length > 0) {
+                if (insertAt >= itemsComAnuncio.length) {
+                    insertAt = Math.max(1, Math.floor(itemsComAnuncio.length / 2));
+                }
+                itemsComAnuncio.splice(insertAt, 0, { tipo: 'anuncio', data: anunciosShuffled[idxAnuncio] });
+                idxAnuncio += 1;
+                insertAt += Math.min(5 + Math.floor(Math.random() * 6), Math.max(1, itemsComAnuncio.length - insertAt));
+            }
+        }
+
+        destaquesScroll.innerHTML = '';
+
+        itemsComAnuncio.forEach(entry => {
+            if (entry.tipo === 'anuncio') {
+                const ad = entry.data;
+                const card = document.createElement('div');
+                card.className = 'thumb-destaque anuncio-nativo';
+                card.innerHTML = `
+                    <img src="${ad.imagem}" alt="" class="anuncio-nativo-img">
+                    <div class="anuncio-nativo-badge">Anúncio</div>
+                    <div class="anuncio-nativo-overlay">
+                        <div class="anuncio-nativo-titulo">${ad.titulo}</div>
+                        <div class="anuncio-nativo-loja">${ad.loja}</div>
+                        <div class="anuncio-nativo-endereco">${ad.endereco}</div>
+                    </div>
+                `;
+                card.addEventListener('click', () => {
+                    if (ad.linkPerfil) window.location.href = ad.linkPerfil;
+                });
+                destaquesScroll.appendChild(card);
+                return;
+            }
+
+            const { item, primeira, extra, profissional, nota } = entry.data;
             const card = document.createElement('div');
             card.className = 'thumb-destaque';
             card.innerHTML = `
@@ -367,7 +439,76 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        posts.forEach(post => {
+        const isMobileAds = window.innerWidth <= 992;
+        const anunciosFeed = [
+            {
+                titulo: 'Oferta para sua obra',
+                loja: 'Loja de Tintas ColorMix',
+                endereco: 'Av. Central, 123 - Centro',
+                linkPerfil: '/perfil.html?id=empresa-demo',
+                imagem: 'https://via.placeholder.com/600x320?text=Tintas+ColorMix',
+                linkMapa: 'https://www.google.com/maps/search/Loja+de+Tintas+ColorMix+Av+Central+123'
+            },
+            {
+                titulo: 'Ferramentas em Promoção',
+                loja: 'Casa do Construtor',
+                endereco: 'Rua das Ferramentas, 50 - Centro',
+                linkPerfil: '/perfil.html?id=empresa-ferramentas',
+                imagem: 'https://via.placeholder.com/600x320?text=Ferramentas',
+                linkMapa: 'https://www.google.com/maps/search/Casa+do+Construtor+Rua+das+Ferramentas+50'
+            },
+            {
+                titulo: 'Entrega de Material Rápida',
+                loja: 'Depósito Constrular',
+                endereco: 'Av. das Indústrias, 200',
+                linkPerfil: '/perfil.html?id=empresa-material',
+                imagem: 'https://via.placeholder.com/600x320?text=Material+de+Obra',
+                linkMapa: 'https://www.google.com/maps/search/Deposito+Constrular+Av+das+Industrias+200'
+            }
+        ];
+
+        // Constrói feed e insere no máx. 1 anúncio a cada intervalo aleatório (5-10)
+        const feedItems = [];
+        const pool = isMobileAds ? [...anunciosFeed].sort(() => Math.random() - 0.5) : [];
+        let idxAd = 0;
+        let distancia = 0;
+        let intervalo = 5 + Math.floor(Math.random() * 6); // 5..10
+
+        posts.forEach((p) => {
+            feedItems.push({ tipo: 'post', data: p });
+            distancia += 1;
+
+            if (isMobileAds && idxAd < pool.length && distancia >= intervalo) {
+                feedItems.push({ tipo: 'ad', data: pool[idxAd] });
+                idxAd += 1;
+                distancia = 0;
+                intervalo = 5 + Math.floor(Math.random() * 6);
+            }
+        });
+
+        feedItems.forEach(entry => {
+            if (entry.tipo === 'ad') {
+                const ad = entry.data;
+                const adEl = document.createElement('article');
+                adEl.className = 'post anuncio-nativo-feed';
+                adEl.innerHTML = `
+                    <img src="${ad.imagem}" alt="" class="anuncio-nativo-img">
+                    <div class="anuncio-nativo-overlay feed">
+                        <div class="anuncio-nativo-badge">Anúncio</div>
+                        <div class="anuncio-nativo-titulo">${ad.titulo}</div>
+                        <div class="anuncio-nativo-loja">${ad.loja}</div>
+                        <div class="anuncio-nativo-endereco">${ad.endereco}</div>
+                        ${ad.linkMapa ? `<button class="btn-como-chegar" onclick="event.stopPropagation(); window.open('${ad.linkMapa}', '_blank')"><i class="fas fa-map-marker-alt"></i> Como chegar</button>` : ''}
+                    </div>
+                `;
+                adEl.addEventListener('click', () => {
+                    if (ad.linkPerfil) window.location.href = ad.linkPerfil;
+                });
+                postsContainer.appendChild(adEl);
+                return;
+            }
+
+            const post = entry.data;
             if (!post.userId) return; 
 
             const postElement = document.createElement('article');
