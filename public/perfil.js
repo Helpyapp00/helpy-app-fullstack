@@ -2320,10 +2320,28 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             if (response.ok) {
                 postCompleto = await response.json();
+                console.log('✅ Post completo carregado da API:', postCompleto);
+                console.log('📝 Comentários no post:', postCompleto.comments?.length || 0);
+            } else if (response.status === 404) {
+                console.warn('Post não encontrado na API, usando dados disponíveis');
+                // Garantir que temos pelo menos arrays vazios para comentários e likes
+                if (!postCompleto.comments) postCompleto.comments = [];
+                if (!postCompleto.likes) postCompleto.likes = [];
             }
         } catch (error) {
             console.warn('Erro ao buscar post completo, usando dados disponíveis:', error);
+            // Garantir que temos pelo menos arrays vazios para comentários e likes
+            if (!postCompleto.comments) postCompleto.comments = [];
+            if (!postCompleto.likes) postCompleto.likes = [];
         }
+        
+        // Debug: verificar dados do post
+        console.log('📋 Dados do post para renderização:', {
+            id: postCompleto._id,
+            temComentarios: !!postCompleto.comments,
+            qtdComentarios: postCompleto.comments?.length || 0,
+            primeiroComentario: postCompleto.comments?.[0]
+        });
         
         const postAuthorPhoto = (postCompleto.userId.foto && !postCompleto.userId.foto.includes('pixabay')) 
             ? postCompleto.userId.foto 
@@ -2354,8 +2372,11 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Renderiza comentários
         const isPostOwner = postCompleto.userId._id === loggedInUserId;
-        const commentsHTML = renderComments(postCompleto.comments || [], isPostOwner);
-        const comentariosVisiveis = (postCompleto.comments && postCompleto.comments.length > 0) ? 'visible' : '';
+        const commentsArray = postCompleto.comments || [];
+        console.log('📝 Renderizando comentários:', commentsArray.length);
+        const commentsHTML = renderComments(commentsArray, isPostOwner);
+        const comentariosVisiveis = (commentsArray.length > 0) ? 'visible' : '';
+        console.log('📝 HTML dos comentários gerado:', commentsHTML.length > 0 ? 'Sim' : 'Não');
         
         modalContent.innerHTML = `
             <article class="post" data-post-id="${postCompleto._id}">
@@ -2413,8 +2434,11 @@ document.addEventListener('DOMContentLoaded', () => {
         modalPostagem.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
         
-        // Configurar listeners de interação
-        setupPostModalListeners(postCompleto._id);
+        // Aguardar um pouco para garantir que o DOM foi atualizado
+        setTimeout(() => {
+            // Configurar listeners de interação
+            setupPostModalListeners(postCompleto._id);
+        }, 300);
     }
     
     // Função para renderizar comentários
@@ -2448,7 +2472,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             <button class="comment-action-btn btn-show-reply-form" data-comment-id="${comment._id}">Responder</button>
                             ${replyCount > 0 ? `<button class="comment-action-btn btn-toggle-replies" data-comment-id="${comment._id}">Ver ${replyCount} Respostas</button>` : ''}
                         </div>
-                        <div class="reply-list ${replyCount > 0 ? '' : 'oculto'}">${repliesHTML}</div>
+                        <div class="reply-list oculto">${repliesHTML}</div>
                         <div class="reply-form oculto">
                             <input type="text" class="reply-input" placeholder="Responda a ${comment.userId.nome}...">
                             <button class="btn-send-reply" data-comment-id="${comment._id}">Enviar</button>
@@ -2487,8 +2511,17 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Configurar listeners de interação do modal
     function setupPostModalListeners(postId) {
-        const postElement = document.querySelector(`[data-post-id="${postId}"]`);
-        if (!postElement) return;
+        // Buscar o elemento dentro do modal, não a miniatura
+        const modalPostagem = document.getElementById('modal-postagem-completa');
+        if (!modalPostagem) {
+            console.error('❌ Modal não encontrado');
+            return;
+        }
+        const postElement = modalPostagem.querySelector(`.post[data-post-id="${postId}"]`);
+        if (!postElement) {
+            console.error('❌ Post element não encontrado no modal');
+            return;
+        }
         
         // Curtir postagem
         const btnLike = postElement.querySelector('.btn-like');
@@ -2623,10 +2656,56 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
         
-        // Configurar listeners dos comentários existentes
-        postElement.querySelectorAll('.comment').forEach(comment => {
-            setupCommentListeners(comment, postId);
-        });
+        // Aguardar um pouco para garantir que o DOM foi atualizado antes de configurar listeners
+        setTimeout(() => {
+            // Buscar o elemento dentro do modal novamente
+            const modalPostagemCheck = document.getElementById('modal-postagem-completa');
+            if (!modalPostagemCheck) {
+                console.error('❌ Modal não encontrado no setTimeout');
+                return;
+            }
+            const postElementCheck = modalPostagemCheck.querySelector(`.post[data-post-id="${postId}"]`);
+            if (!postElementCheck) {
+                console.error('❌ Post element não encontrado no modal no setTimeout');
+                return;
+            }
+            
+            // Configurar listeners dos comentários existentes
+            const comments = postElementCheck.querySelectorAll('.comment');
+            console.log('🔍 Buscando comentários no elemento:', postElementCheck);
+            console.log('🔍 Comentários encontrados:', comments.length);
+            
+            comments.forEach((comment, index) => {
+                console.log(`📝 Configurando listeners para comentário ${index + 1}:`, comment);
+                setupCommentListeners(comment, postId);
+            });
+            
+            // Debug: verificar se os listeners foram configurados
+            const toggleButtons = postElementCheck.querySelectorAll('.btn-toggle-replies');
+            console.log('📝 Comentários configurados:', comments.length);
+            console.log('📝 Botões toggle encontrados:', toggleButtons.length);
+            
+            // Se não encontrou comentários, pode ser que ainda não foram renderizados
+            if (comments.length === 0) {
+                console.warn('⚠️ Nenhum comentário encontrado no DOM');
+                // Tentar novamente após mais tempo
+                setTimeout(() => {
+                    const modalRetry = document.getElementById('modal-postagem-completa');
+                    if (modalRetry) {
+                        const postRetry = modalRetry.querySelector(`.post[data-post-id="${postId}"]`);
+                        if (postRetry) {
+                            const retryComments = postRetry.querySelectorAll('.comment');
+                            console.log('🔄 Retry - Comentários encontrados:', retryComments.length);
+                            if (retryComments.length > 0) {
+                                retryComments.forEach(comment => {
+                                    setupCommentListeners(comment, postId);
+                                });
+                            }
+                        }
+                    }
+                }, 200);
+            }
+        }, 300);
     }
     
     // Configurar listeners de um comentário específico
@@ -2673,17 +2752,40 @@ document.addEventListener('DOMContentLoaded', () => {
         // Toggle respostas
         const btnToggleReplies = commentElement.querySelector('.btn-toggle-replies');
         if (btnToggleReplies) {
+            console.log('🔘 Botão toggle encontrado para comentário:', commentElement.dataset.commentId);
             btnToggleReplies.addEventListener('click', (e) => {
                 e.stopPropagation();
+                e.preventDefault();
+                console.log('🔘 Clique no botão toggle detectado');
                 const replyList = commentElement.querySelector('.reply-list');
+                console.log('🔘 Reply list encontrado:', !!replyList);
                 if (replyList) {
-                    replyList.classList.toggle('oculto');
+                    const isHidden = replyList.classList.contains('oculto');
+                    console.log('🔘 Reply list está oculto?', isHidden);
+                    console.log('🔘 Reply list children:', replyList.children.length);
+                    
+                    if (isHidden) {
+                        // Remove a classe oculto e força display block com !important
+                        replyList.classList.remove('oculto');
+                        replyList.style.setProperty('display', 'block', 'important');
+                        console.log('✅ Respostas mostradas');
+                    } else {
+                        // Adiciona a classe oculto
+                        replyList.classList.add('oculto');
+                        replyList.style.removeProperty('display');
+                        console.log('✅ Respostas ocultadas');
+                    }
+                    
                     const replyCount = replyList.children.length;
                     btnToggleReplies.textContent = replyList.classList.contains('oculto') 
                         ? `Ver ${replyCount} Respostas` 
                         : 'Ocultar Respostas';
+                } else {
+                    console.error('❌ Reply list não encontrado');
                 }
             });
+        } else {
+            console.warn('⚠️ Botão toggle não encontrado para comentário:', commentElement.dataset.commentId);
         }
         
         // Enviar resposta

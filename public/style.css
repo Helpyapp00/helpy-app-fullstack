@@ -946,6 +946,87 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     }
 }
 
+/* Estilos para telas maiores (desktop) - apenas comentários com scroll */
+@media (min-width: 1024px) {
+    #modal-postagem-completa .modal-content {
+        max-height: 75vh;
+        max-width: 900px;
+        padding: 10px;
+    }
+    
+    /* Postagem sem scroll - altura limitada e reduzida */
+    #modal-postagem-completa .post {
+        display: flex;
+        flex-direction: column;
+        max-height: none;
+        overflow: visible !important;
+        overflow-y: visible !important;
+        overflow-x: visible !important;
+        height: auto;
+    }
+    
+    /* Reduzir padding da área da postagem */
+    #modal-postagem-completa .post-header {
+        padding-top: 5px;
+        padding-bottom: 4px;
+        flex-shrink: 0;
+        overflow: visible;
+        margin-bottom: 3px;
+    }
+    
+    #modal-postagem-completa .post-content {
+        padding-top: 4px;
+        padding-bottom: 5px;
+        flex-shrink: 0;
+        overflow: visible;
+        margin-bottom: 3px;
+    }
+    
+    #modal-postagem-completa .post-actions {
+        padding-top: 5px;
+        padding-bottom: 5px;
+        flex-shrink: 0;
+        overflow: visible;
+        margin-bottom: 3px;
+    }
+    
+    /* Reduzir altura máxima da imagem */
+    #modal-postagem-completa .post-image {
+        max-height: 250px !important;
+        margin-top: 5px;
+        margin-bottom: 5px;
+    }
+    
+    /* Seção de comentários com altura máxima e scroll */
+    #modal-postagem-completa .post-comments {
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        max-height: 280px;
+        overflow: visible;
+        margin-top: 5px;
+    }
+    
+    /* Lista de comentários com scroll */
+    #modal-postagem-completa .comment-list {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        max-height: 220px !important;
+        padding-right: 5px;
+        flex: 1;
+    }
+    
+    /* Formulário sempre visível */
+    #modal-postagem-completa .comment-form {
+        flex-shrink: 0;
+        background-color: var(--bg-secondary);
+        border-top: 1px solid var(--border-color);
+        margin-top: 5px;
+        padding-top: 6px;
+        padding-bottom: 6px;
+    }
+}
+
 /* Scroll sem barra em celulares */
 @media (max-width: 767px) {
     #modal-postagem-completa .post-comments {

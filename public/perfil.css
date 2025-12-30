@@ -6,7 +6,7 @@
     max-width: 1200px; /* base para telas médias/grandes */
     padding: 20px;
     box-sizing: border-box;
-    margin-top: 20px;
+    margin-top: 5px; /* Espaçamento para não ser cortado pelo cabeçalho */
     margin-left: auto;
     margin-right: auto;
 }
@@ -1398,7 +1398,8 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
 
 /* --- RESPONSIVIDADE DO PERFIL --- */
 @media (max-width: 768px) {
-    .content-perfil { margin-top: 20px; padding: 10px; }
+    /* Espaçamento entre header e área do perfil em tablets e celulares */
+    .content-perfil { margin-top: 55px; padding: 10px; padding-top: 10px; }
     .perfil-card { padding: 20px; }
     .perfil-acoes { display: flex; justify-content: center; }
     /* Título "Projetos" e botão ficam alinhados pelo topo no mobile */
@@ -1425,6 +1426,12 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
 }
 
 @media (max-width: 480px) {
+    /* Espaçamento entre header e área do perfil em celulares */
+    .content-perfil {
+        margin-top: 55px;
+        padding-top: 10px;
+    }
+    
     .perfil-card { padding: 15px; }
     .perfil-img { width: 100px; height: 100px; }
     #nomePerfil { font-size: 24px; }
