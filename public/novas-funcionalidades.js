@@ -4,6 +4,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const userId = localStorage.getItem('userId');
     const userType = localStorage.getItem('userType');
 
+    // Utilitário para cachear fotos de pedidos (para usar no lembrete de avaliação)
+    function cacheFotoPedidoGenerico(src, pid) {
+        if (!src) return;
+        localStorage.setItem('ultimaFotoPedido', src);
+        localStorage.setItem('fotoUltimoServicoConcluido', src);
+        sessionStorage.setItem('ultimaFotoPedido', src);
+        if (pid) {
+            const pidClean = String(pid).match(/[a-fA-F0-9]{24}/)?.[0];
+            if (pidClean) {
+                localStorage.setItem(`fotoPedido:${pidClean}`, src);
+                localStorage.setItem('pedidoIdUltimoServicoConcluido', pidClean);
+                sessionStorage.setItem(`fotoPedido:${pidClean}`, src);
+            }
+        }
+    }
+
+    // Captura imagens de pedidos carregadas em qualquer modal/lista
+    // (roda após o DOM pronto; também escuta carregamentos futuros de <img>)
+    Array.from(document.querySelectorAll('img[src*="pedidos-urgentes"]')).forEach(img => {
+        cacheFotoPedidoGenerico(img.src);
+    });
+    document.addEventListener('load', (e) => {
+        const t = e.target;
+        if (t && t.tagName === 'IMG' && t.src && t.src.includes('pedidos-urgentes')) {
+            cacheFotoPedidoGenerico(t.src);
+        }
+    }, true);
+
     // ============================================
     // PEDIDOS URGENTES ("Preciso Agora!")
     // ============================================
@@ -235,6 +263,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnSelecionarFotoPedido = document.getElementById('btn-selecionar-foto-pedido');
     const btnAdicionarFotoPedido = document.getElementById('btn-adicionar-foto-pedido');
     const previewFotosContainer = document.getElementById('preview-fotos-pedido');
+    const previewFotoPedido = document.getElementById('preview-foto-pedido'); // fallback legado
+    const imgPreviewPedido = document.getElementById('img-preview-pedido');   // fallback legado
     const fotosSelecionadas = [];
 
     function atualizarVisibilidadeBotoesFoto() {
@@ -245,6 +275,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btnAdicionarFotoPedido) {
             btnAdicionarFotoPedido.style.display = temFotos ? 'inline-flex' : 'none';
         }
+    }
+
+    function limparFotosPedido() {
+        fotosSelecionadas.length = 0;
+        if (previewFotosContainer) {
+            previewFotosContainer.innerHTML = '';
+        }
+        if (previewFotoPedido) previewFotoPedido.style.display = 'none';
+        if (imgPreviewPedido) imgPreviewPedido.src = '';
+        atualizarVisibilidadeBotoesFoto();
     }
 
     function criarThumbnailFoto(file, index) {
@@ -309,14 +349,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    const inputServicoPedido = document.getElementById('pedido-servico');
+
+    // Cacheia nome do serviço durante digitação
+    if (inputServicoPedido) {
+        inputServicoPedido.addEventListener('input', () => {
+            const val = inputServicoPedido.value || '';
+            try {
+                localStorage.setItem('ultimoServicoNome', val);
+                localStorage.setItem('ultimaDescricaoPedido', val);
+                localStorage.setItem('ultimaDemanda', val);
+            } catch (e) {
+                console.warn('Falha ao cachear serviço (input)', e);
+            }
+        });
+    }
+
     if (formPedidoUrgente) {
         formPedidoUrgente.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            const servico = document.getElementById('pedido-servico').value;
+            const servico = inputServicoPedido ? inputServicoPedido.value : '';
+            const descricao = document.getElementById('pedido-descricao').value;
+            // cache nome do serviço para usar no lembrete/avaliação
+            try {
+                localStorage.setItem('ultimoServicoNome', servico || '');
+                localStorage.setItem('ultimaDescricaoPedido', descricao || servico || '');
+                localStorage.setItem('ultimaDemanda', servico || descricao || '');
+            } catch (e) {
+                console.warn('Não foi possível cachear o nome do serviço', e);
+            }
             // Categoria foi removida da interface; usamos um valor padrão para manter compatibilidade com o backend
             const categoria = 'outros';
-            const descricao = document.getElementById('pedido-descricao').value;
             const rua = document.getElementById('pedido-rua').value;
             const numero = document.getElementById('pedido-numero').value;
             const bairro = document.getElementById('pedido-bairro').value;
@@ -380,9 +444,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: formData
                 });
 
-                const data = await response.json();
+                let data = null;
+                try {
+                    data = await response.json();
+                } catch (parseError) {
+                    console.error('Erro ao interpretar resposta do pedido urgente:', parseError);
+                }
                 
-                if (data.success) {
+                const successFlag = data && data.success === true;
+
+                if (successFlag) {
                     // Feedback visual com check animado
                     const toast = document.createElement('div');
                     toast.className = 'toast-sucesso';
@@ -395,16 +466,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (typeof atualizarVisibilidadeTipoAtendimento === 'function') {
                         atualizarVisibilidadeTipoAtendimento();
                     }
-                    if (previewFotoPedido) previewFotoPedido.style.display = 'none';
-                    if (imgPreviewPedido) imgPreviewPedido.src = '';
+                    limparFotosPedido();
                     modalPedidoUrgente?.classList.add('hidden');
-                    
-                    // Abre modal de propostas após 3 segundos
-                    setTimeout(() => {
-                        carregarPropostas(data.pedido._id);
-                    }, 3000);
                 } else {
-                    alert(data.message || 'Erro ao criar pedido.');
+                    console.error('Erro ao criar pedido urgente:', {
+                        status: response.status,
+                        ok: response.ok,
+                        data
+                    });
+                    alert((data && data.message) ? data.message : `Erro ao criar pedido urgente. (status ${response.status || 'desconhecido'})`);
+                    return;
                 }
             } catch (error) {
                 console.error('Erro ao criar pedido urgente:', error);
@@ -413,8 +484,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Carregar propostas de um pedido
-    async function carregarPropostas(pedidoId) {
+    // Carregar propostas de um pedido (tornada global para uso em header-notificacoes.js)
+    window.carregarPropostas = async function carregarPropostas(pedidoId) {
         const modalPropostas = document.getElementById('modal-propostas');
         const listaPropostas = document.getElementById('lista-propostas');
         
@@ -446,7 +517,6 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="pedido-propostas-header">
                             <div class="pedido-propostas-info">
                                 <strong>${pedido.servico || ''}</strong>
-                                ${pedido.categoria ? `<span class="badge-categoria">${pedido.categoria}</span>` : ''}
                                 ${pedido.descricao ? `<p class="pedido-descricao">${pedido.descricao}</p>` : ''}
                             </div>
                             ${pedido.foto ? `
@@ -462,14 +532,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     const prof = proposta.profissionalId;
                     const nivel = prof.gamificacao?.nivel || 1;
                     const mediaAvaliacao = prof.mediaAvaliacao || 0;
+                    const profId = prof._id || prof.id || prof.userId;
+                    const perfilUrl = profId ? `/perfil.html?id=${profId}` : '#';
                     
                     return `
                         <div class="proposta-card">
                             <div class="proposta-header">
+                                <a class="proposta-avatar-link" href="${perfilUrl}">
                                 <img src="${prof.avatarUrl || prof.foto || 'imagens/default-user.png'}" 
                                      alt="${prof.nome}" class="proposta-avatar">
+                                </a>
                                 <div class="proposta-info-profissional">
-                                    <strong>${prof.nome}</strong>
+                                    <strong><a class="link-perfil-proposta" href="${perfilUrl}">${prof.nome}</a></strong>
                                     <div class="proposta-meta">
                                         <span>Nível ${nivel}</span>
                                         ${mediaAvaliacao > 0 ? `<span>⭐ ${mediaAvaliacao.toFixed(1)}</span>` : ''}
@@ -766,7 +840,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="pedido-header">
                                 <div>
                                     <strong>${pedido.servico}</strong>
-                                    <span class="badge-categoria">${pedido.categoria}</span>
                                 </div>
                             </div>
                             
@@ -849,7 +922,8 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    async function carregarServicosAtivos(pedidoIdDestacado = null) {
+    // Função para carregar serviços ativos (tornada global para uso em header-notificacoes.js)
+    window.carregarServicosAtivos = async function carregarServicosAtivos(pedidoIdDestacado = null) {
         if (!listaServicosAtivos) return;
 
         try {
@@ -869,8 +943,34 @@ document.addEventListener('DOMContentLoaded', () => {
             const pedidos = data.pedidos || [];
             if (pedidos.length === 0) {
                 listaServicosAtivos.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-secondary);">Você ainda não tem serviços ativos de pedidos urgentes.</p>';
+                // Abre o modal mesmo sem pedidos (para quando é chamado de notificações)
+                if (modalServicosAtivos) {
+                    modalServicosAtivos.classList.remove('hidden');
+                    console.log('✅ Modal de serviços ativos aberto (sem pedidos)');
+                }
                 return;
             }
+
+            // Guarda fotos e nomes em cache local para uso na avaliação
+            pedidos.forEach(p => {
+                if (p._id) {
+                    const pidClean = String(p._id).match(/[a-fA-F0-9]{24}/)?.[0];
+                    const fotoSrc = p.foto;
+                    if (pidClean) {
+                        if (fotoSrc) {
+                            localStorage.setItem(`fotoPedido:${pidClean}`, fotoSrc);
+                            localStorage.setItem('fotoUltimoServicoConcluido', fotoSrc);
+                            localStorage.setItem('ultimaFotoPedido', fotoSrc);
+                        }
+                        localStorage.setItem('pedidoIdUltimoServicoConcluido', pidClean);
+                        if (p.servico) {
+                            localStorage.setItem(`nomeServico:${pidClean}`, p.servico);
+                            localStorage.setItem('ultimoServicoNome', p.servico);
+                            localStorage.setItem('nomeServicoConcluido', p.servico);
+                        }
+                    }
+                }
+            });
 
             listaServicosAtivos.innerHTML = pedidos.map(pedido => {
                 const cliente = pedido.clienteId;
@@ -879,13 +979,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 const cidadeEstado = `${endereco.cidade || ''}${endereco.cidade && endereco.estado ? ' - ' : ''}${endereco.estado || ''}`;
                 const enderecoMapa = encodeURIComponent(`${enderecoLinha} ${cidadeEstado}`);
                 const destaqueClass = pedidoIdDestacado && pedido._id === pedidoIdDestacado ? 'servico-ativo-destacado' : '';
+                const fotoServico = pedido.foto || '';
+                // Nome do serviço para cache/localStorage
+                const nomeServico = pedido.servico || '';
+                const pidCleanCard = String(pedido._id || '').match(/[a-fA-F0-9]{24}/)?.[0] || '';
+                if (pidCleanCard && nomeServico) {
+                    try {
+                        localStorage.setItem(`nomeServico:${pidCleanCard}`, nomeServico);
+                        localStorage.setItem('ultimoServicoNome', nomeServico);
+                        localStorage.setItem('nomeServicoConcluido', nomeServico);
+                    } catch (e) {
+                        console.warn('Falha ao cachear nomeServico do card ativo', e);
+                    }
+                }
 
                 return `
                     <div class="pedido-urgente-card ${destaqueClass}">
                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                             <div>
                                 <strong style="font-size:16px;">${pedido.servico}</strong>
-                                ${pedido.categoria ? `<span class="badge-categoria">${pedido.categoria}</span>` : ''}
                             </div>
                             <span class="badge-status badge-aceito">Ativo</span>
                         </div>
@@ -895,13 +1007,14 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p style="margin:4px 0;">
                             <i class="fas fa-map-marker-alt"></i> ${enderecoLinha} ${cidadeEstado ? `- ${cidadeEstado}` : ''}
                         </p>
+                        ${fotoServico ? `<div class="pedido-foto-servico"><img src="${fotoServico}" alt="Foto do serviço" loading="lazy"></div>` : ''}
                         ${pedido.descricao ? `<p class="pedido-descricao">${pedido.descricao}</p>` : ''}
                         <div style="margin-top:10px; display:flex; justify-content:space-between; gap: 10px; flex-wrap: wrap;">
                             <a href="https://www.google.com/maps/search/?api=1&query=${enderecoMapa}" target="_blank" rel="noopener noreferrer" class="btn-mapa-link">
                                 <i class="fas fa-map"></i> Ver no mapa
                             </a>
                             <div style="display:flex; gap:8px;">
-                                <button class="btn-servico-concluido" data-pedido-id="${pedido._id}" style="padding:6px 10px; border-radius:6px; border:none; background:#28a745; color:#fff; cursor:pointer; font-size:13px;">
+                                <button class="btn-servico-concluido" data-pedido-id="${pedido._id}" data-servico="${pedido.servico || ''}" data-foto-servico="${fotoServico}" style="padding:6px 10px; border-radius:6px; border:none; background:#28a745; color:#fff; cursor:pointer; font-size:13px;">
                                     <i class="fas fa-check"></i> Marcar serviço feito
                                 </button>
                                 <button class="btn-servico-cancelar" data-pedido-id="${pedido._id}" style="padding:6px 10px; border-radius:6px; border:none; background:#dc3545; color:#fff; cursor:pointer; font-size:13px;">
@@ -913,10 +1026,46 @@ document.addEventListener('DOMContentLoaded', () => {
                 `;
             }).join('');
 
+            // Guarda a primeira foto renderizada (fallback) após montar o DOM
+            const primeiraFoto = listaServicosAtivos.querySelector('.pedido-foto-servico img');
+            if (primeiraFoto?.src) {
+                const src = primeiraFoto.src;
+                localStorage.setItem('ultimaFotoPedido', src);
+                localStorage.setItem('fotoUltimoServicoConcluido', src);
+            }
+
             // Listeners: marcar serviço feito
             document.querySelectorAll('.btn-servico-concluido').forEach(btn => {
                 btn.addEventListener('click', async () => {
                     const pedidoId = btn.dataset.pedidoId;
+                    const nomeServico = btn.dataset.servico || '';
+                    let fotoServico = btn.dataset.fotoServico || '';
+                    if (!fotoServico) {
+                        const card = btn.closest('.pedido-urgente-card');
+                        const imgEl = card?.querySelector('.pedido-foto-servico img');
+                        if (imgEl?.src) fotoServico = imgEl.src;
+                    }
+                    if (nomeServico) {
+                        try {
+                            localStorage.setItem('nomeServicoConcluido', nomeServico);
+                            localStorage.setItem('ultimoServicoNome', nomeServico);
+                            localStorage.setItem('ultimaDescricaoPedido', nomeServico);
+                            const pidClean = String(pedidoId || '').match(/[a-fA-F0-9]{24}/)?.[0] || '';
+                            if (pidClean) localStorage.setItem(`nomeServico:${pidClean}`, nomeServico);
+                        } catch (e) {
+                            console.warn('Falha ao cachear nome do serviço concluído', e);
+                        }
+                    }
+                    if (fotoServico) {
+                        // guarda para usar no lembrete de avaliação
+                        localStorage.setItem('fotoUltimoServicoConcluido', fotoServico);
+                        const pidClean = String(pedidoId || '').match(/[a-fA-F0-9]{24}/)?.[0];
+                        if (pidClean) {
+                            localStorage.setItem(`fotoPedido:${pidClean}`, fotoServico);
+                            localStorage.setItem('pedidoIdUltimoServicoConcluido', pidClean);
+                        localStorage.setItem('ultimaFotoPedido', fotoServico);
+                        }
+                    }
                     abrirConfirmacaoAcao({
                         titulo: 'Marcar serviço como concluído',
                         texto: 'Confirme apenas se o serviço foi realmente finalizado.',
@@ -932,6 +1081,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                 });
                                 const data = await resp.json();
                                 if (data.success) {
+                                    // Guarda referências para a avaliação (foto e pedido)
+                                    const pid = (pedidoId && typeof pedidoId === 'string') ? pedidoId.trim() : '';
+                                    const pidClean = pid.match(/[a-fA-F0-9]{24}/)?.[0] || '';
+                                    if (pidClean) {
+                                        localStorage.setItem('pedidoIdUltimoServicoConcluido', pidClean);
+                                    }
                                     const toast = document.createElement('div');
                                     toast.className = 'toast-sucesso';
                                     toast.innerHTML = '<span class="check-animado">✔</span> Serviço marcado como concluído. O cliente poderá avaliar você.';
@@ -989,9 +1144,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 });
             });
+            
+            // Abre o modal se ele existir (para quando é chamado de notificações)
+            if (modalServicosAtivos) {
+                modalServicosAtivos.classList.remove('hidden');
+                console.log('✅ Modal de serviços ativos aberto');
+            }
         } catch (error) {
             console.error('Erro ao carregar serviços ativos:', error);
             listaServicosAtivos.innerHTML = '<p style="color: var(--error-color);">Erro ao carregar serviços ativos. Tente novamente.</p>';
+            // Tenta abrir o modal mesmo em caso de erro (pode ter dados parciais)
+            if (modalServicosAtivos) {
+                modalServicosAtivos.classList.remove('hidden');
+            }
         }
     }
 
@@ -1048,7 +1213,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                                 <div>
                                     <strong style="font-size: 18px;">${pedido.servico}</strong>
-                                    <span class="badge-categoria">${pedido.categoria}</span>
                                     ${statusBadge}
                                 </div>
                                 ${pedido.status === 'aberto' && !expirado ? `<span class="tempo-restante">⏱️ ${tempoRestante} min</span>` : ''}
@@ -2268,6 +2432,57 @@ document.addEventListener('DOMContentLoaded', () => {
                                         modalNotificacoes?.classList.add('hidden');
                                         const profissionalId = notif.dadosAdicionais.profissionalId;
                                         const agendamentoId = notif.dadosAdicionais.agendamentoId || '';
+                                        const fotoServico = notif.dadosAdicionais.foto || '';
+                                        const pedidoId = notif.dadosAdicionais.pedidoId || '';
+                                        let pidClean = '';
+                                        if (pedidoId) {
+                                            pidClean = String(pedidoId).match(/[a-fA-F0-9]{24}/)?.[0] || '';
+                                        }
+                                        // Tenta descobrir o nome do serviço
+                                        let nomeServico = notif.dadosAdicionais?.servico || '';
+                                        if (!nomeServico && pidClean) {
+                                            try {
+                                                const respPedido = await fetch(`/api/pedidos-urgentes/${pidClean}`, { headers: { 'Authorization': `Bearer ${token}` } });
+                                                if (respPedido.ok) {
+                                                    const pedido = await respPedido.json();
+                                                    nomeServico =
+                                                        pedido?.servico ||
+                                                        pedido?.titulo ||
+                                                        pedido?.descricao ||
+                                                        pedido?.categoria ||
+                                                        pedido?.nome ||
+                                                        '';
+                                                }
+                                            } catch (e) {
+                                                console.warn('Falha ao buscar nome do serviço do pedido', e);
+                                            }
+                                        }
+                                        if (nomeServico) {
+                                            try {
+                                                localStorage.setItem('ultimoServicoNome', nomeServico);
+                                                localStorage.setItem('ultimaDescricaoPedido', nomeServico);
+                                                localStorage.setItem('nomeServicoConcluido', nomeServico);
+                                            } catch (e) {
+                                                console.warn('Falha ao cachear nome do serviço', e);
+                                            }
+                                        }
+                                        if (fotoServico) {
+                                            localStorage.setItem('fotoUltimoServicoConcluido', fotoServico);
+                                            localStorage.setItem('ultimaFotoPedido', fotoServico);
+                                            if (pidClean) {
+                                                localStorage.setItem(`fotoPedido:${pidClean}`, fotoServico);
+                                                localStorage.setItem('pedidoIdUltimoServicoConcluido', pidClean);
+                                            }
+                                        } else if (pidClean) {
+                                            // tenta reaproveitar cache se a notificação não trouxe foto
+                                            const fotoCache = localStorage.getItem(`fotoPedido:${pidClean}`) || localStorage.getItem('fotoUltimoServicoConcluido') || localStorage.getItem('ultimaFotoPedido');
+                                            if (fotoCache) {
+                                                localStorage.setItem('fotoUltimoServicoConcluido', fotoCache);
+                                                localStorage.setItem('ultimaFotoPedido', fotoCache);
+                                                localStorage.setItem(`fotoPedido:${pidClean}`, fotoCache);
+                                                localStorage.setItem('pedidoIdUltimoServicoConcluido', pidClean);
+                                            }
+                                        }
                                         // Abre o perfil do profissional já focado na seção de avaliação,
                                         // passando o agendamento para criar avaliação verificada
                                         const params = new URLSearchParams({
@@ -2275,6 +2490,16 @@ document.addEventListener('DOMContentLoaded', () => {
                                             origem: 'servico_concluido',
                                             agendamentoId
                                         });
+                                        const fotoParam = fotoServico 
+                                            || (pedidoId ? localStorage.getItem(`fotoPedido:${String(pedidoId).match(/[a-fA-F0-9]{24}/)?.[0] || ''}`) : null) 
+                                            || localStorage.getItem('fotoUltimoServicoConcluido') 
+                                            || localStorage.getItem('ultimaFotoPedido');
+                                        if (fotoParam) params.set('foto', fotoParam);
+                                        if (pedidoId) {
+                                            const pidClean = String(pedidoId).match(/[a-fA-F0-9]{24}/)?.[0] || '';
+                                            if (pidClean) params.set('pedidoId', pidClean);
+                                        }
+                                        if (nomeServico) params.set('servico', nomeServico);
                                         window.location.href = `/perfil?${params.toString()}#secao-avaliacao`;
                                     }
                                 }

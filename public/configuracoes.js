@@ -146,6 +146,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (confirmLogoutYesBtn) {
         confirmLogoutYesBtn.addEventListener('click', () => {
+            // Fecha todos os modais antes de fazer logout
+            const modalPropostas = document.getElementById('modal-propostas');
+            if (modalPropostas) {
+                modalPropostas.classList.add('hidden');
+            }
             const jaLogou = localStorage.getItem('helpy-ja-logou');
             localStorage.clear();
             if (jaLogou) {

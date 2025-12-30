@@ -376,9 +376,11 @@ async function registrarHistoricoTransacao(pagamentoId, acao, realizadoPor, dado
 const avaliacaoVerificadaSchema = new mongoose.Schema({
     profissionalId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     clienteId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    agendamentoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Agendamento', required: true },
+    agendamentoId: { type: mongoose.Schema.Types.ObjectId, ref: 'Agendamento' }, // Opcional para pedidos urgentes
+    pedidoUrgenteId: { type: mongoose.Schema.Types.ObjectId, ref: 'PedidoUrgente' }, // Para pedidos urgentes sem agendamento
     estrelas: { type: Number, required: true, min: 1, max: 5 },
     comentario: { type: String, trim: true },
+    servico: { type: String }, // Nome do serviço prestado
     isVerificada: { type: Boolean, default: true }, // Sempre true para avaliações verificadas
     dataServico: { type: Date, required: true } // Data em que o serviço foi realizado
 }, { timestamps: true });
@@ -2728,10 +2730,32 @@ app.post('/api/user/xp', authMiddleware, async (req, res) => {
 // 🌟 NOVO: Criar Avaliação Verificada (após serviço concluído)
 app.post('/api/avaliacao-verificada', authMiddleware, async (req, res) => {
     try {
-        const { profissionalId, agendamentoId, estrelas, comentario, dataServico } = req.body;
+        const { profissionalId, agendamentoId, pedidoUrgenteId, estrelas, comentario, dataServico, servico } = req.body;
         const clienteId = req.user.id;
 
-        // Verifica se o agendamento existe e foi concluído
+        let nomeServico = servico || '';
+        let dataServicoFinal = dataServico;
+
+        // Se tem pedidoUrgenteId (pedido urgente sem agendamento), valida o pedido primeiro
+        if (pedidoUrgenteId) {
+            const pedido = await PedidoUrgente.findById(pedidoUrgenteId);
+            if (!pedido) {
+                return res.status(404).json({ success: false, message: 'Pedido urgente não encontrado.' });
+            }
+
+            if (pedido.clienteId.toString() !== clienteId) {
+                return res.status(403).json({ success: false, message: 'Você não pode avaliar este serviço.' });
+            }
+
+            if (pedido.status !== 'concluido') {
+                return res.status(400).json({ success: false, message: 'O serviço precisa estar concluído para ser avaliado.' });
+            }
+
+            nomeServico = nomeServico || pedido.servico || '';
+            dataServicoFinal = dataServicoFinal || pedido.updatedAt || new Date();
+        }
+        // Se tem agendamentoId (serviço agendado), valida o agendamento
+        else if (agendamentoId) {
         const agendamento = await Agendamento.findById(agendamentoId);
         if (!agendamento) {
             return res.status(404).json({ success: false, message: 'Agendamento não encontrado.' });
@@ -2745,23 +2769,40 @@ app.post('/api/avaliacao-verificada', authMiddleware, async (req, res) => {
             return res.status(400).json({ success: false, message: 'O serviço precisa estar concluído para ser avaliado.' });
         }
 
-        // Verifica se já existe avaliação para este agendamento
-        const avaliacaoExistente = await AvaliacaoVerificada.findOne({ agendamentoId });
-        if (avaliacaoExistente) {
-            return res.status(400).json({ success: false, message: 'Este serviço já foi avaliado.' });
+            nomeServico = nomeServico || agendamento.servico || '';
+            dataServicoFinal = dataServicoFinal || agendamento.dataHora;
+        }
+        // Se não tem nem agendamentoId nem pedidoUrgenteId, retorna erro
+        else {
+            return res.status(400).json({ success: false, message: 'É necessário informar um agendamentoId ou pedidoUrgenteId.' });
         }
 
+        // Permite múltiplas avaliações verificadas por agendamento/pedido (cada vez que o serviço for concluído e acessado pela notificação)
+
         // Cria a avaliação verificada
+        console.log('💾 Criando avaliação verificada com:', {
+            profissionalId,
+            clienteId,
+            agendamentoId: agendamentoId || undefined,
+            pedidoUrgenteId: pedidoUrgenteId || undefined,
+            servico: nomeServico,
+            estrelas,
+            comentario: comentario?.substring(0, 50) + '...'
+        });
+        
         const novaAvaliacao = new AvaliacaoVerificada({
             profissionalId,
             clienteId,
-            agendamentoId,
+            agendamentoId: agendamentoId || undefined,
+            pedidoUrgenteId: pedidoUrgenteId || undefined,
             estrelas,
             comentario,
-            dataServico: dataServico || agendamento.dataHora
+            servico: nomeServico,
+            dataServico: dataServicoFinal
         });
 
         await novaAvaliacao.save();
+        console.log('✅ Avaliação verificada salva com servico:', novaAvaliacao.servico);
 
         // Atualiza XP do profissional baseado na avaliação verificada
         let xpGanho = 0;
@@ -2798,7 +2839,7 @@ app.post('/api/avaliacao-verificada', authMiddleware, async (req, res) => {
     }
 });
 
-// 🌟 NOVO: Listar Avaliações Verificadas de um Profissional
+// 🌟 NOVO: Listar Avaliações Verificadas de um Profissional (enriquece com nome do serviço)
 app.get('/api/avaliacoes-verificadas/:profissionalId', async (req, res) => {
     try {
         const { profissionalId } = req.params;
@@ -2809,7 +2850,99 @@ app.get('/api/avaliacoes-verificadas/:profissionalId', async (req, res) => {
             .sort({ createdAt: -1 })
             .exec();
 
-        res.json({ success: true, avaliacoes });
+        // Enriquecimento: tenta descobrir o nome do serviço via agendamentoId/pedido
+        const avaliacoesEnriquecidas = [];
+        for (const av of avaliacoes) {
+            const plain = av.toObject();
+            
+            // 1. Se já tem servico salvo na avaliação e não é placeholder, usa ele
+            const servicoAtual = plain.servico && plain.servico.trim() ? plain.servico.trim() : '';
+            const isPlaceholder = servicoAtual && (
+                servicoAtual.toLowerCase() === 'serviço concluído' ||
+                servicoAtual.toLowerCase() === 'serviço prestado' ||
+                servicoAtual.toLowerCase() === 'serviço realizado'
+            );
+            
+            if (servicoAtual && !isPlaceholder) {
+                avaliacoesEnriquecidas.push(plain);
+                continue;
+            }
+            
+            // Se tem placeholder ou está vazio, tenta buscar de outras fontes
+            
+            // 2. Tenta pegar do agendamento populado
+            let servicoEncontrado = null;
+            if (plain.agendamentoId) {
+                // Se está populado (é um objeto com propriedades)
+                if (typeof plain.agendamentoId === 'object' && plain.agendamentoId.servico) {
+                    servicoEncontrado = plain.agendamentoId.servico;
+                } else {
+                    // Se é apenas um ObjectId, busca o agendamento
+                    const agendamentoIdValue = plain.agendamentoId._id || plain.agendamentoId;
+                    if (mongoose.Types.ObjectId.isValid(agendamentoIdValue)) {
+                        try {
+                            const agendamento = await Agendamento.findById(agendamentoIdValue).lean();
+                            if (agendamento?.servico) {
+                                servicoEncontrado = agendamento.servico;
+                            } else {
+                                // Se não encontrou no agendamento, tenta buscar em um pedido urgente que tenha este agendamentoId
+                                const pedido = await PedidoUrgente.findOne({ agendamentoId: agendamentoIdValue }).lean();
+                        if (pedido?.servico) {
+                                    servicoEncontrado = pedido.servico;
+                            plain.pedidoId = pedido._id;
+                                }
+                        }
+                    } catch (e) {
+                        console.warn('Falha ao enriquecer avaliação verificada com serviço', e);
+                    }
+                }
+            }
+            }
+            
+            // 3. Se não encontrou no agendamento, tenta do pedidoUrgenteId populado
+            if (!servicoEncontrado && plain.pedidoUrgenteId) {
+                // Se está populado (é um objeto com propriedades)
+                if (typeof plain.pedidoUrgenteId === 'object' && plain.pedidoUrgenteId.servico) {
+                    servicoEncontrado = plain.pedidoUrgenteId.servico;
+                } else {
+                    // Se é apenas um ObjectId, busca o pedido urgente
+                    const pedidoIdValue = plain.pedidoUrgenteId._id || plain.pedidoUrgenteId;
+                    if (mongoose.Types.ObjectId.isValid(pedidoIdValue)) {
+                        try {
+                            const pedido = await PedidoUrgente.findById(pedidoIdValue).lean();
+                            if (pedido?.servico) {
+                                servicoEncontrado = pedido.servico;
+                            }
+                        } catch (e) {
+                            console.warn('Falha ao enriquecer avaliação verificada com serviço do pedido urgente', e);
+                        }
+                    }
+                }
+            }
+            
+            // Atribui o serviço encontrado (só se não for placeholder)
+            if (servicoEncontrado && servicoEncontrado.trim()) {
+                const servicoLimpo = servicoEncontrado.trim();
+                const isPlaceholderEncontrado = (
+                    servicoLimpo.toLowerCase() === 'serviço concluído' ||
+                    servicoLimpo.toLowerCase() === 'serviço prestado' ||
+                    servicoLimpo.toLowerCase() === 'serviço realizado'
+                );
+                
+                if (!isPlaceholderEncontrado) {
+                    plain.servico = servicoLimpo;
+                    console.log(`✅ Nome do serviço atribuído à avaliação ${plain._id}: ${plain.servico}`);
+                } else {
+                    console.warn(`⚠️ Serviço encontrado é placeholder, não atribuindo: ${servicoLimpo}`);
+                }
+            } else {
+                console.warn(`⚠️ Nenhum nome de serviço encontrado para avaliação ${plain._id}`);
+            }
+            
+            avaliacoesEnriquecidas.push(plain);
+        }
+
+        res.json({ success: true, avaliacoes: avaliacoesEnriquecidas });
     } catch (error) {
         console.error('Erro ao buscar avaliações verificadas:', error);
         res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
@@ -2819,7 +2952,7 @@ app.get('/api/avaliacoes-verificadas/:profissionalId', async (req, res) => {
 // 🆕 NOVO: Atualizar avaliação para adicionar XP automaticamente (MANTIDO PARA COMPATIBILIDADE)
 app.post('/api/avaliar-trabalhador', authMiddleware, async (req, res) => {
     try {
-        const { trabalhadorId, estrelas, comentario } = req.body;
+        const { trabalhadorId, estrelas, comentario, servico, pedidoId, agendamentoId } = req.body;
         const usuarioId = req.user.id;
 
         const trabalhador = await User.findById(trabalhadorId);
@@ -2832,6 +2965,9 @@ app.post('/api/avaliar-trabalhador', authMiddleware, async (req, res) => {
             usuarioId,
             estrelas,
             comentario,
+            servico: servico || '',
+            pedidoId: pedidoId || '',
+            agendamentoId: agendamentoId || '',
             createdAt: new Date()
         };
         trabalhador.avaliacoes.push(novaAvaliacao);
@@ -3399,6 +3535,36 @@ app.post('/api/pedidos-urgentes/:pedidoId/recusar-proposta', authMiddleware, asy
         return res.json({ success: true, message: 'Proposta recusada com sucesso.', pedido });
     } catch (error) {
         console.error('Erro ao recusar proposta:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Buscar um pedido urgente por ID (dados básicos e foto) - restringe a ObjectId para não conflitar com /ativos, /meus etc.
+app.get('/api/pedidos-urgentes/:pedidoId([a-fA-F0-9]{24})', authMiddleware, async (req, res) => {
+    try {
+        const { pedidoId } = req.params;
+        const pedido = await PedidoUrgente.findById(pedidoId)
+            .populate('clienteId', 'nome foto avatarUrl cidade estado')
+            .exec();
+
+        if (!pedido) {
+            return res.status(404).json({ success: false, message: 'Pedido não encontrado.' });
+        }
+
+        res.json({
+            success: true,
+            pedido: {
+                _id: pedido._id,
+                servico: pedido.servico,
+                descricao: pedido.descricao,
+                foto: pedido.foto,
+                localizacao: pedido.localizacao,
+                categoria: pedido.categoria,
+                clienteId: pedido.clienteId
+            }
+        });
+    } catch (error) {
+        console.error('Erro ao buscar pedido urgente:', error);
         res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
     }
 });
@@ -4257,7 +4423,8 @@ app.post('/api/pedidos-urgentes/:pedidoId/concluir-servico', authMiddleware, asy
                 {
                     profissionalId: propostaAceita.profissionalId,
                     agendamentoId: pedido.agendamentoId || null,
-                    pedidoId: pedido._id
+                    pedidoId: pedido._id,
+                    foto: pedido.foto || null
                 },
                 null
             );
@@ -5024,6 +5191,32 @@ app.put('/api/notificacoes/marcar-todas-lidas', authMiddleware, async (req, res)
         res.json({ success: true, message: 'Todas as notificações foram marcadas como lidas.' });
     } catch (error) {
         console.error('Erro ao marcar notificações como lidas:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Deletar todas as notificações do usuário
+app.delete('/api/notificacoes', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const { ids } = req.body; // Array de IDs para deletar específicas
+        
+        let query = { userId };
+        if (ids && Array.isArray(ids) && ids.length > 0) {
+            // Deleta apenas as notificações especificadas
+            query._id = { $in: ids };
+        }
+        // Se não passar ids, deleta todas
+        
+        const resultado = await Notificacao.deleteMany(query);
+        
+        res.json({ 
+            success: true, 
+            message: ids && ids.length > 0 ? 'Notificações selecionadas foram deletadas.' : 'Todas as notificações foram deletadas.',
+            deletadas: resultado.deletedCount
+        });
+    } catch (error) {
+        console.error('Erro ao deletar notificações:', error);
         res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
     }
 });

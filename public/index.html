@@ -17,15 +17,22 @@
                 // Aplica a classe no <html> para :root funcionar
                 document.documentElement.classList.add('dark-mode');
             }
+            // Garante que o avatar do header use o caminho correto desde o início
+            document.addEventListener('DOMContentLoaded', function() {
+                const userAvatarHeader = document.getElementById('user-avatar-header');
+                if (userAvatarHeader && userAvatarHeader.src && !userAvatarHeader.src.includes('/imagens/')) {
+                    userAvatarHeader.src = '/imagens/default-user.png';
+                }
+            });
         })();
     </script>
 
     <header>
         <div class="logo-box">
-            <img src="imagens/helpy-feed.png" alt="Logo Helpy"> <h1>Helpy</h1>
+            <img src="/imagens/helpy-feed.png" alt="Logo Helpy" onerror="this.onerror=null; this.src='imagens/helpy-feed.png';"> <h1>Helpy</h1>
         </div>
         <div class="user-info">
-            <img id="user-avatar-header" src="imagens/default-user.png" alt="Avatar do Usuário" class="user-avatar-header">
+            <img id="user-avatar-header" src="/imagens/default-user.png" alt="Avatar do Usuário" class="user-avatar-header" onerror="this.onerror=null; this.src='/imagens/default-user.png';">
             <span id="user-name-header"></span>
             <button id="logout-button">Sair</button>
         </div>
@@ -104,10 +111,10 @@
 
         <main>
             <div class="top-strip">
-                <!-- Botão (mobile) para abrir filtros / ações rápidas / times -->
-                <button id="mobile-sidebar-toggle" class="mobile-sidebar-toggle" aria-label="Abrir menu de filtros e ações">
-                    <i class="fas fa-sliders-h"></i>
-                </button>
+            <!-- Botão (mobile) para abrir filtros / ações rápidas / times -->
+            <button id="mobile-sidebar-toggle" class="mobile-sidebar-toggle" aria-label="Abrir menu de filtros e ações">
+                <i class="fas fa-sliders-h"></i>
+            </button>
 
                 <!-- 🆕 Faixa de destaques (miniaturas sobre o feed) -->
                 <section id="barra-destaques" class="barra-destaques">
@@ -153,7 +160,7 @@
             <h3>Anúncios</h3>
             <div class="caixa-anuncio">
                 <div class="anuncio-card anuncio-nativo" onclick="window.location.href='/perfil.html?id=empresa-demo'">
-                    <img src="https://via.placeholder.com/640x320?text=Loja+de+Tintas+ColorMix" alt="" class="anuncio-nativo-img">
+                    <img src="https://placehold.co/640x320?text=Loja+de+Tintas+ColorMix" alt="" class="anuncio-nativo-img">
                     <div class="anuncio-nativo-overlay">
                         <div class="anuncio-nativo-titulo">Oferta para sua obra</div>
                         <div class="anuncio-nativo-loja">Loja de Tintas ColorMix</div>
@@ -484,10 +491,14 @@
         </div>
     </div>
 
-    <!-- 🚨 NOVO: Modal Ver Propostas -->
+
+    <!-- 🚨 Modal Ver Propostas -->
     <div id="modal-propostas" class="modal-overlay hidden">
         <div class="modal-content modal-grande">
-            <h2><i class="fas fa-hand-holding-usd"></i> Propostas Recebidas</h2>
+            <div class="modal-header">
+                <h2><i class="fas fa-hand-holding-usd"></i> Propostas Recebidas</h2>
+                <button class="btn-close-modal" data-modal="modal-propostas">&times;</button>
+            </div>
             <div id="lista-propostas" class="lista-propostas">
                 <p>Carregando propostas...</p>
             </div>
@@ -873,14 +884,40 @@
     <!-- 🔔 NOVO: Modal Notificações -->
     <div id="modal-notificacoes" class="modal-overlay hidden">
         <div class="modal-content modal-grande">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                <h2><i class="fas fa-bell"></i> Notificações</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; position: relative;">
+                <h2 style="margin: 0;"><i class="fas fa-bell"></i> Notificações</h2>
+                <div style="display: flex; align-items: center; gap: 10px;">
                 <button id="btn-marcar-todas-lidas" class="btn-secondary" style="padding: 8px 15px;">
                     <i class="fas fa-check-double"></i> Marcar todas como lidas
                 </button>
+                    <button id="btn-limpar-notificacoes" class="btn-lixeira" title="Deletar notificações" style="position: absolute; top: 0; right: 0;" onclick="console.log('🟢 CLIQUE NO HTML!'); event.stopPropagation(); event.preventDefault(); if (window.handleClickLixeira) { console.log('🟢 Chamando handleClickLixeira...'); window.handleClickLixeira(event); } else { console.error('❌ handleClickLixeira não encontrado!'); } return false;">
+                        <i class="fas fa-trash"></i>
+                    </button>
             </div>
-            <div id="lista-notificacoes" class="lista-propostas" style="max-height: 500px; overflow-y: auto;">
+            </div>
+            <div id="selecionar-tudo-container" style="display: none; margin-bottom: 10px; position: relative;">
+                <button id="btn-selecionar-tudo" class="btn-secondary" style="padding: 6px 12px; font-size: 14px;">
+                    Selecionar tudo
+                </button>
+                <span id="mensagem-selecionar-primeiro" style="display: none; position: absolute; left: 0; top: 100%; margin-top: 5px; color: #ff6b6b; font-size: 12px; white-space: nowrap;">Primeiro selecione!</span>
+            </div>
+            <div id="lista-notificacoes" class="lista-propostas">
                 <p>Carregando notificações...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de aviso/confirmação customizado -->
+    <div id="modal-aviso-notificacoes" class="modal-overlay hidden" style="z-index: 10001;">
+        <div class="modal-content modal-confirmacao">
+            <div style="text-align: center; padding: 20px;">
+                <div id="modal-aviso-icon" style="font-size: 48px; margin-bottom: 15px;">⚠️</div>
+                <h3 id="modal-aviso-titulo" style="margin: 0 0 15px 0; color: var(--text-primary);">Aviso</h3>
+                <p id="modal-aviso-mensagem" style="margin: 0 0 25px 0; color: var(--text-secondary); line-height: 1.5;">Mensagem</p>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button id="modal-aviso-btn-cancelar" class="btn-secondary" style="display: none; padding: 10px 20px;">Cancelar</button>
+                    <button id="modal-aviso-btn-ok" class="btn-secondary" style="padding: 10px 20px;">OK</button>
+                </div>
             </div>
         </div>
     </div>
@@ -1150,6 +1187,7 @@
         </div>
     </div>
 
+    <script src="/header-notificacoes.js"></script>
     <script src="/script.js"></script>
     <script src="/novas-funcionalidades.js"></script>
 </body>

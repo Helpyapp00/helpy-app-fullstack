@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perfil</title>
+    <link rel="icon" href="/icons/helpy.ico">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/style.css">
     <link rel="stylesheet" href="/perfil.css">
@@ -16,29 +17,45 @@
             if (savedTheme === 'dark') {
                 document.documentElement.classList.add('dark-mode');
             }
+            // Garante que o avatar do header use o caminho correto desde o início
+            document.addEventListener('DOMContentLoaded', function() {
+                const userAvatarHeader = document.getElementById('user-avatar-header');
+                if (userAvatarHeader && userAvatarHeader.src && !userAvatarHeader.src.includes('/imagens/')) {
+                    userAvatarHeader.src = '/imagens/default-user.png';
+                }
+            });
         })();
     </script>
 
     <header>
         <div class="logo-box">
-            <img src="imagens/helpy-feed.png" alt="Logo Helpy"> <h1>Helpy</h1>
+            <img src="/imagens/helpy-feed.png" alt="Logo Helpy" onerror="this.onerror=null; this.src='imagens/helpy-feed.png';"> <h1>Helpy</h1>
         </div>
-        
         <div class="user-info">
-            <img id="user-avatar-header" src="imagens/default-user.png" alt="Avatar" class="user-avatar-header">
-            <span id="user-name-header">Carregando...</span>
-            
-            <button id="feed-button" title="Voltar ao Feed">
-                <i class="fas fa-home"></i>
-            </button>
+            <img id="user-avatar-header" src="/imagens/default-user.png" alt="Avatar do Usuário" class="user-avatar-header" onerror="this.onerror=null; this.src='/imagens/default-user.png';">
+            <span id="user-name-header"></span>
             <button id="logout-button">Sair</button>
+        </div>
+        <div class="header-actions">
+            <!-- Botão de busca (mobile) -->
+            <button id="search-toggle" class="search-toggle" aria-label="Buscar">
+                <i class="fas fa-search"></i>
+            </button>
+            <input type="text" class="search" placeholder="Buscar serviços ou profissionais...">
+            <!-- 🔔 Ícone de Notificações -->
+            <div id="notificacoes-container" style="position: relative; margin-right: 15px;">
+                <button id="btn-notificacoes" style="background: none; border: none; cursor: pointer; font-size: 20px; color: var(--text-primary); position: relative;">
+                    <i class="fas fa-bell"></i>
+                    <span id="badge-notificacoes" style="position: absolute; top: -5px; right: -5px; background: #dc3545; color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 11px; display: none; align-items: center; justify-content: center;">0</span>
+                </button>
+            </div>
         </div>
     </header>
 
     <div class="content-perfil">
         <div class="perfil-card">
             <div class="perfil-header">
-                <img id="fotoPerfil" class="perfil-img" src="imagens/default-user.png" alt="User Profile Image">
+                <img id="fotoPerfil" class="perfil-img" src="/imagens/default-user.png" alt="User Profile Image">
                 
                 <label id="labelInputFotoPerfil" class="label-input-foto oculto">
                     <i class="fas fa-camera"></i> Alterar Foto
@@ -267,7 +284,7 @@
         </div>
         <div id="secao-postagens" class="secao-perfil">
             <h3>Minhas Postagens</h3>
-            <div id="minhasPostagens" class="minhas-postagens"></div>
+            <div id="minhasPostagens" class="minhas-postagens postagens-grid"></div>
         </div>
         <!-- 🌟 NOVO: Seção de Avaliações Verificadas -->
         <div id="secao-avaliacoes-verificadas" class="secao-perfil" style="display: none;">
@@ -297,6 +314,22 @@
             </form>
         </div>
     </div>
+
+    <!-- 🚨 Modal Serviços Ativos -->
+    <div id="modal-servicos-ativos" class="modal-overlay hidden">
+        <div class="modal-content modal-grande">
+            <div class="modal-header">
+                <h3><i class="fas fa-briefcase"></i> Serviços Ativos (Pedidos Urgentes)</h3>
+                <button class="btn-close-modal" data-modal="modal-servicos-ativos">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="lista-servicos-ativos" class="lista-propostas">
+                    <p>Carregando serviços...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="logout-confirm-modal" class="modal-overlay hidden">
         <div class="modal-content">
             <h3>Tem certeza que deseja sair?</h3>
@@ -310,6 +343,65 @@
         <span id="close-image-modal" class="close-btn-modal">&times;</span>
         <img id="modal-image" class="image-modal-content" src="" alt="Imagem Ampliada">
     </div>
+    <!-- 🔔 Modal Notificações -->
+    <div id="modal-notificacoes" class="modal-overlay hidden">
+        <div class="modal-content modal-grande">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; position: relative;">
+                <h2 style="margin: 0;"><i class="fas fa-bell"></i> Notificações</h2>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <button id="btn-marcar-todas-lidas" class="btn-secondary" style="padding: 8px 15px;">
+                        <i class="fas fa-check-double"></i> Marcar todas como lidas
+                    </button>
+                    <button id="btn-limpar-notificacoes" class="btn-lixeira" title="Deletar notificações" style="position: absolute; top: 0; right: 0;" onclick="console.log('🟢 CLIQUE NO HTML!'); event.stopPropagation(); event.preventDefault(); if (window.handleClickLixeira) { console.log('🟢 Chamando handleClickLixeira...'); window.handleClickLixeira(event); } else { console.error('❌ handleClickLixeira não encontrado!'); } return false;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="selecionar-tudo-container" style="display: none; margin-bottom: 10px; position: relative;">
+                <button id="btn-selecionar-tudo" class="btn-secondary" style="padding: 6px 12px; font-size: 14px;">
+                    Selecionar tudo
+                </button>
+                <span id="mensagem-selecionar-primeiro" style="display: none; position: absolute; left: 0; top: 100%; margin-top: 5px; color: #ff6b6b; font-size: 12px; white-space: nowrap;">Primeiro selecione!</span>
+            </div>
+            <div id="lista-notificacoes" class="lista-propostas">
+                <p>Carregando notificações...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de aviso/confirmação customizado -->
+    <div id="modal-aviso-notificacoes" class="modal-overlay hidden" style="z-index: 10001;">
+        <div class="modal-content modal-confirmacao">
+            <div style="text-align: center; padding: 20px;">
+                <div id="modal-aviso-icon" style="font-size: 48px; margin-bottom: 15px;">⚠️</div>
+                <h3 id="modal-aviso-titulo" style="margin: 0 0 15px 0; color: var(--text-primary);">Aviso</h3>
+                <p id="modal-aviso-mensagem" style="margin: 0 0 25px 0; color: var(--text-secondary); line-height: 1.5;">Mensagem</p>
+                <div style="display: flex; gap: 10px; justify-content: center;">
+                    <button id="modal-aviso-btn-cancelar" class="btn-secondary" style="display: none; padding: 10px 20px;">Cancelar</button>
+                    <button id="modal-aviso-btn-ok" class="btn-secondary" style="padding: 10px 20px;">OK</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal flutuante para lembrete de avaliação -->
+    <div id="modal-lembrete-avaliacao" class="modal-overlay hidden" style="z-index: 10002;">
+        <div class="modal-content modal-grande" style="max-width: 500px;">
+            <div id="conteudo-lembrete-avaliacao"></div>
+        </div>
+    </div>
+    
+    <!-- Modal para postagem completa -->
+    <div id="modal-postagem-completa" class="modal-overlay hidden" style="z-index: 10003;">
+        <div class="modal-content modal-grande" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>Postagem</h3>
+                <button class="btn-close-modal" data-modal="modal-postagem-completa">&times;</button>
+            </div>
+            <div id="modal-postagem-content" class="modal-body"></div>
+        </div>
+    </div>
+    <script src="/header-notificacoes.js"></script>
     <script src="/perfil.js"></script>
 </body>
 </html>

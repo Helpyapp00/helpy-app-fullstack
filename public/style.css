@@ -427,6 +427,561 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 #posts-container { padding-top: 5px; }
 .post { background: var(--bg-secondary); border-radius: 8px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 5px var(--shadow-color); word-wrap: break-word; position: relative; transition: opacity 0.3s ease, transform 0.3s ease, height 0.3s ease; } 
 .post.hidden { opacity: 0; transform: scale(0.95); height: 0; padding: 0; margin: 0; overflow: hidden; border: none; }
+
+/* Garantir que postagens antigas não apareçam no grid de miniaturas */
+.postagens-grid .post {
+    display: none !important;
+}
+
+/* Garantir que apenas thumbnails apareçam no grid */
+.postagens-grid > .post-thumbnail {
+    display: block !important;
+}
+
+/* Grid de miniaturas de postagens no perfil - padrão celular */
+.postagens-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+    padding: 10px 0 !important;
+    max-width: 100% !important;
+}
+
+/* Entre celular e tablet - transição gradual */
+@media (min-width: 481px) and (max-width: 767px) {
+    .postagens-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 8px !important;
+    }
+}
+
+/* Tablets - tamanho próximo de celulares, 4 lado a lado */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .postagens-grid {
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 8px !important;
+    }
+    
+    .post-thumbnail {
+        min-width: 0 !important;
+    }
+}
+
+/* Desktop pequeno - transição gradual até tablets */
+@media (min-width: 1024px) and (max-width: 1439px) {
+    .postagens-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
+        gap: 12px !important;
+    }
+}
+
+/* Desktop grande */
+@media (min-width: 1440px) {
+    .postagens-grid {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
+        gap: 12px !important;
+    }
+}
+
+/* Em telas menores - celulares 3 lado a lado */
+@media (max-width: 480px) {
+    .postagens-grid {
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 6px !important;
+    }
+    
+    .post-thumbnail {
+        min-width: 0 !important;
+    }
+}
+
+.post-thumbnail {
+    position: relative;
+    width: 100% !important;
+    aspect-ratio: 1 !important;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: pointer;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    max-width: 100% !important;
+    min-width: 0 !important;
+}
+
+/* Garantir que as imagens dentro das miniaturas não ultrapassem */
+.post-thumbnail .thumbnail-image,
+.post-thumbnail .thumbnail-video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    display: block !important;
+}
+
+.post-thumbnail:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.post-thumbnail .thumbnail-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.post-thumbnail .thumbnail-video-wrapper {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: #000;
+}
+
+.post-thumbnail .thumbnail-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.post-thumbnail .thumbnail-play-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 28px;
+    color: rgba(255, 255, 255, 0.9);
+    z-index: 2;
+}
+
+.post-thumbnail .thumbnail-text-icon {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    color: var(--text-secondary);
+}
+
+.post-thumbnail .thumbnail-text-icon i {
+    font-size: 24px;
+    margin-bottom: 6px;
+}
+
+.post-thumbnail .thumbnail-text-preview {
+    font-size: 10px;
+    text-align: center;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.2;
+}
+
+/* Reduz tamanho dos ícones em telas maiores */
+@media (min-width: 768px) {
+    .post-thumbnail .thumbnail-text-icon i {
+        font-size: 20px;
+        margin-bottom: 4px;
+    }
+    
+    .post-thumbnail .thumbnail-text-preview {
+        font-size: 9px;
+    }
+    
+    .post-thumbnail .thumbnail-play-icon {
+        font-size: 24px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .post-thumbnail .thumbnail-text-icon i {
+        font-size: 18px;
+        margin-bottom: 3px;
+    }
+    
+    .post-thumbnail .thumbnail-text-preview {
+        font-size: 8px;
+    }
+    
+    .post-thumbnail .thumbnail-play-icon {
+        font-size: 20px;
+    }
+    
+    .post-thumbnail .thumbnail-info {
+        font-size: 10px;
+        gap: 8px;
+    }
+    
+    .post-thumbnail .thumbnail-info i {
+        font-size: 12px;
+    }
+}
+
+.post-thumbnail .thumbnail-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.7), transparent);
+    padding: 8px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.post-thumbnail:hover .thumbnail-overlay {
+    opacity: 1;
+}
+
+.post-thumbnail .thumbnail-info {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    color: white;
+    font-size: 12px;
+}
+
+.post-thumbnail .thumbnail-info i {
+    font-size: 14px;
+}
+
+.post-thumbnail .thumbnail-info i.liked {
+    color: #007bff;
+}
+
+/* Limite de tamanho para imagem no modal */
+#modal-postagem-completa .post-image {
+    max-width: 100%;
+    max-height: 600px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    margin-left: auto;
+    margin-right: auto;
+    display: block;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+/* Aumentar espaço da área da postagem */
+#modal-postagem-completa .post-header {
+    padding-top: 15px;
+    padding-bottom: 10px;
+}
+
+#modal-postagem-completa .post-content {
+    padding-top: 10px;
+    padding-bottom: 15px;
+}
+
+#modal-postagem-completa .post-actions {
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+
+/* Aumentar espaço da área da postagem */
+#modal-postagem-completa .post-header {
+    padding-top: 15px;
+    padding-bottom: 10px;
+}
+
+#modal-postagem-completa .post-content {
+    padding-top: 10px;
+    padding-bottom: 15px;
+}
+
+#modal-postagem-completa .post-actions {
+    padding-top: 15px;
+    padding-bottom: 15px;
+}
+
+/* Comentários sem scroll individual - fazem parte do scroll da postagem */
+#modal-postagem-completa .post-comments {
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+}
+
+/* Ajustes para formulário de comentários no modal */
+#modal-postagem-completa .comment-form {
+    display: flex;
+    gap: 5px;
+    margin-top: 10px;
+    padding: 10px;
+    padding-bottom: 10px;
+    flex-wrap: nowrap;
+    align-items: center;
+}
+
+#modal-postagem-completa .comment-input {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid var(--border-color);
+    background-color: var(--bg-input);
+    color: var(--text-primary);
+    border-radius: 20px;
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+#modal-postagem-completa .btn-send-comment {
+    flex-shrink: 0;
+    border: none;
+    background: var(--btn-secondary-bg);
+    color: white;
+    border-radius: 20px;
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    white-space: nowrap;
+    transition: background-color 0.2s;
+}
+
+#modal-postagem-completa .btn-send-comment:hover {
+    background: var(--btn-secondary-hover);
+}
+
+/* Ajustes específicos para tablets e celulares */
+@media (max-width: 1023px) {
+    #modal-postagem-completa .modal-content {
+        max-height: 98vh;
+        max-width: 98vw;
+        padding: 20px;
+        padding-bottom: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Toda a postagem com scroll - adapta ao tamanho sem cortar */
+    #modal-postagem-completa .post {
+        display: flex;
+        flex-direction: column;
+        max-height: calc(98vh - 40px);
+        overflow-y: auto;
+        overflow-x: hidden;
+        min-height: 0;
+        padding-bottom: 70px; /* Espaço para o formulário não ser cortado */
+    }
+    
+    /* Scroll sem barra em tablets */
+    #modal-postagem-completa .post {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    
+    #modal-postagem-completa .post::-webkit-scrollbar {
+        display: none;
+    }
+    
+    /* Área da postagem - sem scroll individual, faz parte do scroll geral */
+    #modal-postagem-completa .post-header,
+    #modal-postagem-completa .post-content,
+    #modal-postagem-completa .post-actions {
+        flex-shrink: 0;
+        overflow: visible;
+    }
+    
+    /* Comentários sem scroll individual - faz parte do scroll geral */
+    #modal-postagem-completa .post-comments {
+        padding-bottom: 0;
+        display: flex;
+        flex-direction: column;
+        flex-shrink: 0;
+        overflow: visible;
+    }
+    
+    #modal-postagem-completa .comment-list {
+        overflow: visible !important;
+        padding-bottom: 10px;
+        max-height: none !important;
+        overflow-y: visible !important;
+    }
+    
+    /* Formulário sempre visível no final - não corta */
+    #modal-postagem-completa .comment-form {
+        flex-shrink: 0;
+        background-color: var(--bg-secondary);
+        border-top: 1px solid var(--border-color);
+        margin-top: 0;
+        margin-bottom: 0;
+        position: sticky;
+        bottom: 0;
+        z-index: 10;
+        padding: 10px;
+        padding-bottom: 10px;
+    }
+}
+
+/* Ajustes específicos para celular */
+@media (max-width: 767px) {
+    #modal-postagem-completa .modal-content {
+        padding: 15px;
+        padding-bottom: 0;
+        max-height: 98vh;
+        max-width: 98vw;
+    }
+    
+    /* Toda a postagem com scroll em celular - adapta sem cortar */
+    #modal-postagem-completa .post {
+        overflow-y: auto;
+        overflow-x: hidden;
+        max-height: calc(98vh - 30px);
+        padding-bottom: 70px; /* Espaço para o formulário não ser cortado */
+    }
+    
+    /* Scroll sem barra na área da postagem em celular */
+    #modal-postagem-completa .post {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    
+    #modal-postagem-completa .post::-webkit-scrollbar {
+        display: none;
+    }
+    
+    /* Comentários sem scroll individual - faz parte do scroll geral */
+    #modal-postagem-completa .post-comments {
+        padding-bottom: 0;
+        display: flex;
+        flex-direction: column;
+        margin-top: 10px;
+        overflow: visible;
+    }
+    
+    #modal-postagem-completa .comment-list {
+        overflow: visible !important;
+        padding-bottom: 10px;
+        max-height: none !important;
+        overflow-y: visible !important;
+    }
+    
+    /* Formulário sempre visível no final - não corta */
+    #modal-postagem-completa .comment-form {
+        position: sticky;
+        bottom: 0;
+        z-index: 10;
+        background-color: var(--bg-secondary);
+        border-top: 1px solid var(--border-color);
+        padding: 10px;
+        padding-bottom: 10px;
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+    
+    /* Garantir que a imagem não seja cortada */
+    #modal-postagem-completa .post-image {
+        max-height: min(400px, calc(100vh - 400px));
+        margin-top: 15px;
+        margin-bottom: 15px;
+    }
+    
+    /* Aumentar espaçamento em celular */
+    #modal-postagem-completa .post-header {
+        padding-top: 10px;
+        padding-bottom: 10px;
+    }
+    
+    #modal-postagem-completa .post-content {
+        padding-top: 10px;
+        padding-bottom: 15px;
+    }
+    
+    #modal-postagem-completa .post-actions {
+        padding-top: 15px;
+        padding-bottom: 15px;
+    }
+    
+    #modal-postagem-completa .comment-form {
+        padding: 10px;
+        padding-bottom: 10px;
+        gap: 4px;
+        margin-top: 0;
+        margin-bottom: 0;
+        flex-shrink: 0;
+        position: sticky;
+        bottom: 0;
+        background-color: var(--bg-secondary);
+        border-top: 1px solid var(--border-color);
+        z-index: 10;
+    }
+    
+    #modal-postagem-completa .comment-input {
+        padding: 8px 10px;
+        font-size: 13px;
+        flex: 1;
+        min-width: 0;
+    }
+    
+    #modal-postagem-completa .btn-send-comment {
+        padding: 8px 14px;
+        font-size: 13px;
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+    
+    /* Garantir que o modal não corte o botão */
+    #modal-postagem-completa .modal-content {
+        padding-bottom: 0;
+        max-height: 95vh;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    /* Toda a postagem com scroll - não apenas comentários */
+    #modal-postagem-completa .post {
+        display: flex;
+        flex-direction: column;
+        max-height: 95vh;
+        overflow-y: auto;
+        overflow-x: hidden;
+    }
+    
+    /* Comentários sem scroll individual */
+    #modal-postagem-completa .comment-list {
+        overflow: visible !important;
+        overflow-y: visible !important;
+        overflow-x: visible !important;
+        max-height: none !important;
+    }
+}
+
+/* Scroll sem barra em celulares */
+@media (max-width: 767px) {
+    #modal-postagem-completa .post-comments {
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE e Edge */
+    }
+    
+    #modal-postagem-completa .post-comments::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
+    }
+}
+
+/* Scroll com barra em tablets e computadores */
+@media (min-width: 768px) {
+    #modal-postagem-completa .post-comments {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(155, 155, 155, 0.5) transparent;
+    }
+    
+    #modal-postagem-completa .post-comments::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    #modal-postagem-completa .post-comments::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    
+    #modal-postagem-completa .post-comments::-webkit-scrollbar-thumb {
+        background-color: rgba(155, 155, 155, 0.5);
+        border-radius: 10px;
+    }
+    
+    #modal-postagem-completa .post-comments::-webkit-scrollbar-thumb:hover {
+        background-color: rgba(155, 155, 155, 0.7);
+    }
+}
 .post-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .post-header .post-avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; flex-shrink: 0; cursor: pointer; }
 .post-header .post-meta { display: flex; flex-direction: column; flex-grow: 1; }
@@ -437,8 +992,18 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 .delete-post-btn { background-color: transparent; color: var(--text-secondary); padding: 5px; margin-left: auto; display: flex; align-items: center; gap: 5px; border: none; cursor: pointer; font-size: 12px; border-radius: 5px; } 
 .delete-post-btn:hover { background-color: var(--bg-hover); color: #dc3545; } 
 .post-content { margin-bottom: 10px; color: var(--text-primary); line-height: 1.5; } 
-.post-image { max-width: 100%; height: auto; border-radius: 8px; margin-top: 10px; display: block; }
-.post-image { max-height: 600px; width: 100%; object-fit: contain; }
+.post-image { 
+    max-width: 100%; 
+    max-height: 600px; 
+    width: auto; 
+    height: auto; 
+    border-radius: 8px; 
+    margin-top: 10px; 
+    display: block; 
+    object-fit: contain; 
+    margin-left: auto;
+    margin-right: auto;
+}
 .post-video { max-width: 100%; height: auto; border-radius: 8px; margin-top: 10px; display: block; background-color: #000; }
 .post-actions { display: flex; gap: 10px; padding: 10px 0; border-top: 1px solid var(--border-color); margin-top: 10px; } 
 .action-btn { background-color: var(--bg-action); border: none; border-radius: 5px; padding: 8px 12px; cursor: pointer; color: var(--text-secondary); font-weight: bold; display: flex; align-items: center; gap: 5px; transition: background-color 0.2s; font-size: 14px; } 
@@ -707,6 +1272,42 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     width: auto;
     align-self: flex-start;
     margin-top: 6px;
+}
+
+/* Modal Enviar Proposta Rápida */
+#modal-enviar-proposta .modal-content {
+    max-width: 420px;
+    width: 92%;
+    max-height: none;
+    overflow: visible;
+}
+#modal-enviar-proposta .form-group input,
+#modal-enviar-proposta .form-group select,
+#modal-enviar-proposta .form-group textarea {
+    width: 100%;
+}
+#modal-enviar-proposta .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+#modal-enviar-proposta .btn-close-modal[data-modal="modal-enviar-proposta"] {
+    position: static;
+    width: auto;
+    height: auto;
+    font-size: 14px;
+    padding: 10px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+#modal-enviar-proposta .btn-close-modal[data-modal="modal-enviar-proposta"]:hover {
+    background: var(--bg-hover);
 }
 .anuncio-nativo-titulo {
     font-weight: 800;
@@ -1021,6 +1622,9 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     text-align: left;
     padding: 15px 15px 10px;
     margin-top: 110px; /* desce mais a caixinha em relação ao cabeçalho */
+    overflow: hidden; /* Remove barra de rolagem externa */
+    display: flex;
+    flex-direction: column;
 }
 
 /* Ajuste extra para telas bem estreitas: empurra um pouco mais para baixo */
@@ -1033,6 +1637,108 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 #lista-notificacoes {
     max-height: 340px;
     overflow-y: auto;
+    overflow-x: hidden;
+    flex: 1; /* Ocupa o espaço disponível */
+    padding: 10px; /* Mesmo padding do lista-propostas */
+}
+
+/* Estilização da barra de rolagem para #lista-notificacoes - igual ao destaques-scroll */
+#lista-notificacoes::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+#lista-notificacoes::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 10px;
+}
+
+#lista-notificacoes::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    transition: background 0.2s;
+}
+
+#lista-notificacoes::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+}
+
+/* Para Firefox */
+#lista-notificacoes {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+/* Botão lixeira menor - quadrado */
+.btn-lixeira {
+    background-color: #ff6b6b;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    padding: 0;
+    font-size: 14px;
+    z-index: 10;
+}
+
+.btn-lixeira:hover {
+    background-color: #ff5252;
+}
+
+.btn-lixeira.modo-selecao {
+    background-color: #ff5252;
+}
+
+/* Checkbox nas notificações */
+.notificacao-card.modo-selecao {
+    cursor: pointer;
+    position: relative;
+}
+
+.notificacao-card.modo-selecao::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--text-secondary);
+    border-radius: 3px;
+    background-color: var(--bg-secondary);
+    z-index: 1;
+    box-sizing: border-box;
+}
+
+.notificacao-card.modo-selecao.selecionada::before {
+    background-color: #4CAF50;
+    border-color: #4CAF50;
+}
+
+.notificacao-card.modo-selecao.selecionada::after {
+    content: '✓';
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    line-height: 1;
+    padding: 0;
+    margin: 0;
 }
 
 /* Esconde o botão antigo de "Marcar todas como lidas" (agora é automático ao abrir) */
@@ -1042,7 +1748,55 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
 /* Modal de confirmação menor e central */
 .modal-confirmacao {
-    max-width: 360px;
+    max-width: 400px;
+    padding: 0;
+}
+
+/* Estilização do modal de aviso customizado */
+#modal-aviso-notificacoes .modal-content {
+    background-color: var(--bg-secondary);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+#modal-aviso-notificacoes #modal-aviso-icon {
+    font-size: 48px;
+    margin-bottom: 15px;
+    display: block;
+}
+
+#modal-aviso-notificacoes #modal-aviso-titulo {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 15px 0;
+    color: var(--text-primary);
+}
+
+#modal-aviso-notificacoes #modal-aviso-mensagem {
+    font-size: 15px;
+    line-height: 1.6;
+    margin: 0 0 25px 0;
+    color: var(--text-secondary);
+    padding: 0 10px;
+}
+
+#modal-aviso-notificacoes #modal-aviso-btn-ok,
+#modal-aviso-notificacoes #modal-aviso-btn-cancelar {
+    min-width: 100px;
+    padding: 10px 24px;
+    font-size: 15px;
+    border-radius: 8px;
+    transition: all 0.2s;
+}
+
+#modal-aviso-notificacoes #modal-aviso-btn-ok:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+#modal-aviso-notificacoes #modal-aviso-btn-cancelar:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 /* Layout compacto do formulário de pedido urgente */
@@ -1884,6 +2638,32 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid var(--border-color);
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    cursor: pointer;
+}
+
+.profissional-card a:hover .profissional-avatar {
+    transform: scale(1.05);
+    opacity: 0.9;
+}
+
+.profissional-avatar-link {
+    text-decoration: none;
+    display: block;
+    cursor: pointer;
+}
+
+.profissional-nome-link {
+    transition: color 0.2s ease;
+    color: inherit;
+    text-decoration: none;
+    cursor: pointer;
+    display: inline-block;
+}
+
+.profissional-nome-link:hover {
+    color: var(--primary-color, #007bff) !important;
+    text-decoration: underline;
 }
 
 .profissional-info {
@@ -2310,6 +3090,16 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     padding: 10px;
     background: var(--bg-secondary);
     border-radius: 5px;
+}
+.proposta-avatar-link {
+    display: inline-flex;
+}
+.proposta-info-profissional .link-perfil-proposta {
+    color: var(--text-primary);
+    text-decoration: none;
+}
+.proposta-info-profissional .link-perfil-proposta:hover {
+    text-decoration: underline;
 }
 
 .btn-aceitar-proposta {
@@ -3203,5 +3993,35 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
 .nivel-container .nivel-badge {
     margin-bottom: 0;
+}
+
+/* Botão para expandir/colapsar avaliações verificadas */
+.btn-expandir-avaliacoes {
+    border: none;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.35) 100%);
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 8px;
+    padding: 4px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.12s ease;
+    opacity: 0.7;
+    margin: 2px auto;
+    z-index: 2;
+}
+
+.btn-expandir-avaliacoes:hover {
+    opacity: 1;
+}
+
+.btn-expandir-avaliacoes:focus {
+    outline: none;
+}
+
+.avaliacao-oculta {
+    display: none;
 }
 

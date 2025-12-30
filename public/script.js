@@ -85,6 +85,49 @@ document.addEventListener('DOMContentLoaded', () => {
         logoBox.addEventListener('click', irParaFeedOuRecarregar);
     }
 
+    // --- Função para garantir que o logo seja carregado corretamente ---
+    function loadLogo() {
+        const logoImg = document.querySelector('.logo-box img');
+        if (logoImg) {
+            // Garante que o caminho está correto (tenta relativo e absoluto)
+            const logoPaths = [
+                'imagens/helpy-feed.png',
+                '/imagens/helpy-feed.png',
+                './imagens/helpy-feed.png'
+            ];
+            
+            let currentPathIndex = 0;
+            
+            // Se a imagem não carregou ou deu erro, tenta outros caminhos
+            logoImg.onerror = function() {
+                currentPathIndex++;
+                if (currentPathIndex < logoPaths.length) {
+                    console.log(`🔄 Tentando carregar logo do caminho: ${logoPaths[currentPathIndex]}`);
+                    logoImg.src = logoPaths[currentPathIndex] + '?t=' + Date.now();
+                } else {
+                    console.error('❌ Não foi possível carregar o logo de nenhum caminho disponível');
+                }
+            };
+            
+            // Verifica se a imagem já foi carregada corretamente
+            if (!logoImg.complete || logoImg.naturalHeight === 0) {
+                // Se não carregou, força reload com o primeiro caminho
+                logoImg.src = logoPaths[0] + '?t=' + Date.now();
+            }
+            
+            // Garante que a imagem está visível
+            logoImg.style.display = '';
+            logoImg.style.visibility = 'visible';
+        }
+    }
+    
+    // Carrega o logo quando a página estiver pronta
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', loadLogo);
+    } else {
+        loadLogo();
+    }
+
     // ----------------------------------------------------------------------
     // LÓGICA DO TEMA (DARK MODE)
     // ----------------------------------------------------------------------
@@ -195,8 +238,10 @@ document.addEventListener('DOMContentLoaded', () => {
             userNameHeader.textContent = storedName ? storedName.split(' ')[0] : '';
         }
         if (userAvatarHeader) {
-            if (!storedPhotoUrl || storedPhotoUrl === 'undefined') {
-                userAvatarHeader.src = 'imagens/default-user.png';
+            // Se não tem foto ou é inválida, usa a imagem padrão
+            if (!storedPhotoUrl || storedPhotoUrl === 'undefined' || storedPhotoUrl === 'null') {
+                userAvatarHeader.src = '/imagens/default-user.png';
+                return; // Retorna cedo para não continuar o processamento
             } else if (!storedPhotoUrl.includes('pixabay')) {
                 // Remove src primeiro para forçar reload completo
                 userAvatarHeader.src = '';
@@ -221,13 +266,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 };
                 
                 preloadImg.onerror = function () {
-                    userAvatarHeader.src = storedPhotoUrl;
+                    // Se a foto do usuário falhar, usa a imagem padrão
+                    userAvatarHeader.src = '/imagens/default-user.png';
                     userAvatarHeader.loading = 'eager';
                 };
                 
                 preloadImg.src = freshUrl;
             } else {
-                userAvatarHeader.src = storedPhotoUrl;
+                // Sem foto do usuário, usa a imagem padrão
+                userAvatarHeader.src = '/imagens/default-user.png';
             }
         }
     }
@@ -238,7 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function buildDemoDestaques() {
         const nomes = ['Ana', 'Bruno', 'Carla', 'Diego', 'Eva', 'Fábio', 'Gabi', 'Hugo', 'Iris', 'João'];
         return nomes.map((nome, idx) => {
-            const img = `https://via.placeholder.com/300x200?text=Trabalho+${idx+1}`;
+            const img = `https://placehold.co/300x200?text=Trabalho+${idx+1}`;
             return {
                 id: `demo-${idx}`,
                 title: `Projeto ${idx + 1}`,
@@ -299,7 +346,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 endereco: 'Av. Central, 123 - Centro',
                 linkPerfil: '/perfil.html?id=empresa-demo',
                 linkMapa: 'https://www.google.com/maps/search/Loja+de+Tintas+ColorMix+Av+Central+123',
-                imagem: 'https://via.placeholder.com/400x240?text=Tintas+ColorMix'
+                imagem: 'https://placehold.co/400x240?text=Tintas+ColorMix'
             },
             {
                 titulo: 'Ferramentas em Promoção',
@@ -307,7 +354,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 endereco: 'Rua das Ferramentas, 50 - Centro',
                 linkPerfil: '/perfil.html?id=empresa-ferramentas',
                 linkMapa: 'https://www.google.com/maps/search/Casa+do+Construtor+Rua+das+Ferramentas+50',
-                imagem: 'https://via.placeholder.com/400x240?text=Ferramentas'
+                imagem: 'https://placehold.co/400x240?text=Ferramentas'
             },
             {
                 titulo: 'Entrega de Material Rápida',
@@ -315,7 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 endereco: 'Av. das Indústrias, 200',
                 linkPerfil: '/perfil.html?id=empresa-material',
                 linkMapa: 'https://www.google.com/maps/search/Deposito+Constrular+Av+das+Industrias+200',
-                imagem: 'https://via.placeholder.com/400x240?text=Material+de+Obra'
+                imagem: 'https://placehold.co/400x240?text=Material+de+Obra'
             }
         ];
 
@@ -446,7 +493,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 loja: 'Loja de Tintas ColorMix',
                 endereco: 'Av. Central, 123 - Centro',
                 linkPerfil: '/perfil.html?id=empresa-demo',
-                imagem: 'https://via.placeholder.com/600x320?text=Tintas+ColorMix',
+                imagem: 'https://placehold.co/600x320?text=Tintas+ColorMix',
                 linkMapa: 'https://www.google.com/maps/search/Loja+de+Tintas+ColorMix+Av+Central+123'
             },
             {
@@ -454,7 +501,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 loja: 'Casa do Construtor',
                 endereco: 'Rua das Ferramentas, 50 - Centro',
                 linkPerfil: '/perfil.html?id=empresa-ferramentas',
-                imagem: 'https://via.placeholder.com/600x320?text=Ferramentas',
+                imagem: 'https://placehold.co/600x320?text=Ferramentas',
                 linkMapa: 'https://www.google.com/maps/search/Casa+do+Construtor+Rua+das+Ferramentas+50'
             },
             {
@@ -462,7 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 loja: 'Depósito Constrular',
                 endereco: 'Av. das Indústrias, 200',
                 linkPerfil: '/perfil.html?id=empresa-material',
-                imagem: 'https://via.placeholder.com/600x320?text=Material+de+Obra',
+                imagem: 'https://placehold.co/600x320?text=Material+de+Obra',
                 linkMapa: 'https://www.google.com/maps/search/Deposito+Constrular+Av+das+Industrias+200'
             }
         ];
@@ -1391,6 +1438,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (confirmLogoutYesBtn) {
         confirmLogoutYesBtn.addEventListener('click', () => {
+            // Fecha todos os modais antes de fazer logout
+            const modalPropostas = document.getElementById('modal-propostas');
+            if (modalPropostas) {
+                modalPropostas.classList.add('hidden');
+            }
             // Preserva a informação se este dispositivo já fez login alguma vez
             const jaLogou = localStorage.getItem('helpy-ja-logou');
             localStorage.clear();
@@ -1477,13 +1529,18 @@ document.addEventListener('DOMContentLoaded', () => {
                     const temSelo = prof.gamificacao?.temSeloQualidade || false;
                     const nivelReputacao = prof.gamificacao?.nivelReputacao || 'iniciante';
                     const nivel = prof.gamificacao?.nivel || 1;
+                    const perfilUrl = `/perfil?id=${prof._id}`;
                     
                     return `
                     <div class="profissional-card ${temSelo ? 'com-selo' : ''}">
-                        <img src="${prof.foto || prof.avatarUrl || 'imagens/default-user.png'}" alt="${prof.nome}" class="profissional-avatar">
+                        <a href="${perfilUrl}" class="profissional-avatar-link">
+                            <img src="${prof.foto || prof.avatarUrl || 'imagens/default-user.png'}" alt="${prof.nome}" class="profissional-avatar">
+                        </a>
                         <div class="profissional-info">
                             <h4>
-                                ${prof.nome}
+                                <a href="${perfilUrl}" class="profissional-nome-link">
+                                    ${prof.nome}
+                                </a>
                                 ${temSelo ? '<span class="selo-qualidade" title="Selo de Qualidade Helpy">🛡️</span>' : ''}
                                 ${nivelReputacao === 'mestre' ? '<span class="badge-mestre" title="Mestre Helpy">👑</span>' : ''}
                             </h4>
@@ -1833,7 +1890,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INICIALIZAÇÃO ---
     (async () => {
-        if (!token || !userId) {
+    if (!token || !userId) {
             const isLoginPath = path.endsWith('/login') || path.endsWith('/login.html');
             const isCadastroPath = path.endsWith('/cadastro') || path.endsWith('/cadastro.html');
             // Se está no feed (ou outra página protegida) sem login → manda para /login
@@ -1842,9 +1899,9 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 // Se está na página de login/cadastro, garante header limpo
                 if (userNameHeader) userNameHeader.textContent = '';
-                if (userAvatarHeader) userAvatarHeader.src = 'imagens/default-user.png';
-            }
-        } else {
+                if (userAvatarHeader) userAvatarHeader.src = '/imagens/default-user.png';
+        }
+    } else {
             // Antes de carregar o feed e outras informações, valida se o token ainda é aceito pelo backend
             const sessaoValida = await validarSessaoAtiva();
             if (!sessaoValida) {
@@ -1852,17 +1909,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            if (postsContainer) {
-                loadHeaderInfo();
-                fetchPosts(); 
-            }
+        if (postsContainer) {
+            loadHeaderInfo();
+            fetchPosts(); 
+        }
             if (destaquesScroll) {
                 fetchDestaques();
-            }
-            if (timesContainer) {
-                carregarTimesLocais();
-            }
         }
+        if (timesContainer) {
+            carregarTimesLocais();
+        }
+        
+        // Abrir modal de propostas se houver pedidoId na URL
+        const urlParamsCheck = new URLSearchParams(window.location.search);
+        const pedidoIdFromUrl = urlParamsCheck.get('pedidoId');
+        const hashFromUrl = window.location.hash;
+        
+        if (pedidoIdFromUrl && hashFromUrl === '#propostas') {
+            // Aguarda o carregamento completo da página e scripts
+            setTimeout(async () => {
+                if (typeof window.carregarPropostas === 'function') {
+                    await window.carregarPropostas(pedidoIdFromUrl);
+                }
+            }, 1000);
+        } else if (pedidoIdFromUrl && hashFromUrl === '#meus-pedidos-urgentes') {
+            setTimeout(async () => {
+                const modalMeusPedidos = document.getElementById('modal-meus-pedidos-urgentes');
+                const btnMeusPedidos = document.getElementById('btn-meus-pedidos-urgentes');
+                if (modalMeusPedidos && typeof window.carregarMeusPedidosUrgentes === 'function') {
+                    await window.carregarMeusPedidosUrgentes();
+                    modalMeusPedidos.classList.remove('hidden');
+                } else if (btnMeusPedidos) {
+                    btnMeusPedidos.click();
+                }
+            }, 1000);
+        }
+    }
     })();
 });
 
