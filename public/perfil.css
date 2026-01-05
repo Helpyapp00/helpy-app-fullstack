@@ -673,6 +673,78 @@ textarea.input-edicao { min-height: 100px; resize: vertical; }
 /* Postagens (Reutilizando estilo do feed, já usam variáveis) */
 .minhas-postagens { display: flex; flex-direction: column; gap: 15px; }
 
+/* Garantir que comentários nas postagens do perfil tenham nomes e botões sempre visíveis */
+.minhas-postagens .post-comments .comment-list {
+    overflow-y: visible !important;
+    max-height: none !important;
+}
+
+.minhas-postagens .post-comments .comment {
+    overflow: visible !important;
+    max-height: none !important;
+}
+
+.minhas-postagens .post-comments .comment .comment-body-container {
+    overflow: visible !important;
+    max-height: none !important;
+}
+
+.minhas-postagens .post-comments .comment .comment-body strong {
+    position: relative;
+    z-index: 2;
+    overflow: visible !important;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+.minhas-postagens .post-comments .comment .comment-actions {
+    position: relative;
+    z-index: 2;
+    overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: flex !important;
+    flex-shrink: 0 !important;
+}
+
+/* Garantir que o formulário de comentários fique sempre visível nas postagens do perfil */
+.minhas-postagens .post-comments .comment-form {
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 20 !important;
+    background: var(--bg-secondary) !important;
+    padding: 10px 0 !important;
+    margin-top: auto !important;
+    border-top: 1px solid var(--border-color) !important;
+    display: flex !important;
+    gap: 5px !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    flex-shrink: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.minhas-postagens .post-comments .comment-form .comment-input {
+    flex: 1 !important;
+    min-width: 0 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+}
+
+.minhas-postagens .post-comments .comment-form .btn-send-comment {
+    flex-shrink: 0 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: inline-block !important;
+    white-space: nowrap !important;
+}
+
 /* Seção de Avaliação */
 #formAvaliacao { 
     display: flex; 

@@ -336,86 +336,15 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const isMobileAds = window.innerWidth <= 992;
+        destaquesScroll.innerHTML = '';
 
-        // Pool de anúncios (visível para todos). Para adicionar/remover, edite aqui.
-        const anunciosPool = [
-            {
-                titulo: 'Oferta para sua obra',
-                loja: 'Loja de Tintas ColorMix',
-                endereco: 'Av. Central, 123 - Centro',
-                linkPerfil: '/perfil.html?id=empresa-demo',
-                linkMapa: 'https://www.google.com/maps/search/Loja+de+Tintas+ColorMix+Av+Central+123',
-                imagem: 'https://placehold.co/400x240?text=Tintas+ColorMix'
-            },
-            {
-                titulo: 'Ferramentas em Promoção',
-                loja: 'Casa do Construtor',
-                endereco: 'Rua das Ferramentas, 50 - Centro',
-                linkPerfil: '/perfil.html?id=empresa-ferramentas',
-                linkMapa: 'https://www.google.com/maps/search/Casa+do+Construtor+Rua+das+Ferramentas+50',
-                imagem: 'https://placehold.co/400x240?text=Ferramentas'
-            },
-            {
-                titulo: 'Entrega de Material Rápida',
-                loja: 'Depósito Constrular',
-                endereco: 'Av. das Indústrias, 200',
-                linkPerfil: '/perfil.html?id=empresa-material',
-                linkMapa: 'https://www.google.com/maps/search/Deposito+Constrular+Av+das+Industrias+200',
-                imagem: 'https://placehold.co/400x240?text=Material+de+Obra'
-            }
-        ];
-
-        const baseItems = lista.map(item => {
+        lista.forEach(item => {
             const imagens = (item.thumbUrls && item.thumbUrls.length > 0) ? item.thumbUrls : (item.images || []);
             const primeira = imagens[0] || 'imagens/default-user.png';
             const extra = Math.max((imagens.length - 1), 0);
             const profissional = item.user || {};
             const nota = item.mediaAvaliacao || profissional.mediaAvaliacao || 0;
-            return { tipo: 'destaque', data: { item, primeira, extra, profissional, nota } };
-        });
-
-        let itemsComAnuncio = [...baseItems];
-
-        if (isMobileAds && baseItems.length > 0 && anunciosPool.length > 0) {
-            const anunciosShuffled = [...anunciosPool].sort(() => Math.random() - 0.5);
-            let idxAnuncio = 0;
-            let insertAt = Math.min(5 + Math.floor(Math.random() * 6), itemsComAnuncio.length);
-
-            while (idxAnuncio < anunciosShuffled.length && itemsComAnuncio.length > 0) {
-                if (insertAt >= itemsComAnuncio.length) {
-                    insertAt = Math.max(1, Math.floor(itemsComAnuncio.length / 2));
-                }
-                itemsComAnuncio.splice(insertAt, 0, { tipo: 'anuncio', data: anunciosShuffled[idxAnuncio] });
-                idxAnuncio += 1;
-                insertAt += Math.min(5 + Math.floor(Math.random() * 6), Math.max(1, itemsComAnuncio.length - insertAt));
-            }
-        }
-
-        destaquesScroll.innerHTML = '';
-
-        itemsComAnuncio.forEach(entry => {
-            if (entry.tipo === 'anuncio') {
-                const ad = entry.data;
-                const card = document.createElement('div');
-                card.className = 'thumb-destaque anuncio-nativo';
-                card.innerHTML = `
-                    <img src="${ad.imagem}" alt="" class="anuncio-nativo-img">
-                    <div class="anuncio-nativo-badge">Anúncio</div>
-                    <div class="anuncio-nativo-overlay">
-                        <div class="anuncio-nativo-titulo">${ad.titulo}</div>
-                        <div class="anuncio-nativo-loja">${ad.loja}</div>
-                        <div class="anuncio-nativo-endereco">${ad.endereco}</div>
-                    </div>
-                `;
-                card.addEventListener('click', () => {
-                    if (ad.linkPerfil) window.location.href = ad.linkPerfil;
-                });
-                destaquesScroll.appendChild(card);
-                return;
-            }
-
-            const { item, primeira, extra, profissional, nota } = entry.data;
+            
             const card = document.createElement('div');
             card.className = 'thumb-destaque';
             card.innerHTML = `
@@ -596,12 +525,23 @@ document.addEventListener('DOMContentLoaded', () => {
             const isLiked = post.likes.includes(userId);
             
             // 🛑 ATUALIZAÇÃO: Renderização dos Comentários e Respostas
-            let commentsHTML = (post.comments || []).map(comment => {
+            const allComments = post.comments || [];
+            const totalComments = allComments.length;
+            const initialComments = allComments.slice(0, 2); // Mostra apenas os 2 primeiros
+            const hasMoreComments = totalComments > 2;
+            
+            let commentsHTML = initialComments.map(comment => {
                 if (!comment.userId) return '';
+                
+                // Verifica se o usuário pode deletar este comentário
+                const isCommentOwner = comment.userId._id === userId;
+                const canDeleteComment = isPostOwner || isCommentOwner;
                 
                 // Renderiza Respostas primeiro
                 let repliesHTML = (comment.replies || []).map(reply => {
-                    return renderReply(reply, comment._id, isPostOwner);
+                    const isReplyOwner = reply.userId && reply.userId._id === userId;
+                    const canDeleteReply = isPostOwner || isReplyOwner;
+                    return renderReply(reply, comment._id, canDeleteReply);
                 }).join('');
 
                 const commentPhoto = comment.userId.foto || comment.userId.avatarUrl || 'imagens/default-user.png';
@@ -615,10 +555,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="comment-body">
                             <strong>${comment.userId.nome}</strong>
                             <p>${comment.content}</p>
-                            <!-- Botão de deletar (só visível para dono do post) -->
-                            <button class="btn-delete-comment" data-comment-id="${comment._id}" title="Apagar comentário">
+                            <!-- Botão de deletar (visível para dono do post OU dono do comentário) -->
+                            ${canDeleteComment ? `<button class="btn-delete-comment" data-comment-id="${comment._id}" title="Apagar comentário">
                                 <i class="fas fa-trash"></i>
-                            </button>
+                            </button>` : ''}
                         </div>
                         <div class="comment-actions">
                             <button class="comment-action-btn btn-like-comment ${isCommentLiked ? 'liked' : ''}" data-comment-id="${comment._id}">
@@ -637,6 +577,56 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 `;
             }).join('');
+            
+            // Comentários adicionais (ocultos inicialmente)
+            const remainingComments = allComments.slice(2);
+            let hiddenCommentsHTML = remainingComments.map((comment, index) => {
+                if (!comment.userId) return '';
+                
+                const isCommentOwner = comment.userId._id === userId;
+                const canDeleteComment = isPostOwner || isCommentOwner;
+                
+                let repliesHTML = (comment.replies || []).map(reply => {
+                    const isReplyOwner = reply.userId && reply.userId._id === userId;
+                    const canDeleteReply = isPostOwner || isReplyOwner;
+                    return renderReply(reply, comment._id, canDeleteReply);
+                }).join('');
+
+                const commentPhoto = comment.userId.foto || comment.userId.avatarUrl || 'imagens/default-user.png';
+                const isCommentLiked = comment.likes && comment.likes.includes(userId);
+                const replyCount = comment.replies?.length || 0;
+                
+                return `
+                <div class="comment comment-hidden" data-comment-id="${comment._id}" data-comment-index="${index + 2}">
+                    <img src="${commentPhoto.includes('pixabay') ? 'imagens/default-user.png' : commentPhoto}" alt="Avatar" class="comment-avatar">
+                    <div class="comment-body-container">
+                        <div class="comment-body">
+                            <strong>${comment.userId.nome}</strong>
+                            <p>${comment.content}</p>
+                            ${canDeleteComment ? `<button class="btn-delete-comment" data-comment-id="${comment._id}" title="Apagar comentário">
+                                <i class="fas fa-trash"></i>
+                            </button>` : ''}
+                        </div>
+                        <div class="comment-actions">
+                            <button class="comment-action-btn btn-like-comment ${isCommentLiked ? 'liked' : ''}" data-comment-id="${comment._id}">
+                                <i class="fas fa-thumbs-up"></i>
+                                <span class="like-count">${comment.likes?.length || 0}</span>
+                            </button>
+                            <button class="comment-action-btn btn-show-reply-form" data-comment-id="${comment._id}">Responder</button>
+                            ${(replyCount > 0) ? `<button class="comment-action-btn btn-toggle-replies" data-comment-id="${comment._id}">Ver ${replyCount} Respostas</button>` : ''}
+                        </div>
+                        <div class="reply-list oculto">${repliesHTML}</div>
+                        <div class="reply-form oculto">
+                            <input type="text" class="reply-input" placeholder="Responda a ${comment.userId.nome}...">
+                            <button class="btn-send-reply" data-comment-id="${comment._id}">Enviar</button>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+            
+            // Botão "Carregar mais" se houver mais comentários
+            const loadMoreHTML = hasMoreComments ? `<div class="load-more-comments" data-post-id="${post._id}" data-loaded="2" data-total="${totalComments}">Carregar mais</div>` : '';
             
             const postDate = new Date(post.createdAt).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
             // 🛑 ATUALIZAÇÃO: Mostra Cidade e Estado
@@ -672,9 +662,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     </button>
                 </div>
                 <div class="post-comments ${comentariosVisiveis}">
-                    <div class="comment-list">${commentsHTML}</div>
+                    <div class="comment-list">
+                        ${commentsHTML}
+                        ${hiddenCommentsHTML}
+                        ${loadMoreHTML}
+                    </div>
                     <div class="comment-form">
-                        <input type="text" class="comment-input" placeholder="Escreva um comentário...">
+                        <textarea class="comment-input" placeholder="Escreva um comentário..." rows="1"></textarea>
                         <button class="btn-send-comment" data-post-id="${post._id}">Enviar</button>
                     </div>
                 </div>
@@ -683,10 +677,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         setupPostListeners();
+        
+        // Verifica comentários longos após carregar posts
+        setTimeout(() => {
+            document.querySelectorAll('.comment').forEach(comment => {
+                if (comment.offsetParent !== null) {
+                    checkLongComment(comment);
+                }
+            });
+        }, 500);
     }
 
     // 🛑 NOVO: Função para renderizar uma Resposta (Reply)
-    function renderReply(reply, commentId, isPostOwner) {
+    function renderReply(reply, commentId, canDeleteReply) {
         if (!reply.userId) return '';
         const replyPhoto = reply.userId.foto || reply.userId.avatarUrl || 'imagens/default-user.png';
         const isReplyLiked = reply.likes && reply.likes.includes(userId);
@@ -698,10 +701,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="reply-body">
                     <strong>${reply.userId.nome}</strong>
                     <p>${reply.content}</p>
-                    <!-- Botão de deletar (só visível para dono do post) -->
-                    <button class="btn-delete-reply" data-comment-id="${commentId}" data-reply-id="${reply._id}" title="Apagar resposta">
+                    <!-- Botão de deletar (visível para dono do post OU dono da resposta) -->
+                    ${canDeleteReply ? `<button class="btn-delete-reply" data-comment-id="${commentId}" data-reply-id="${reply._id}" title="Apagar resposta">
                         <i class="fas fa-trash"></i>
-                    </button>
+                    </button>` : ''}
                 </div>
                 <div class="reply-actions">
                     <button class="reply-action-btn btn-like-reply ${isReplyLiked ? 'liked' : ''}" data-comment-id="${commentId}" data-reply-id="${reply._id}">
@@ -735,6 +738,37 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.btn-comment').forEach(btn => btn.addEventListener('click', toggleCommentSection));
         document.querySelectorAll('.btn-send-comment').forEach(btn => btn.addEventListener('click', handleSendComment));
         
+        // Auto-resize e Enter para enviar comentários
+        document.querySelectorAll('.comment-input').forEach(textarea => {
+            // Auto-resize ao digitar
+            textarea.addEventListener('input', function() {
+                autoResizeTextarea(this);
+            });
+            
+            // Enter envia, Shift+Enter quebra linha
+            textarea.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    const postElement = this.closest('.post');
+                    const sendBtn = postElement.querySelector('.btn-send-comment');
+                    if (sendBtn) {
+                        sendBtn.click();
+                    }
+                }
+            });
+        });
+        
+        // Revalida comentários longos ao redimensionar a janela
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                document.querySelectorAll('.comment').forEach(comment => {
+                    checkLongComment(comment);
+                });
+            }, 200);
+        });
+        
         // 🛑 NOVO: Ações de Comentário
         document.querySelectorAll('.btn-like-comment').forEach(btn => btn.addEventListener('click', handleLikeComment));
         document.querySelectorAll('.btn-delete-comment').forEach(btn => btn.addEventListener('click', handleDeleteComment));
@@ -745,6 +779,71 @@ document.addEventListener('DOMContentLoaded', () => {
         // 🛑 NOVO: Ações de Resposta
         document.querySelectorAll('.btn-like-reply').forEach(btn => btn.addEventListener('click', handleLikeReply));
         document.querySelectorAll('.btn-delete-reply').forEach(btn => btn.addEventListener('click', handleDeleteReply));
+        
+        // Botão "Carregar mais" comentários (carrega 5 por vez)
+        document.querySelectorAll('.load-more-comments').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const postId = this.dataset.postId;
+                const postElement = this.closest('.post');
+                const currentlyLoaded = parseInt(this.dataset.loaded) || 2;
+                const totalComments = parseInt(this.dataset.total) || 0;
+                const nextBatch = currentlyLoaded + 5;
+                
+                // Mostra os próximos 5 comentários (ou menos se não houver 5)
+                const hiddenComments = Array.from(postElement.querySelectorAll('.comment-hidden'));
+                const commentsToShow = hiddenComments.slice(0, 5);
+                
+                commentsToShow.forEach(comment => {
+                    comment.classList.remove('comment-hidden');
+                    // Garante que comentários recém-visíveis não tenham estilos inline de limite
+                    const commentText = comment.querySelector('.comment-body p');
+                    if (commentText) {
+                        commentText.style.maxHeight = '';
+                        commentText.style.overflow = '';
+                        commentText.style.overflowY = '';
+                        commentText.style.height = '';
+                    }
+                });
+                
+                // Atualiza o contador de comentários carregados
+                const newLoadedCount = Math.min(nextBatch, totalComments);
+                this.dataset.loaded = newLoadedCount;
+                
+                // Se ainda houver mais comentários, mantém o botão, senão remove
+                if (newLoadedCount >= totalComments) {
+                    this.remove();
+                } else {
+                    // Atualiza o texto se necessário (opcional)
+                    // this.textContent = `Carregar mais (${totalComments - newLoadedCount} restantes)`;
+                }
+                
+                // Reconfigura listeners dos novos comentários visíveis
+                commentsToShow.forEach(commentElement => {
+                    const commentId = commentElement.dataset.commentId;
+                    const likeBtn = commentElement.querySelector('.btn-like-comment');
+                    const deleteBtn = commentElement.querySelector('.btn-delete-comment');
+                    const replyFormBtn = commentElement.querySelector('.btn-show-reply-form');
+                    const toggleRepliesBtn = commentElement.querySelector('.btn-toggle-replies');
+                    const sendReplyBtn = commentElement.querySelector('.btn-send-reply');
+                    
+                    if (likeBtn) likeBtn.addEventListener('click', handleLikeComment);
+                    if (deleteBtn) deleteBtn.addEventListener('click', handleDeleteComment);
+                    if (replyFormBtn) replyFormBtn.addEventListener('click', toggleReplyForm);
+                    if (toggleRepliesBtn) toggleRepliesBtn.addEventListener('click', toggleReplyList);
+                    if (sendReplyBtn) sendReplyBtn.addEventListener('click', handleSendReply);
+                });
+                
+                // Verifica comentários longos após um delay maior para garantir renderização completa
+                setTimeout(() => {
+                    commentsToShow.forEach(commentElement => {
+                        // Aguarda o elemento estar visível antes de verificar
+                        if (commentElement.offsetParent !== null) {
+                            checkLongComment(commentElement);
+                        }
+                    });
+                }, 500);
+            });
+        });
     }
 
     async function handleDeletePost(event) {
@@ -922,39 +1021,234 @@ document.addEventListener('DOMContentLoaded', () => {
     // BOTÃO LATERAL (MOBILE) PARA ABRIR CATEGORIAS / AÇÕES RÁPIDAS / TIMES
     // ----------------------------------------------------------------------
     const categoriasAside = document.querySelector('.categorias');
+    console.log('🔍 Elemento categorias encontrado:', categoriasAside);
     const mobileSidebarClose = document.getElementById('mobile-sidebar-close');
     let mobileSidebarBackdrop = null;
 
     if (mobileSidebarToggle && categoriasAside) {
+        console.log('🔧 Botão de filtros encontrado, configurando...');
         mobileSidebarBackdrop = document.createElement('div');
         mobileSidebarBackdrop.id = 'mobile-sidebar-backdrop';
         document.body.appendChild(mobileSidebarBackdrop);
 
+        function isMediaScreen() {
+            return window.innerWidth >= 769 && window.innerWidth <= 992;
+        }
+
         function fecharSidebarMobile() {
+            console.log('🔒 Fechando sidebar...');
             categoriasAside.classList.remove('aberta');
-            mobileSidebarBackdrop.classList.remove('visible');
-            mobileSidebarToggle.classList.remove('hidden');
+            
+            // Remover listener de clique fora quando fechar
+            if (outsideClickHandler) {
+                document.removeEventListener('click', outsideClickHandler);
+                outsideClickHandler = null;
+            }
+            
+            if (!isMediaScreen()) {
+                mobileSidebarBackdrop.classList.remove('visible');
+                mobileSidebarToggle.classList.remove('hidden');
+            }
         }
 
         function abrirSidebarMobile() {
-            categoriasAside.classList.add('aberta');
-            mobileSidebarBackdrop.classList.add('visible');
-            mobileSidebarToggle.classList.add('hidden');
+            console.log('🔓 Abrindo sidebar...', 'isMediaScreen:', isMediaScreen());
+            
+            if (isMediaScreen()) {
+                // Primeiro adicionar a classe para mostrar
+                categoriasAside.classList.add('aberta');
+                
+                // Posicionar dropdown abaixo do botão em telas médias
+                // Usar requestAnimationFrame para garantir que o DOM seja atualizado
+                requestAnimationFrame(() => {
+                    const toggleRect = mobileSidebarToggle.getBoundingClientRect();
+                    console.log('📍 Posicionando dropdown:', toggleRect);
+                    
+                    // Definir posição explicitamente
+                    categoriasAside.style.position = 'fixed';
+                    categoriasAside.style.top = `${toggleRect.bottom + 8}px`;
+                    categoriasAside.style.left = `${toggleRect.left}px`;
+                    categoriasAside.style.right = 'auto';
+                    categoriasAside.style.bottom = 'auto';
+                    categoriasAside.style.display = 'block';
+                    categoriasAside.style.visibility = 'visible';
+                    categoriasAside.style.opacity = '1';
+                    categoriasAside.style.pointerEvents = 'auto';
+                    categoriasAside.style.zIndex = '9999';
+                    
+                    // Verificar se o elemento está visível após aplicar os estilos
+                    requestAnimationFrame(() => {
+                        const rect = categoriasAside.getBoundingClientRect();
+                        const isVisible = rect.width > 0 && rect.height > 0 && 
+                                         rect.top >= 0 && rect.left >= 0 &&
+                                         rect.top < window.innerHeight && 
+                                         rect.left < window.innerWidth;
+                        
+                        console.log('✅ Estilos aplicados:', {
+                            top: categoriasAside.style.top,
+                            left: categoriasAside.style.left,
+                            display: categoriasAside.style.display,
+                            visibility: categoriasAside.style.visibility,
+                            opacity: categoriasAside.style.opacity,
+                            zIndex: categoriasAside.style.zIndex,
+                            rect: rect,
+                            isVisible: isVisible
+                        });
+                        
+                        if (!isVisible) {
+                            console.warn('⚠️ Dropdown pode estar fora da viewport!', rect);
+                        }
+                    });
+                });
+            } else {
+                categoriasAside.classList.add('aberta');
+                mobileSidebarBackdrop.classList.add('visible');
+                mobileSidebarToggle.classList.add('hidden');
+            }
         }
 
-        mobileSidebarToggle.addEventListener('click', () => {
-            if (categoriasAside.classList.contains('aberta')) {
-                fecharSidebarMobile();
-            } else {
-                abrirSidebarMobile();
+        let isOpening = false;
+        let isProcessing = false;
+        let clickTimeout = null;
+        let outsideClickHandler = null;
+        let lastClickTime = 0;
+        const CLICK_DEBOUNCE = 300; // Tempo mínimo entre cliques em ms
+
+        function setupOutsideClickHandler() {
+            // Remover listener anterior se existir
+            if (outsideClickHandler) {
+                document.removeEventListener('click', outsideClickHandler);
+                outsideClickHandler = null;
             }
-        });
+            
+            outsideClickHandler = (e) => {
+                // Ignorar se estiver abrindo ou processando
+                if (isOpening || isProcessing) {
+                    console.log('⏸️ Ignorando clique fora - dropdown está abrindo/processando');
+                    return;
+                }
+                
+                if (isMediaScreen() && categoriasAside.classList.contains('aberta')) {
+                    const clickedElement = e.target;
+                    const isClickInside = categoriasAside.contains(clickedElement);
+                    const isClickOnButton = mobileSidebarToggle.contains(clickedElement);
+                    const isClickOnClose = mobileSidebarClose?.contains(clickedElement);
+                    
+                    console.log('🔍 Verificando clique fora:', {
+                        isMediaScreen: isMediaScreen(),
+                        isAberta: categoriasAside.classList.contains('aberta'),
+                        isClickInside,
+                        isClickOnButton,
+                        isClickOnClose,
+                        clickedElement: clickedElement.tagName
+                    });
+                    
+                    if (!isClickInside && !isClickOnButton && !isClickOnClose) {
+                        console.log('✅ Fechando dropdown - clique fora detectado');
+                        fecharSidebarMobile();
+                    } else {
+                        console.log('❌ Clique dentro do dropdown ou botão - mantendo aberto');
+                    }
+                }
+            };
+            
+            // Usar setTimeout com delay maior para garantir que seja adicionado depois do evento do botão
+            // Delay aumentado para evitar capturar o clique do botão
+            setTimeout(() => {
+                // Verificar novamente se ainda está aberto antes de adicionar o listener
+                if (categoriasAside.classList.contains('aberta') && !isOpening && !isProcessing) {
+                    document.addEventListener('click', outsideClickHandler, false);
+                    console.log('✅ Listener de clique fora adicionado');
+                } else {
+                    console.log('⏸️ Listener não adicionado - dropdown não está mais aberto ou está processando');
+                }
+            }, 500);
+        }
+
+        mobileSidebarToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            
+            const now = Date.now();
+            const timeSinceLastClick = now - lastClickTime;
+            
+            // Debounce: ignorar cliques muito próximos
+            if (timeSinceLastClick < CLICK_DEBOUNCE) {
+                console.log(`⏸️ Clique ignorado - muito rápido (${timeSinceLastClick}ms)`);
+                return;
+            }
+            
+            // Prevenir múltiplos cliques rápidos
+            if (isProcessing || isOpening) {
+                console.log('⏸️ Clique ignorado - já processando ou abrindo');
+                return;
+            }
+            
+            // Verificar estado atual antes de processar
+            const isCurrentlyOpen = categoriasAside.classList.contains('aberta');
+            
+            lastClickTime = now;
+            console.log('🖱️ Botão clicado!', 'Estado atual:', isCurrentlyOpen ? 'aberto' : 'fechado');
+            isProcessing = true;
+            
+            // Limpar timeout anterior se existir
+            if (clickTimeout) {
+                clearTimeout(clickTimeout);
+                clickTimeout = null;
+            }
+            
+            if (isCurrentlyOpen) {
+                console.log('🔒 Fechando dropdown...');
+                fecharSidebarMobile();
+                setTimeout(() => {
+                    isProcessing = false;
+                }, 200);
+            } else {
+                console.log('🔓 Abrindo dropdown...');
+                isOpening = true;
+                abrirSidebarMobile();
+                
+                // Configurar listener de clique fora apenas quando abrir
+                setupOutsideClickHandler();
+                
+                // Delay maior para garantir que o evento de clique fora não interfira
+                clickTimeout = setTimeout(() => {
+                    isOpening = false;
+                    isProcessing = false;
+                    clickTimeout = null;
+                    console.log('✅ Dropdown totalmente aberto e pronto');
+                }, 600);
+            }
+        }, { capture: true, once: false }); // Usar capture: true para garantir que seja processado primeiro
 
         if (mobileSidebarClose) {
-            mobileSidebarClose.addEventListener('click', fecharSidebarMobile);
+            mobileSidebarClose.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                fecharSidebarMobile();
+            });
         }
 
         mobileSidebarBackdrop.addEventListener('click', fecharSidebarMobile);
+
+        // Reposicionar dropdown ao rolar ou redimensionar em telas médias
+        function reposicionarDropdown() {
+            if (isMediaScreen() && categoriasAside.classList.contains('aberta')) {
+                const toggleRect = mobileSidebarToggle.getBoundingClientRect();
+                categoriasAside.style.top = `${toggleRect.bottom + 8}px`;
+                categoriasAside.style.left = `${toggleRect.left}px`;
+            }
+        }
+
+        window.addEventListener('scroll', reposicionarDropdown, true);
+        window.addEventListener('resize', () => {
+            if (isMediaScreen() && categoriasAside.classList.contains('aberta')) {
+                reposicionarDropdown();
+            } else if (!isMediaScreen()) {
+                // Se mudou para outra resolução, fechar dropdown
+                fecharSidebarMobile();
+            }
+        });
     }
 
     if (filtroCidadeBtn && filtroCidadeInput) {
@@ -1168,13 +1462,114 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Função para verificar se um comentário é longo e precisa de "Carregar comentário"
+    function checkLongComment(commentElement) {
+        if (window.innerWidth > 767) {
+            // Em telas maiores, remove qualquer limite que possa ter sido aplicado
+            const commentText = commentElement.querySelector('.comment-body p');
+            if (commentText) {
+                commentText.classList.remove('comment-long', 'expanded');
+                const loadBtn = commentText.querySelector('.load-comment-text');
+                if (loadBtn) loadBtn.remove();
+            }
+            return;
+        }
+        
+        const commentText = commentElement.querySelector('.comment-body p');
+        if (!commentText) return;
+        
+        // Remove classes anteriores para medir corretamente
+        commentText.classList.remove('comment-long', 'expanded');
+        const existingLoadBtn = commentText.querySelector('.load-comment-text');
+        if (existingLoadBtn) existingLoadBtn.remove();
+        
+        // Força remoção de qualquer estilo inline que possa interferir
+        commentText.style.maxHeight = '';
+        commentText.style.height = '';
+        commentText.style.overflow = '';
+        commentText.style.overflowY = '';
+        commentText.style.overflowX = '';
+        
+        // Aguarda um frame para garantir que o navegador renderizou
+        requestAnimationFrame(() => {
+            // Mede a altura real do texto sem limite
+            const computedStyle = window.getComputedStyle(commentText);
+            const lineHeight = parseFloat(computedStyle.lineHeight) || 22;
+            const maxLines = 5;
+            const maxHeight = lineHeight * maxLines;
+            
+            // Altura real do conteúdo
+            const actualHeight = commentText.scrollHeight;
+            
+            if (actualHeight > maxHeight) {
+                // Comentário é longo, aplica limite e adiciona botão "Carregar comentário"
+                commentText.classList.add('comment-long');
+                
+                // Encontra o container do comentário para adicionar o botão após o parágrafo
+                const commentBody = commentText.closest('.comment-body');
+                if (commentBody) {
+                    // Garante que o botão não existe antes de adicionar
+                    const existingBtn = commentBody.querySelector('.load-comment-text');
+                    if (existingBtn) existingBtn.remove();
+                    
+                    const loadBtn = document.createElement('span');
+                    loadBtn.className = 'load-comment-text';
+                    loadBtn.textContent = 'Carregar comentário';
+                    loadBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        commentText.classList.add('expanded');
+                        commentText.style.maxHeight = 'none';
+                        commentText.style.overflow = 'visible';
+                        commentText.style.display = 'block';
+                        commentText.style.webkitLineClamp = 'unset';
+                        commentText.style.webkitBoxOrient = 'unset';
+                        this.remove();
+                    });
+                    // Adiciona o botão após o parágrafo, dentro do comment-body
+                    commentBody.insertBefore(loadBtn, commentText.nextSibling);
+                }
+            } else {
+                // Garante que comentários curtos não tenham limite
+                commentText.classList.remove('comment-long', 'expanded');
+                commentText.style.maxHeight = '';
+                commentText.style.overflow = '';
+                commentText.style.overflowY = '';
+                commentText.style.overflowX = '';
+                commentText.style.height = '';
+            }
+        });
+    }
+
+    // Função para auto-resize do textarea
+    function autoResizeTextarea(textarea) {
+        textarea.style.height = 'auto';
+        const scrollHeight = textarea.scrollHeight;
+        const maxHeight = window.innerWidth <= 767 ? 66 : 200; // 3 linhas em mobile, mais em desktop
+        textarea.style.height = Math.min(scrollHeight, maxHeight) + 'px';
+    }
+
     function toggleCommentSection(e) {
         const btn = e.currentTarget;
         const postElement = btn.closest('.post');
         const commentsSection = postElement.querySelector('.post-comments');
         commentsSection.classList.toggle('visible');
         if (commentsSection.classList.contains('visible')) {
-            commentsSection.querySelector('.comment-input').focus();
+            const textarea = commentsSection.querySelector('.comment-input');
+            if (textarea) {
+                textarea.focus();
+                // Inicializa altura do textarea
+                textarea.style.height = (window.innerWidth <= 767 ? 44 : 50) + 'px';
+            }
+            // Verifica comentários longos após abrir
+            setTimeout(() => {
+                const comments = commentsSection.querySelectorAll('.comment');
+                comments.forEach(comment => {
+                    if (comment.offsetParent !== null) {
+                        checkLongComment(comment);
+                    }
+                });
+            }, 300);
         }
     }
 
@@ -1198,6 +1593,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const comment = data.comment;
                 const commentPhoto = comment.userId.foto || comment.userId.avatarUrl || 'imagens/default-user.png';
                 const isPostOwner = postElement.classList.contains('is-owner');
+                // O usuário que acabou de criar o comentário sempre é o dono dele
+                const isCommentOwner = comment.userId._id === userId;
+                const canDeleteComment = isPostOwner || isCommentOwner;
 
                 const newCommentHTML = `
                 <div class="comment" data-comment-id="${comment._id}">
@@ -1206,9 +1604,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         <div class="comment-body">
                             <strong>${comment.userId.nome}</strong>
                             <p>${comment.content}</p>
-                            <button class="btn-delete-comment" data-comment-id="${comment._id}" title="Apagar comentário">
+                            ${canDeleteComment ? `<button class="btn-delete-comment" data-comment-id="${comment._id}" title="Apagar comentário">
                                 <i class="fas fa-trash"></i>
-                            </button>
+                            </button>` : ''}
                         </div>
                         <div class="comment-actions">
                             <button class="comment-action-btn btn-like-comment" data-comment-id="${comment._id}">
@@ -1234,7 +1632,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 newCommentElement.querySelector('.btn-show-reply-form').addEventListener('click', toggleReplyForm);
                 newCommentElement.querySelector('.btn-send-reply').addEventListener('click', handleSendReply);
                 
+                // Verifica se o novo comentário é longo após renderização
+                setTimeout(() => {
+                    if (newCommentElement.offsetParent !== null) {
+                        checkLongComment(newCommentElement);
+                    }
+                }, 300);
+                
+                // Limpa e reseta o textarea
                 input.value = '';
+                input.style.height = 'auto';
+                input.style.height = (window.innerWidth <= 767 ? 44 : 50) + 'px';
             } else {
                 throw new Error(data.message || 'Erro ao enviar comentário.');
             }
@@ -1359,6 +1767,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const commentId = btn.dataset.commentId;
         const postElement = btn.closest('.post');
         const postId = postElement.dataset.postId;
+        const userId = localStorage.getItem('userId');
+
+        // Log no frontend para debug
+        console.log('🗑️ Tentando deletar comentário:', {
+            postId,
+            commentId,
+            userId,
+            url: `/api/posts/${postId}/comments/${commentId}`
+        });
 
         if (!confirm('Tem certeza que deseja apagar este comentário?')) return;
 
@@ -1368,13 +1785,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
+            
+            console.log('📥 Resposta do servidor:', {
+                status: response.status,
+                success: data.success,
+                message: data.message
+            });
+            
             if (data.success) {
                 btn.closest('.comment').remove(); // Remove o comentário do DOM
             } else {
                 throw new Error(data.message);
             }
         } catch (error) {
-            console.error('Erro ao deletar comentário:', error);
+            console.error('❌ Erro ao deletar comentário:', error);
             alert('Erro: ' + error.message);
         }
     }
@@ -1384,6 +1808,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const commentId = btn.dataset.commentId;
         const replyId = btn.dataset.replyId;
         const postId = btn.closest('.post').dataset.postId;
+        const userId = localStorage.getItem('userId');
+
+        // Log no frontend para debug
+        console.log('🗑️ Tentando deletar resposta:', {
+            postId,
+            commentId,
+            replyId,
+            userId,
+            url: `/api/posts/${postId}/comments/${commentId}/replies/${replyId}`
+        });
 
         if (!confirm('Tem certeza que deseja apagar esta resposta?')) return;
 
@@ -1393,13 +1827,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
+            
+            console.log('📥 Resposta do servidor:', {
+                status: response.status,
+                success: data.success,
+                message: data.message
+            });
+            
             if (data.success) {
                 btn.closest('.reply').remove(); // Remove a resposta do DOM
             } else {
                 throw new Error(data.message);
             }
         } catch (error) {
-            console.error('Erro ao deletar resposta:', error);
+            console.error('❌ Erro ao deletar resposta:', error);
             alert('Erro: ' + error.message);
         }
     }

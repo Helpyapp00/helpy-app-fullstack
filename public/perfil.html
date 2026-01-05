@@ -386,14 +386,15 @@
     
     <!-- Modal flutuante para lembrete de avaliação -->
     <div id="modal-lembrete-avaliacao" class="modal-overlay hidden" style="z-index: 10002;">
-        <div class="modal-content modal-grande" style="max-width: 500px;">
+        <div class="modal-content modal-grande" style="max-width: 500px; position: relative;">
+            <button id="btn-fechar-lembrete-avaliacao" class="btn-close-modal" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; font-size: 24px; cursor: pointer; z-index: 10003; display: flex; align-items: center; justify-content: center;">&times;</button>
             <div id="conteudo-lembrete-avaliacao"></div>
         </div>
     </div>
     
     <!-- Modal para postagem completa -->
     <div id="modal-postagem-completa" class="modal-overlay hidden" style="z-index: 10003;">
-        <div class="modal-content modal-grande" style="max-width: 600px;">
+        <div class="modal-content modal-grande">
             <div class="modal-header">
                 <h3>Postagem</h3>
                 <button class="btn-close-modal" data-modal="modal-postagem-completa">&times;</button>
@@ -401,6 +402,15 @@
             <div id="modal-postagem-content" class="modal-body"></div>
         </div>
     </div>
+
+    <!-- Modal de Imagem Flutuante -->
+    <div id="image-modal-pedido" class="image-modal-overlay hidden" style="display: none !important;">
+        <div style="position: relative; display: inline-block;">
+            <img id="modal-image-pedido" class="image-modal-content" src="" alt="" style="max-width: 90vw; max-height: 90vh; object-fit: contain; border-radius: 5px; display: block;">
+            <span id="close-image-modal-pedido" class="close-btn-modal">&times;</span>
+        </div>
+    </div>
+
     <script src="/header-notificacoes.js"></script>
     <script src="/perfil.js"></script>
 </body>

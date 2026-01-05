@@ -4,6 +4,226 @@ document.addEventListener('DOMContentLoaded', () => {
     const userId = localStorage.getItem('userId');
     const userType = localStorage.getItem('userType');
 
+    // Função para abrir modal de imagem flutuante (tornada global)
+    window.abrirModalImagem = function abrirModalImagem(fotoUrl) {
+        // Verificar se a URL é válida e não é um avatar
+        if (!fotoUrl || 
+            typeof fotoUrl !== 'string' ||
+            fotoUrl.includes('avatar') || 
+            fotoUrl.includes('default-user') ||
+            fotoUrl.includes('perfil') ||
+            fotoUrl === '' ||
+            fotoUrl === 'undefined' ||
+            fotoUrl.trim() === '') {
+            console.warn('⚠️ Tentativa de abrir modal com URL inválida ou avatar:', fotoUrl);
+            return;
+        }
+        
+        // Verificar se estamos na página de perfil - se sim, não abrir modal
+        if (window.location.pathname.includes('/perfil') || window.location.pathname.includes('perfil.html')) {
+            console.warn('⚠️ Tentativa de abrir modal na página de perfil - ignorando');
+            return;
+        }
+        
+        console.log('🖼️ Abrindo modal de imagem:', fotoUrl);
+        const modalImagem = document.getElementById('image-modal-pedido');
+        const imagemModal = document.getElementById('modal-image-pedido');
+        const btnFecharModal = document.getElementById('close-image-modal-pedido');
+        
+        console.log('🔍 Elementos do modal:', {
+            modalImagem: !!modalImagem,
+            imagemModal: !!imagemModal,
+            btnFecharModal: !!btnFecharModal
+        });
+        
+        if (modalImagem && imagemModal && fotoUrl) {
+            imagemModal.src = fotoUrl;
+            
+            // Remover classe hidden
+            modalImagem.classList.remove('hidden');
+            
+            // Forçar display e visibilidade via style inline também
+            modalImagem.style.display = 'flex';
+            modalImagem.style.opacity = '1';
+            modalImagem.style.visibility = 'visible';
+            modalImagem.style.zIndex = '10001';
+            
+            document.body.style.overflow = 'hidden';
+            
+            console.log('✅ Modal aberto');
+            console.log('🔍 Estado do modal:', {
+                hasHidden: modalImagem.classList.contains('hidden'),
+                display: window.getComputedStyle(modalImagem).display,
+                opacity: window.getComputedStyle(modalImagem).opacity,
+                visibility: window.getComputedStyle(modalImagem).visibility,
+                zIndex: window.getComputedStyle(modalImagem).zIndex
+            });
+        } else {
+            console.error('❌ Elementos do modal não encontrados ou URL inválida');
+        }
+    };
+
+    // Fechar modal ao clicar no X ou fora da imagem
+    const modalImagem = document.getElementById('image-modal-pedido');
+    const btnFecharModal = document.getElementById('close-image-modal-pedido');
+    
+    function fecharModalImagem() {
+        const modal = document.getElementById('image-modal-pedido');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+            modal.style.opacity = '0';
+            modal.style.visibility = 'hidden';
+            document.body.style.overflow = '';
+            console.log('✅ Modal de imagem fechado');
+        }
+    }
+    
+    window.fecharModalImagem = fecharModalImagem;
+    
+    if (btnFecharModal) {
+        // Remover listeners anteriores se existirem
+        const novoBtnFechar = btnFecharModal.cloneNode(true);
+        btnFecharModal.parentNode.replaceChild(novoBtnFechar, btnFecharModal);
+        
+        novoBtnFechar.addEventListener('click', (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            console.log('❌ Botão X clicado - fechando modal');
+            fecharModalImagem();
+        }, true); // Capture phase para executar primeiro
+        
+        // Também adicionar onclick direto como fallback
+        novoBtnFechar.onclick = (e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            console.log('❌ Botão X (onclick) clicado - fechando modal');
+            fecharModalImagem();
+            return false;
+        };
+    }
+    
+    if (modalImagem) {
+        // Remover listener anterior se existir e adicionar novo
+        const novoModal = modalImagem.cloneNode(true);
+        modalImagem.parentNode.replaceChild(novoModal, modalImagem);
+        
+        novoModal.addEventListener('click', (e) => {
+            // Fechar se clicar no overlay ou no próprio modal (não na imagem)
+            if (e.target === novoModal || 
+                e.target.classList.contains('image-modal-overlay') ||
+                e.target.id === 'image-modal-pedido' ||
+                e.target.classList.contains('close-btn-modal')) {
+                e.stopPropagation();
+                e.preventDefault();
+                console.log('🖼️ Clicou no overlay - fechando modal');
+                fecharModalImagem();
+            }
+        });
+        
+        // Reconfigurar o botão de fechar após clonar
+        const novoBtnFechar = document.getElementById('close-image-modal-pedido');
+        if (novoBtnFechar) {
+            novoBtnFechar.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                console.log('❌ Botão X clicado (overlay) - fechando modal');
+                fecharModalImagem();
+            }, true);
+        }
+        
+        // Garantir que o modal comece fechado quando a página carrega, especialmente na página de perfil
+        setTimeout(() => {
+            if (modalImagem && !modalImagem.classList.contains('hidden')) {
+                const imagemModal = document.getElementById('modal-image-pedido');
+                if (!imagemModal || !imagemModal.src || imagemModal.src === '' || 
+                    imagemModal.src.includes('avatar') || 
+                    window.location.pathname.includes('/perfil') ||
+                    window.location.pathname.includes('perfil.html')) {
+                    fecharModalImagem();
+                }
+            }
+        }, 100);
+    }
+
+    // Usar delegação de eventos para garantir que funcione mesmo com elementos carregados dinamicamente
+    // IMPORTANTE: Não capturar cliques em avatares de perfil ou nomes de clientes
+    // Usar bubble phase (false) para que listeners específicos executem primeiro na fase de captura
+    document.addEventListener('click', (e) => {
+        // PRIMEIRA VERIFICAÇÃO: Se o clique foi em um avatar de perfil, nome de cliente ou qualquer elemento relacionado
+        const avatarClickable = e.target.closest('.clickable-avatar, .avatar-pequeno-pedido, .nome-cliente-clickable');
+        if (avatarClickable) {
+            console.log('🚫 Clique em avatar/nome detectado - ignorando modal de foto');
+            return; // Não fazer nada, deixa o listener do avatar/nome processar
+        }
+        
+        // SEGUNDA VERIFICAÇÃO: Se o elemento clicado diretamente é um avatar ou nome
+        if (e.target.classList.contains('clickable-avatar') || 
+            e.target.classList.contains('avatar-pequeno-pedido') ||
+            e.target.classList.contains('nome-cliente-clickable')) {
+            console.log('🚫 Elemento é avatar/nome - ignorando modal de foto');
+            return;
+        }
+        
+        // TERCEIRA VERIFICAÇÃO: Verificar se o elemento clicado está dentro de um container de avatar/nome
+        const parentAvatar = e.target.closest('.pedido-cliente-header');
+        if (parentAvatar) {
+            // Se está dentro do header do cliente, verificar se é um avatar ou nome
+            const isAvatarOrName = e.target.closest('.clickable-avatar, .avatar-pequeno-pedido, .nome-cliente-clickable');
+            if (isAvatarOrName) {
+                console.log('🚫 Clique dentro do header do cliente (avatar/nome) - ignorando modal de foto');
+                return;
+            }
+            // Se é uma imagem dentro do header, verificar se é avatar
+            if (e.target.tagName === 'IMG' || e.target.closest('img')) {
+                const img = e.target.tagName === 'IMG' ? e.target : e.target.closest('img');
+                if (img && (img.classList.contains('clickable-avatar') || img.classList.contains('avatar-pequeno-pedido'))) {
+                    console.log('🚫 Imagem dentro de header de cliente - ignorando modal de foto');
+                    return;
+                }
+            }
+        }
+        
+        // QUARTA VERIFICAÇÃO: Verificar se o clique foi em uma foto de serviço (apenas fotos de serviço, não avatares)
+        const fotoClickable = e.target.closest('.foto-pedido-clickable');
+        if (fotoClickable) {
+            // Verificar se não é um avatar ou nome de cliente
+            const isAvatar = fotoClickable.classList.contains('clickable-avatar') || 
+                           fotoClickable.classList.contains('avatar-pequeno-pedido') ||
+                           fotoClickable.classList.contains('nome-cliente-clickable') ||
+                           fotoClickable.closest('.clickable-avatar') ||
+                           fotoClickable.closest('.avatar-pequeno-pedido') ||
+                           fotoClickable.closest('.nome-cliente-clickable') ||
+                           fotoClickable.closest('.pedido-cliente-header');
+            
+            if (!isAvatar) {
+                const fotoUrl = fotoClickable.dataset.fotoUrl || fotoClickable.src;
+                // Validar URL antes de abrir modal
+                if (fotoUrl && 
+                    !fotoUrl.includes('avatar') && 
+                    !fotoUrl.includes('default-user') &&
+                    fotoUrl !== '' &&
+                    fotoUrl !== 'undefined') {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    console.log('🖼️ Clicou na foto (delegação):', fotoUrl);
+                    if (typeof window.abrirModalImagem === 'function') {
+                        window.abrirModalImagem(fotoUrl);
+                    } else {
+                        console.error('❌ Função abrirModalImagem não encontrada');
+                    }
+                } else {
+                    console.warn('⚠️ URL de foto inválida ou é avatar:', fotoUrl);
+                }
+            } else {
+                console.log('🚫 Foto clicável é avatar - ignorando modal');
+            }
+        }
+    }, false); // Bubble phase - executa DEPOIS dos listeners na fase de captura
+
     // Utilitário para cachear fotos de pedidos (para usar no lembrete de avaliação)
     function cacheFotoPedidoGenerico(src, pid) {
         if (!src) return;
@@ -388,7 +608,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const cidade = document.getElementById('pedido-cidade').value;
             const estado = document.getElementById('pedido-estado').value;
             const prazoHoras = document.getElementById('pedido-prazo')?.value || '1';
-            const fotoFile = fotosSelecionadas[0] || inputFotoPedido?.files?.[0] || null;
+            // Prepara todas as fotos selecionadas para envio
+            const fotosParaEnviar = fotosSelecionadas.length > 0 ? fotosSelecionadas : (inputFotoPedido?.files ? Array.from(inputFotoPedido.files) : []);
 
             const tipoAtendimento = (radioTipoAgendado && radioTipoAgendado.checked) ? 'agendado' : 'urgente';
             let dataAgendadaIso = '';
@@ -431,9 +652,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     cidade,
                     estado
                 }));
-                if (fotoFile) {
-                    formData.append('foto', fotoFile);
-                }
+                // Adiciona todas as fotos ao FormData
+                console.log(`📤 Enviando ${fotosParaEnviar.length} foto(s) para o servidor`);
+                fotosParaEnviar.forEach((foto, index) => {
+                    formData.append('fotos', foto);
+                    console.log(`  Foto ${index + 1}: ${foto.name || 'sem nome'} (${foto.size || 0} bytes)`);
+                });
 
                 const response = await fetch('/api/pedidos-urgentes', {
                     method: 'POST',
@@ -446,9 +670,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 let data = null;
                 try {
-                    data = await response.json();
+                    const responseText = await response.text();
+                    console.log('Resposta do servidor (texto):', responseText);
+                    try {
+                        data = JSON.parse(responseText);
+                    } catch (parseError) {
+                        console.error('Erro ao fazer parse do JSON:', parseError);
+                        console.error('Resposta recebida:', responseText);
+                        throw new Error(`Resposta inválida do servidor: ${responseText.substring(0, 200)}`);
+                    }
                 } catch (parseError) {
                     console.error('Erro ao interpretar resposta do pedido urgente:', parseError);
+                    alert(`Erro ao processar resposta do servidor: ${parseError.message}`);
+                    return;
                 }
                 
                 const successFlag = data && data.success === true;
@@ -457,7 +691,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Feedback visual com check animado
                     const toast = document.createElement('div');
                     toast.className = 'toast-sucesso';
-                    toast.innerHTML = `<span class="check-animado">✔</span> Pedido criado! ${data.profissionaisNotificados} profissionais foram notificados.`;
+                    toast.innerHTML = `<span class="check-animado">✔</span> Pedido criado! ${data.profissionaisNotificados || 0} profissionais foram notificados.`;
                     document.body.appendChild(toast);
                     setTimeout(() => toast.classList.add('show'), 10);
                     setTimeout(() => toast.remove(), 2500);
@@ -474,7 +708,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         ok: response.ok,
                         data
                     });
-                    alert((data && data.message) ? data.message : `Erro ao criar pedido urgente. (status ${response.status || 'desconhecido'})`);
+                    const errorMsg = (data && data.message) 
+                        ? data.message 
+                        : (data && data.error) 
+                            ? data.error 
+                            : `Erro ao criar pedido urgente. (status ${response.status || 'desconhecido'})`;
+                    alert(errorMsg);
                     return;
                 }
             } catch (error) {
@@ -505,6 +744,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 const pedido = data.pedido;
                 const propostas = data.propostas || [];
+                
+                // Verificar se o pedido foi concluído mas não foi avaliado
+                let pedidoFoiAvaliado = false;
+                if (pedido && pedido.status === 'concluido') {
+                    try {
+                        const avaliacaoResponse = await fetch(`/api/avaliacoes-verificadas/pedido/${pedidoId}`, {
+                            headers: {
+                                'Authorization': `Bearer ${token}`
+                            }
+                        });
+                        
+                        if (avaliacaoResponse.ok) {
+                            const avaliacaoData = await avaliacaoResponse.json();
+                            pedidoFoiAvaliado = avaliacaoData.avaliacoes && avaliacaoData.avaliacoes.some(av => 
+                                av.clienteId && (av.clienteId._id || av.clienteId) === loggedInUserId
+                            );
+                        }
+                    } catch (error) {
+                        console.error('Erro ao verificar avaliação:', error);
+                    }
+                }
 
                 if (propostas.length === 0) {
                     listaPropostas.innerHTML = '<p>Ainda não há propostas. Profissionais serão notificados!</p>';
@@ -518,6 +778,10 @@ document.addEventListener('DOMContentLoaded', () => {
                             <div class="pedido-propostas-info">
                                 <strong>${pedido.servico || ''}</strong>
                                 ${pedido.descricao ? `<p class="pedido-descricao">${pedido.descricao}</p>` : ''}
+                                ${pedido.status === 'concluido' && !pedidoFoiAvaliado ? 
+                                    '<p style="color: #dc3545; font-size: 14px; font-weight: 600; margin-top: 10px;"><i class="fas fa-exclamation-triangle"></i> Serviço concluído! Falta avaliar o profissional.</p>' : 
+                                    ''
+                                }
                             </div>
                             ${pedido.foto ? `
                                 <div class="pedido-propostas-foto">
@@ -811,7 +1075,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     
                     return `
-                        <div class="pedido-urgente-card">
+                        <div class="pedido-urgente-card" style="overflow: visible !important; overflow-x: visible !important; overflow-y: visible !important; max-height: none !important; height: auto !important;">
                             <div class="pedido-cliente-header">
                                 <img src="${cliente?.avatarUrl || cliente?.foto || 'imagens/default-user.png'}" 
                                      alt="${cliente?.nome || 'Cliente'}" 
@@ -831,9 +1095,14 @@ document.addEventListener('DOMContentLoaded', () => {
                                 </span>
                             </div>
                             
-                            ${pedido.foto ? `
-                                <div class="pedido-foto-servico">
-                                    <img src="${pedido.foto}" alt="Foto do serviço" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 8px; margin: 10px 0;">
+                            ${pedido.foto || (pedido.fotos && pedido.fotos.length > 0) ? `
+                                <div class="pedido-foto-servico" style="display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0; overflow: visible; overflow-x: visible; overflow-y: visible;">
+                                    ${pedido.fotos && pedido.fotos.length > 0 ? 
+                                        pedido.fotos.map((foto, idx) => `
+                                            <img src="${foto}" alt="Foto do serviço ${idx + 1}" class="foto-pedido-clickable" data-foto-url="${foto}" style="width: calc(50% - 2.5px); max-width: 150px; height: 100px; object-fit: cover; border-radius: 8px; cursor: pointer; flex-shrink: 0;">
+                                        `).join('') :
+                                        `<img src="${pedido.foto}" alt="Foto do serviço" class="foto-pedido-clickable" data-foto-url="${pedido.foto}" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 8px; cursor: pointer;">`
+                                    }
                                 </div>
                             ` : ''}
                             
@@ -870,12 +1139,43 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 // Adicionar listeners para nome e avatar clicáveis (abrir perfil)
-                document.querySelectorAll('.nome-cliente-clickable, .clickable-avatar').forEach(element => {
-                    element.addEventListener('click', (e) => {
+                // IMPORTANTE: Usar capture phase para executar ANTES do listener de delegação
+                document.querySelectorAll('.nome-cliente-clickable, .clickable-avatar, .avatar-pequeno-pedido').forEach(element => {
+                    // Remover listeners anteriores clonando o elemento
+                    const novoElement = element.cloneNode(true);
+                    element.parentNode.replaceChild(novoElement, element);
+                    
+                    const novoListener = (e) => {
                         e.stopPropagation(); // Evita que o clique se propague
-                        const clienteId = element.dataset.clienteId;
+                        e.preventDefault(); // Previne comportamento padrão
+                        e.stopImmediatePropagation(); // Impede que outros listeners sejam executados
+                        
+                        // Fechar modal de imagem se estiver aberto antes de navegar
+                        if (typeof window.fecharModalImagem === 'function') {
+                            window.fecharModalImagem();
+                        }
+                        
+                        const clienteId = novoElement.dataset.clienteId;
                         if (clienteId) {
+                            console.log('👤 Abrindo perfil do cliente:', clienteId);
+                            // Navegar imediatamente, sem delay
                             window.location.href = `/perfil?id=${clienteId}`;
+                        }
+                    };
+                    novoElement.addEventListener('click', novoListener, true); // Capture phase - executa ANTES
+                });
+
+                // Adicionar listeners para fotos clicáveis (abrir modal)
+                document.querySelectorAll('.foto-pedido-clickable').forEach(img => {
+                    img.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        const fotoUrl = img.dataset.fotoUrl || img.src;
+                        console.log('🖼️ Clicou na foto:', fotoUrl);
+                        if (typeof window.abrirModalImagem === 'function') {
+                            window.abrirModalImagem(fotoUrl);
+                        } else {
+                            console.error('❌ Função abrirModalImagem não encontrada');
                         }
                     });
                 });
@@ -898,22 +1198,80 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Adicionar botão na lateral se for profissional (apenas para "Procurar pedidos")
-    if (userType === 'trabalhador' && !btnVerPedidosUrgentes) {
+    function adicionarBotoesAcaoRapida() {
+        const currentUserType = localStorage.getItem('userType');
+        console.log('🔍 Verificando userType:', currentUserType);
         const acoesRapidas = document.querySelector('.filtro-acoes-rapidas');
-        if (acoesRapidas) {
-            const btnNovo = document.createElement('button');
-            btnNovo.id = 'btn-ver-pedidos-urgentes';
-            btnNovo.className = 'btn-acao-lateral';
-            btnNovo.innerHTML = '<i class="fas fa-bolt"></i> Procurar pedidos';
-            btnNovo.style.marginTop = '10px';
-            acoesRapidas.appendChild(btnNovo);
-            
-            btnNovo.addEventListener('click', async () => {
-                await carregarPedidosUrgentes();
-                modalPedidosUrgentesProfissional?.classList.remove('hidden');
-            });
+        console.log('🔍 Seção ações rápidas encontrada:', !!acoesRapidas);
+        
+        if (currentUserType === 'trabalhador') {
+            if (acoesRapidas) {
+                // Verificar se o botão já existe antes de criar
+                let btnVerPedidos = document.getElementById('btn-ver-pedidos-urgentes');
+                if (!btnVerPedidos) {
+                    console.log('✅ Criando botão "Procurar pedidos"');
+                    btnVerPedidos = document.createElement('button');
+                    btnVerPedidos.id = 'btn-ver-pedidos-urgentes';
+                    btnVerPedidos.className = 'btn-acao-lateral';
+                    btnVerPedidos.innerHTML = '<i class="fas fa-bolt"></i> Procurar pedidos';
+                    btnVerPedidos.style.marginTop = '10px';
+                    acoesRapidas.appendChild(btnVerPedidos);
+                    
+                    btnVerPedidos.addEventListener('click', async () => {
+                        await carregarPedidosUrgentes();
+                        const modal = document.getElementById('modal-pedidos-urgentes-profissional');
+                        if (modal) modal.classList.remove('hidden');
+                    });
+                    console.log('✅ Botão "Procurar pedidos" criado com sucesso');
+                } else {
+                    console.log('⚠️ Botão "Procurar pedidos" já existe');
+                }
+            } else {
+                console.error('❌ Seção .filtro-acoes-rapidas não encontrada para trabalhador');
+            }
+        } else if (currentUserType === 'cliente') {
+            if (acoesRapidas) {
+                // Verificar se o botão já existe antes de criar
+                let btnMeusPedidos = document.getElementById('btn-meus-pedidos-urgentes');
+                if (!btnMeusPedidos) {
+                    console.log('✅ Criando botão "Meus Pedidos Urgentes"');
+                    btnMeusPedidos = document.createElement('button');
+                    btnMeusPedidos.id = 'btn-meus-pedidos-urgentes';
+                    btnMeusPedidos.className = 'btn-acao-lateral';
+                    btnMeusPedidos.innerHTML = '<i class="fas fa-list"></i> Meus Pedidos Urgentes';
+                    btnMeusPedidos.style.marginTop = '10px';
+                    acoesRapidas.appendChild(btnMeusPedidos);
+                    
+                    btnMeusPedidos.addEventListener('click', async () => {
+                        modoVisualizacaoMeusPedidos = 'abertos';
+                        // Carregar pedidos abertos automaticamente ao abrir o modal
+                        await carregarMeusPedidosUrgentes('abertos');
+                        const modal = document.getElementById('modal-meus-pedidos-urgentes');
+                        if (modal) modal.classList.remove('hidden');
+                    });
+                    console.log('✅ Botão "Meus Pedidos Urgentes" criado com sucesso');
+                } else {
+                    console.log('⚠️ Botão "Meus Pedidos Urgentes" já existe');
+                }
+            } else {
+                console.error('❌ Seção .filtro-acoes-rapidas não encontrada para cliente');
+            }
+        } else {
+            console.log('⚠️ userType não é trabalhador nem cliente:', currentUserType);
         }
     }
+    
+    // Executar após o DOM estar completamente carregado
+    // Múltiplos delays para garantir que o DOM esteja pronto
+    setTimeout(() => {
+        adicionarBotoesAcaoRapida();
+    }, 100);
+    setTimeout(() => {
+        adicionarBotoesAcaoRapida();
+    }, 500);
+    setTimeout(() => {
+        adicionarBotoesAcaoRapida();
+    }, 1000);
     // Clique no botão de serviços ativos dentro do modal de pedidos urgentes
     if (btnServicosAtivos) {
         btnServicosAtivos.addEventListener('click', async () => {
@@ -1007,7 +1365,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         <p style="margin:4px 0;">
                             <i class="fas fa-map-marker-alt"></i> ${enderecoLinha} ${cidadeEstado ? `- ${cidadeEstado}` : ''}
                         </p>
-                        ${fotoServico ? `<div class="pedido-foto-servico"><img src="${fotoServico}" alt="Foto do serviço" loading="lazy"></div>` : ''}
+                        ${fotoServico || (pedido.fotos && pedido.fotos.length > 0) ? `
+                            <div class="pedido-foto-servico" style="display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0; overflow: visible; overflow-x: visible; overflow-y: visible;">
+                                ${pedido.fotos && pedido.fotos.length > 0 ? 
+                                    pedido.fotos.map((foto, idx) => `
+                                        <img src="${foto}" alt="Foto do serviço ${idx + 1}" class="foto-pedido-clickable" data-foto-url="${foto}" style="width: calc(50% - 2.5px); max-width: 150px; height: 100px; object-fit: cover; border-radius: 8px; cursor: pointer; flex-shrink: 0;" loading="lazy">
+                                    `).join('') :
+                                    `<img src="${fotoServico}" alt="Foto do serviço" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px;" loading="lazy">`
+                                }
+                            </div>
+                        ` : ''}
                         ${pedido.descricao ? `<p class="pedido-descricao">${pedido.descricao}</p>` : ''}
                         <div style="margin-top:10px; display:flex; justify-content:space-between; gap: 10px; flex-wrap: wrap;">
                             <a href="https://www.google.com/maps/search/?api=1&query=${enderecoMapa}" target="_blank" rel="noopener noreferrer" class="btn-mapa-link">
@@ -1169,34 +1536,194 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnMeusPedidosUrgentes = document.getElementById('btn-meus-pedidos-urgentes');
     const modalMeusPedidosUrgentes = document.getElementById('modal-meus-pedidos-urgentes');
     const listaMeusPedidosUrgentes = document.getElementById('lista-meus-pedidos-urgentes');
-    const btnFiltrarMeusPedidos = document.getElementById('btn-filtrar-meus-pedidos');
-    const filtroStatusMeusPedidos = document.getElementById('filtro-status-meus-pedidos');
+    const btnPedidosConcluidos = document.getElementById('btn-pedidos-concluidos');
+    const modalPedidosConcluidos = document.getElementById('modal-pedidos-concluidos');
+    const listaPedidosConcluidos = document.getElementById('lista-pedidos-concluidos');
+    
+    let modoVisualizacaoMeusPedidos = 'abertos'; // 'abertos' ou 'concluidos'
 
-    async function carregarMeusPedidosUrgentes(status = null) {
+    // Tornar função global para ser chamada após avaliação
+    window.carregarMeusPedidosUrgentes = async function carregarMeusPedidosUrgentes(modo = 'abertos') {
         if (!listaMeusPedidosUrgentes) return;
 
         try {
-            let url = '/api/pedidos-urgentes/meus';
-            if (status) {
-                url += `?status=${encodeURIComponent(status)}`;
+            modoVisualizacaoMeusPedidos = modo;
+            
+            let pedidosParaMostrar = [];
+            
+            if (modo === 'abertos') {
+                // Buscar TODOS os pedidos (sem filtro de status) para incluir concluídos não avaliados
+                const response = await fetch('/api/pedidos-urgentes/meus', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    // Pegar todos os pedidos da resposta (pedidos inclui todos, independente de status)
+                    const todosPedidos = data.pedidos || [];
+                    
+                    // Se não tiver em pedidos, usar pedidosAtivos e pedidosExpirados
+                    if (todosPedidos.length === 0) {
+                        todosPedidos.push(...(data.pedidosAtivos || []), ...(data.pedidosExpirados || []));
+                    }
+                    
+                    console.log('📦 Total de pedidos retornados pela API:', todosPedidos.length);
+                    console.log('📦 Pedidos por status:', {
+                        abertos: todosPedidos.filter(p => p.status === 'aberto').length,
+                        em_andamento: todosPedidos.filter(p => p.status === 'em_andamento').length,
+                        concluidos: todosPedidos.filter(p => p.status === 'concluido').length,
+                        cancelados: todosPedidos.filter(p => p.status === 'cancelado').length
+                    });
+                    
+                    // Separar pedidos por status
+                    const pedidosAbertosOuEmAndamento = todosPedidos.filter(p => 
+                        p.status === 'aberto' || p.status === 'em_andamento'
+                    );
+                    
+                    // Buscar pedidos concluídos que TIVERAM PROPOSTA ACEITA e verificar se foram avaliados
+                    const pedidosConcluidos = todosPedidos.filter(p => {
+                        // Deve estar concluído E ter pelo menos uma proposta aceita
+                        const temPropostaAceita = p.propostas && Array.isArray(p.propostas) && p.propostas.some(prop => prop.status === 'aceita');
+                        return p.status === 'concluido' && temPropostaAceita;
+                    });
+                    
+                    console.log('🔍 Pedidos concluídos com proposta aceita encontrados:', pedidosConcluidos.length);
+                    
+                    // Verificar quais pedidos concluídos não foram avaliados
+                    const pedidosConcluidosNaoAvaliados = await Promise.all(
+                        pedidosConcluidos.map(async (pedido) => {
+                            try {
+                                const avaliacaoResponse = await fetch(`/api/avaliacoes-verificadas/pedido/${pedido._id}`, {
+                                    headers: {
+                                        'Authorization': `Bearer ${token}`
+                                    }
+                                });
+                                
+                                if (avaliacaoResponse.ok) {
+                                    const avaliacaoData = await avaliacaoResponse.json();
+                                    console.log('🔍 Verificando avaliações para pedido:', pedido._id, 'userId:', userId);
+                                    console.log('🔍 Dados recebidos:', JSON.stringify(avaliacaoData, null, 2));
+                                    
+                                    // Verificar se há avaliação deste cliente para este pedido
+                                    const temAvaliacao = avaliacaoData.success && avaliacaoData.avaliacoes && Array.isArray(avaliacaoData.avaliacoes) && avaliacaoData.avaliacoes.some(av => {
+                                        // clienteId pode vir populado (objeto) ou como string/ObjectId
+                                        const clienteId = av.clienteId?._id || av.clienteId?.id || av.clienteId;
+                                        const clienteIdStr = clienteId ? String(clienteId) : null;
+                                        const userIdStr = userId ? String(userId) : null;
+                                        const match = clienteIdStr && userIdStr && clienteIdStr === userIdStr;
+                                        if (match) {
+                                            console.log('✅ Avaliação encontrada para este pedido:', pedido._id, 'clienteId:', clienteIdStr, 'userId:', userIdStr);
+                                        }
+                                        return match;
+                                    });
+                                    
+                                    // Se não tem avaliação, incluir nos pedidos abertos
+                                    if (!temAvaliacao) {
+                                        pedido.faltaAvaliar = true;
+                                        console.log('✅ Pedido concluído não avaliado encontrado:', pedido._id, pedido.servico);
+                                        return pedido;
+                                    }
+                                    console.log('❌ Pedido já avaliado - removendo da lista:', pedido._id);
+                                    return null;
+                                } else if (avaliacaoResponse.status === 401 || avaliacaoResponse.status === 403) {
+                                    // Token inválido ou sem permissão - não incluir o pedido (já foi avaliado ou erro de autenticação)
+                                    console.warn('⚠️ Erro de autenticação ao verificar avaliação do pedido:', pedido._id, 'Status:', avaliacaoResponse.status);
+                                    // Não incluir o pedido se houver erro de autenticação (provavelmente já foi avaliado)
+                                    return null;
+                                } else {
+                                    // Outro erro - assumir que não foi avaliado (para segurança)
+                                    pedido.faltaAvaliar = true;
+                                    console.log('⚠️ Não foi possível verificar avaliação (status:', avaliacaoResponse.status, '), incluindo pedido:', pedido._id);
+                                    return pedido;
+                                }
+                            } catch (error) {
+                                console.error('❌ Erro ao verificar avaliação do pedido:', pedido._id, error);
+                                // Em caso de erro de rede/conexão, não incluir o pedido (para evitar duplicatas)
+                                // Se o servidor estiver offline, melhor não mostrar do que mostrar incorretamente
+                                return null;
+                            }
+                        })
+                    );
+                    
+                    const concluidosNaoAvaliadosFiltrados = pedidosConcluidosNaoAvaliados.filter(p => p !== null);
+                    console.log('📋 Pedidos concluídos não avaliados:', concluidosNaoAvaliadosFiltrados.length);
+                    
+                    // Combinar pedidos abertos/em_andamento com concluídos não avaliados
+                    pedidosParaMostrar = [
+                        ...pedidosAbertosOuEmAndamento,
+                        ...concluidosNaoAvaliadosFiltrados
+                    ];
+                    
+                    console.log('📊 Total de pedidos para mostrar:', pedidosParaMostrar.length);
+                }
+            } else if (modo === 'concluidos') {
+                // Buscar pedidos concluídos que foram avaliados
+                const response = await fetch('/api/pedidos-urgentes/meus?status=concluido', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    const pedidosConcluidos = data.pedidosAtivos || data.pedidos || [];
+                    
+                    // Verificar quais pedidos foram avaliados
+                    const pedidosComAvaliacao = await Promise.all(
+                        pedidosConcluidos.map(async (pedido) => {
+                            try {
+                                const avaliacaoResponse = await fetch(`/api/avaliacoes-verificadas/pedido/${pedido._id}`, {
+                                    headers: {
+                                        'Authorization': `Bearer ${token}`
+                                    }
+                                });
+                                
+                                if (avaliacaoResponse.ok) {
+                                    const avaliacaoData = await avaliacaoResponse.json();
+                                    // Verificar se há avaliação deste cliente para este pedido
+                                    const temAvaliacao = avaliacaoData.success && avaliacaoData.avaliacoes && avaliacaoData.avaliacoes.some(av => {
+                                        const clienteId = av.clienteId?._id || av.clienteId?.id || av.clienteId;
+                                        return clienteId && String(clienteId) === String(userId);
+                                    });
+                                    if (temAvaliacao) {
+                                        pedido.avaliado = true;
+                                        return pedido;
+                                    }
+                                    return null;
+                                }
+                                return null;
+                            } catch (error) {
+                                console.error('Erro ao verificar avaliação do pedido:', error);
+                                return null;
+                            }
+                        })
+                    );
+                    
+                    pedidosParaMostrar = pedidosComAvaliacao.filter(p => p !== null);
+                }
             }
 
-            const response = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            if (pedidosParaMostrar.length === 0) {
+                const mensagem = modo === 'abertos' 
+                    ? 'Você ainda não criou nenhum pedido urgente aberto.'
+                    : 'Você ainda não tem pedidos concluídos avaliados.';
+                listaMeusPedidosUrgentes.innerHTML = `<p style="text-align: center; padding: 20px; color: var(--text-secondary);">${mensagem}</p>`;
+                return;
+            }
 
-            const data = await response.json();
-            
-            if (data.success) {
-                const pedidosAtivos = data.pedidosAtivos || data.pedidos || [];
-                const pedidosExpirados = data.pedidosExpirados || [];
-
-                if (pedidosAtivos.length === 0 && pedidosExpirados.length === 0) {
-                    listaMeusPedidosUrgentes.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-secondary);">Você ainda não criou nenhum pedido urgente.</p>';
-                    return;
-                }
+                // Log para debug
+                console.log('📋 Pedidos carregados:', pedidosParaMostrar.map(p => ({
+                    id: p._id,
+                    servico: p.servico,
+                    status: p.status,
+                    temFoto: !!p.foto,
+                    temFotos: p.fotos && p.fotos.length > 0,
+                    numFotos: p.fotos ? p.fotos.length : 0
+                })));
 
                 function renderPedidoCard(pedido, expirado = false) {
                     const tempoRestante = Math.max(0, Math.ceil((new Date(pedido.dataExpiracao) - new Date()) / 60000));
@@ -1208,8 +1735,13 @@ document.addEventListener('DOMContentLoaded', () => {
                         'cancelado': '<span class="badge-status badge-cancelado">Cancelado</span>'
                     }[pedido.status] || '';
 
+                    // Verifica se tem múltiplas fotos ou apenas uma
+                    const temFotos = pedido.fotos && Array.isArray(pedido.fotos) && pedido.fotos.length > 0;
+                    const temFotoUnica = pedido.foto && !temFotos;
+                    const fotosParaMostrar = temFotos ? pedido.fotos : (temFotoUnica ? [pedido.foto] : []);
+
                     return `
-                        <div class="pedido-urgente-card" style="margin-bottom: 20px;">
+                        <div class="pedido-urgente-card" style="margin-bottom: 20px; overflow: visible !important; overflow-x: visible !important; overflow-y: visible !important; max-height: none !important; height: auto !important;">
                             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                                 <div>
                                     <strong style="font-size: 18px;">${pedido.servico}</strong>
@@ -1218,9 +1750,14 @@ document.addEventListener('DOMContentLoaded', () => {
                                 ${pedido.status === 'aberto' && !expirado ? `<span class="tempo-restante">⏱️ ${tempoRestante} min</span>` : ''}
                             </div>
                             
-                            ${pedido.foto ? `
-                                <div class="pedido-foto-servico">
-                                    <img src="${pedido.foto}" alt="Foto do serviço" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 8px; margin: 10px 0;">
+                            ${fotosParaMostrar.length > 0 ? `
+                                <div class="pedido-foto-servico" style="display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0; overflow: visible; overflow-x: visible; overflow-y: visible;">
+                                    ${fotosParaMostrar.length > 1 ? 
+                                        fotosParaMostrar.map((foto, idx) => `
+                                            <img src="${foto}" alt="Foto do serviço ${idx + 1}" class="foto-pedido-clickable" data-foto-url="${foto}" style="width: calc(50% - 2.5px); max-width: 150px; height: 100px; object-fit: cover; border-radius: 8px; cursor: pointer; flex-shrink: 0;">
+                                        `).join('') :
+                                        `<img src="${fotosParaMostrar[0]}" alt="Foto do serviço" class="foto-pedido-clickable" data-foto-url="${fotosParaMostrar[0]}" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 8px; cursor: pointer;">`
+                                    }
                                 </div>
                             ` : ''}
                             
@@ -1231,20 +1768,109 @@ document.addEventListener('DOMContentLoaded', () => {
                                 ${pedido.localizacao.endereco}, ${pedido.localizacao.cidade} - ${pedido.localizacao.estado}
                             </div>
 
-                            <div style="margin-top: 15px; padding: 15px; background: var(--bg-secondary); border-radius: 8px;">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                    <strong><i class="fas fa-hand-holding-usd"></i> Propostas Recebidas: ${numPropostas}</strong>
-                                    ${numPropostas > 0 ? `
-                                        <button class="btn-ver-propostas" data-pedido-id="${pedido._id}" style="padding: 8px 15px; background: var(--primary-color); color: white; border: none; border-radius: 4px; cursor: pointer;">
-                                            <i class="fas fa-eye"></i> Ver Propostas
-                                        </button>
-                                    ` : ''}
-                                </div>
-                                ${numPropostas === 0 && pedido.status === 'aberto' ? 
-                                    (!expirado ? '<p style="color: var(--text-secondary); font-size: 14px;">Aguardando propostas de profissionais...</p>' : '') : 
-                                    ''
+                            ${(() => {
+                                // Encontrar proposta aceita
+                                const propostaAceita = pedido.propostas?.find(p => p.status === 'aceita');
+                                const profissionalAceito = propostaAceita?.profissionalId;
+                                const valorAceito = propostaAceita?.valor;
+                                
+                                if (propostaAceita && profissionalAceito) {
+                                    // Se tem proposta aceita, mostrar a caixa clicável
+                                    return `
+                                        <div class="proposta-aceita-clickable" 
+                                             data-profissional-id="${profissionalAceito._id || profissionalAceito.id}" 
+                                             data-pedido-id="${pedido._id}"
+                                             data-servico="${pedido.servico || ''}"
+                                             style="margin-top: 15px; padding: 15px; background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(40, 167, 69, 0.05) 100%); border: 1px solid rgba(40, 167, 69, 0.3); border-radius: 8px; cursor: pointer; transition: all 0.2s ease;"
+                                             onmouseover="this.style.background='linear-gradient(135deg, rgba(40, 167, 69, 0.15) 0%, rgba(40, 167, 69, 0.1) 100%)'; this.style.borderColor='rgba(40, 167, 69, 0.5)';"
+                                             onmouseout="this.style.background='linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(40, 167, 69, 0.05) 100%)'; this.style.borderColor='rgba(40, 167, 69, 0.3)';">
+                                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                                                <div style="flex: 1;">
+                                                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                                                        <i class="fas fa-check-circle" style="color: #28a745; font-size: 16px;"></i>
+                                                        <strong style="color: #28a745; font-size: 14px;">Proposta Aceita</strong>
+                                                    </div>
+                                                    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                                        ${profissionalAceito.foto || profissionalAceito.avatarUrl ? `
+                                                            <img src="${profissionalAceito.foto || profissionalAceito.avatarUrl}" 
+                                                                 alt="${profissionalAceito.nome}" 
+                                                                 style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(40, 167, 69, 0.3); pointer-events: none;">
+                                                        ` : ''}
+                                                        <div style="flex: 1; min-width: 150px; pointer-events: none;">
+                                                            <div style="font-weight: 600; color: var(--text-primary); font-size: 15px;">
+                                                                ${profissionalAceito.nome || 'Profissional'}
+                                                            </div>
+                                                            ${profissionalAceito.cidade && profissionalAceito.estado ? `
+                                                                <div style="font-size: 12px; color: var(--text-secondary);">
+                                                                    <i class="fas fa-map-marker-alt"></i> ${profissionalAceito.cidade} - ${profissionalAceito.estado}
+                                                                </div>
+                                                            ` : ''}
+                                                        </div>
+                                                        ${valorAceito ? `
+                                                            <div style="text-align: right; pointer-events: none;">
+                                                                <div style="font-size: 18px; font-weight: 700; color: #28a745;">
+                                                                    R$ ${parseFloat(valorAceito).toFixed(2)}
+                                                                </div>
+                                                                <div style="font-size: 11px; color: var(--text-secondary);">
+                                                                    Valor aceito
+                                                                </div>
+                                                            </div>
+                                                        ` : ''}
+                                                    </div>
+                                                    ${pedido.status === 'concluido' && pedido.faltaAvaliar ? 
+                                                        `<p class="mensagem-falta-avaliar" 
+                                                             data-profissional-id="${profissionalAceito._id || profissionalAceito.id}" 
+                                                             data-pedido-id="${pedido._id}"
+                                                             data-servico="${pedido.servico || ''}"
+                                                             style="color: #dc3545; font-size: 14px; font-weight: 600; margin-top: 10px; cursor: pointer; padding: 8px; background: rgba(220, 53, 69, 0.1); border-radius: 4px; transition: background 0.2s;"
+                                                             onmouseover="this.style.background='rgba(220, 53, 69, 0.2)'"
+                                                             onmouseout="this.style.background='rgba(220, 53, 69, 0.1)'">
+                                                            <i class="fas fa-exclamation-triangle"></i> Serviço concluído! Clique aqui para avaliar o profissional.
+                                                        </p>` : 
+                                                        ''
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `;
+                                } else {
+                                    // Se não tem proposta aceita, mostrar a seção normal de propostas
+                                    return `
+                                        <div style="margin-top: 15px; padding: 15px; background: var(--bg-secondary); border-radius: 8px;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                                <strong><i class="fas fa-hand-holding-usd"></i> Propostas Recebidas: ${numPropostas}</strong>
+                                                ${numPropostas > 0 ? `
+                                                    <button class="btn-ver-propostas" data-pedido-id="${pedido._id}" style="padding: 8px 15px; background: var(--primary-color); color: white; border: none; border-radius: 4px; cursor: pointer;">
+                                                        <i class="fas fa-eye"></i> Ver Propostas
+                                                    </button>
+                                                ` : ''}
+                                            </div>
+                                            ${pedido.status === 'concluido' && pedido.faltaAvaliar ? 
+                                                (() => {
+                                                    const propostaAceita = pedido.propostas?.find(p => p.status === 'aceita');
+                                                    const profissionalId = propostaAceita?.profissionalId?._id || propostaAceita?.profissionalId?.id;
+                                                    return profissionalId ? 
+                                                        `<p class="mensagem-falta-avaliar" 
+                                                             data-profissional-id="${profissionalId}" 
+                                                             data-pedido-id="${pedido._id}"
+                                                             data-servico="${pedido.servico || ''}"
+                                                             style="color: #dc3545; font-size: 14px; font-weight: 600; margin-top: 10px; cursor: pointer; padding: 8px; background: rgba(220, 53, 69, 0.1); border-radius: 4px; transition: background 0.2s;"
+                                                             onmouseover="this.style.background='rgba(220, 53, 69, 0.2)'"
+                                                             onmouseout="this.style.background='rgba(220, 53, 69, 0.1)'">
+                                                            <i class="fas fa-exclamation-triangle"></i> Serviço concluído! Clique aqui para avaliar o profissional.
+                                                        </p>` :
+                                                        '<p style="color: #dc3545; font-size: 14px; font-weight: 600; margin-top: 10px;"><i class="fas fa-exclamation-triangle"></i> Serviço concluído! Falta avaliar o profissional.</p>';
+                                                })() : 
+                                                ''
+                                            }
+                                            ${numPropostas === 0 && pedido.status === 'aberto' ? 
+                                                (!expirado ? '<p style="color: var(--text-secondary); font-size: 14px;">Aguardando propostas de profissionais...</p>' : '') : 
+                                                ''
+                                            }
+                                        </div>
+                                    `;
                                 }
-                            </div>
+                            })()}
                             ${pedido.status === 'aberto' && !expirado ? `
                                 <div style="margin-top: 10px; text-align: right;">
                                     <button class="btn-cancelar-pedido" data-pedido-id="${pedido._id}" style="padding: 8px 15px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">
@@ -1257,15 +1883,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
 
                 let html = '';
-
-                if (pedidosAtivos.length > 0) {
-                    html += '<h4 style="margin-bottom: 10px;">Pedidos Ativos</h4>';
-                    html += pedidosAtivos.map(p => renderPedidoCard(p, false)).join('');
-                }
-
-                if (pedidosExpirados.length > 0) {
-                    html += '<h4 style="margin: 20px 0 10px;">Pedidos Expirados</h4>';
-                    html += pedidosExpirados.map(p => renderPedidoCard(p, true)).join('');
+                
+                if (modo === 'abertos') {
+                    // Separar por status
+                    const pedidosAbertos = pedidosParaMostrar.filter(p => p.status === 'aberto');
+                    const pedidosEmAndamento = pedidosParaMostrar.filter(p => p.status === 'em_andamento');
+                    const pedidosConcluidosNaoAvaliados = pedidosParaMostrar.filter(p => p.status === 'concluido' && p.faltaAvaliar);
+                    
+                    console.log('📊 Renderização:', {
+                        abertos: pedidosAbertos.length,
+                        emAndamento: pedidosEmAndamento.length,
+                        concluidosNaoAvaliados: pedidosConcluidosNaoAvaliados.length
+                    });
+                    
+                    if (pedidosAbertos.length > 0) {
+                        html += '<h4 style="margin-bottom: 10px;">Pedidos Abertos</h4>';
+                        html += pedidosAbertos.map(p => renderPedidoCard(p, false)).join('');
+                    }
+                    
+                    if (pedidosEmAndamento.length > 0) {
+                        html += '<h4 style="margin: 20px 0 10px;">Pedidos em Andamento</h4>';
+                        html += pedidosEmAndamento.map(p => renderPedidoCard(p, false)).join('');
+                    }
+                    
+                    if (pedidosConcluidosNaoAvaliados.length > 0) {
+                        html += '<h4 style="margin: 20px 0 10px;">Aguardando Avaliação</h4>';
+                        html += pedidosConcluidosNaoAvaliados.map(p => renderPedidoCard(p, false)).join('');
+                    }
+                } else {
+                    // Modo concluídos
+                    html += '<h4 style="margin-bottom: 10px;">Pedidos Concluídos e Avaliados</h4>';
+                    html += pedidosParaMostrar.map(p => renderPedidoCard(p, false)).join('');
                 }
 
                 listaMeusPedidosUrgentes.innerHTML = html;
@@ -1279,67 +1927,425 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 });
 
+                // Função auxiliar para redirecionar para avaliação
+                const redirecionarParaAvaliacao = (profissionalId, pedidoId, servico) => {
+                    // Salva informações no localStorage para usar na avaliação
+                    if (pedidoId) {
+                        const pidClean = String(pedidoId).match(/[a-fA-F0-9]{24}/)?.[0];
+                        if (pidClean) {
+                            localStorage.setItem('pedidoIdUltimoServicoConcluido', pidClean);
+                        }
+                    }
+                    if (servico) {
+                        localStorage.setItem('ultimoServicoNome', servico);
+                        localStorage.setItem('nomeServicoConcluido', servico);
+                        if (pedidoId) {
+                            const pidClean = String(pedidoId).match(/[a-fA-F0-9]{24}/)?.[0];
+                            if (pidClean) {
+                                localStorage.setItem(`nomeServico:${pidClean}`, servico);
+                            }
+                        }
+                    }
+                    
+                    // Redireciona para a página de perfil com os parâmetros necessários
+                    const params = new URLSearchParams({
+                        id: profissionalId,
+                        pedidoId: pedidoId,
+                        servico: servico
+                    });
+                    window.location.href = `/perfil?${params.toString()}#secao-avaliacao`;
+                };
+                
+                // Adicionar listeners para avaliar pedidos concluídos não avaliados (card clicável)
+                document.querySelectorAll('.proposta-aceita-clickable').forEach(card => {
+                    card.addEventListener('click', async () => {
+                        const profissionalId = card.dataset.profissionalId;
+                        const pedidoId = card.dataset.pedidoId;
+                        const servico = card.dataset.servico || '';
+                        
+                        // Verifica se o pedido está concluído e falta avaliar
+                        const pedido = pedidosParaMostrar.find(p => p._id === pedidoId);
+                        if (pedido && pedido.status === 'concluido' && pedido.faltaAvaliar) {
+                            redirecionarParaAvaliacao(profissionalId, pedidoId, servico);
+                        }
+                    });
+                });
+                
+                // Adicionar listeners para mensagem "falta avaliar" (quando não está dentro do card clicável)
+                document.querySelectorAll('.mensagem-falta-avaliar').forEach(msg => {
+                    msg.addEventListener('click', () => {
+                        const profissionalId = msg.dataset.profissionalId;
+                        const pedidoId = msg.dataset.pedidoId;
+                        const servico = msg.dataset.servico || '';
+                        redirecionarParaAvaliacao(profissionalId, pedidoId, servico);
+                    });
+                });
+                
                 // Adicionar listeners para cancelar pedidos
                 document.querySelectorAll('.btn-cancelar-pedido').forEach(btn => {
                     btn.addEventListener('click', async () => {
                         const pedidoId = btn.dataset.pedidoId;
-                        if (!confirm('Tem certeza que deseja cancelar este pedido?')) return;
+                        
+                        // Usar modal de confirmação estilizado
+                        abrirConfirmacaoAcao({
+                            titulo: 'Cancelar pedido',
+                            texto: 'Tem certeza que deseja cancelar este pedido? Esta ação não pode ser desfeita.',
+                            exigeMotivo: false,
+                            onConfirm: async () => {
+                                try {
+                                    const response = await fetch(`/api/pedidos-urgentes/${pedidoId}/cancelar`, {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                            'Authorization': `Bearer ${token}`
+                                        }
+                                    });
 
-                        try {
-                            const response = await fetch(`/api/pedidos-urgentes/${pedidoId}/cancelar`, {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': `Bearer ${token}`
+                                    const data = await response.json();
+                                    if (data.success) {
+                                        // Mostrar mensagem discreta em vermelho claro
+                                        const mensagemDiscreta = document.createElement('div');
+                                        mensagemDiscreta.style.cssText = 'position: fixed; top: 100px; right: 20px; background: rgba(239, 83, 80, 0.95); color: white; padding: 8px 16px; border-radius: 4px; font-size: 14px; z-index: 10000; box-shadow: 0 2px 8px rgba(0,0,0,0.15); font-weight: 500;';
+                                        mensagemDiscreta.textContent = 'Cancelado';
+                                        document.body.appendChild(mensagemDiscreta);
+                                        
+                                        setTimeout(() => {
+                                            mensagemDiscreta.style.opacity = '0';
+                                            mensagemDiscreta.style.transition = 'opacity 0.3s ease';
+                                            setTimeout(() => mensagemDiscreta.remove(), 300);
+                                        }, 1500);
+                                        
+                                        await carregarMeusPedidosUrgentes(modoVisualizacaoMeusPedidos);
+                                    } else {
+                                        alert(data.message || 'Erro ao cancelar pedido.');
+                                    }
+                                } catch (error) {
+                                    console.error('Erro ao cancelar pedido urgente:', error);
+                                    alert('Erro ao cancelar pedido.');
                                 }
-                            });
-
-                            const data = await response.json();
-                            if (data.success) {
-                                alert('Pedido cancelado com sucesso.');
-                                await carregarMeusPedidosUrgentes(status);
-                            } else {
-                                alert(data.message || 'Erro ao cancelar pedido.');
                             }
-                        } catch (error) {
-                            console.error('Erro ao cancelar pedido urgente:', error);
-                            alert('Erro ao cancelar pedido.');
+                        });
+                    });
+                });
+
+                // Adicionar listeners para fotos clicáveis (abrir modal)
+                document.querySelectorAll('.foto-pedido-clickable').forEach(img => {
+                    img.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const fotoUrl = img.dataset.fotoUrl || img.src;
+                        if (typeof window.abrirModalImagem === 'function') {
+                            window.abrirModalImagem(fotoUrl);
                         }
                     });
                 });
-            } else {
-                listaMeusPedidosUrgentes.innerHTML = '<p style="color: var(--error-color);">Erro ao carregar seus pedidos.</p>';
-            }
+
+                // Adicionar listener para caixa de proposta aceita (navegar para avaliação)
+                document.querySelectorAll('.proposta-aceita-clickable').forEach(caixa => {
+                    caixa.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        
+                        const profissionalId = caixa.dataset.profissionalId;
+                        const pedidoId = caixa.dataset.pedidoId;
+                        const servico = caixa.dataset.servico || '';
+                        
+                        if (!profissionalId || !pedidoId) {
+                            console.error('❌ Dados insuficientes para navegar para avaliação');
+                            return;
+                        }
+
+                        // Buscar informações do pedido para obter agendamentoId se existir
+                        try {
+                            const token = localStorage.getItem('token');
+                            const pedidoResponse = await fetch(`/api/pedidos-urgentes/${pedidoId}`, {
+                                headers: {
+                                    'Authorization': `Bearer ${token}`
+                                }
+                            });
+                            
+                            let agendamentoId = null;
+                            if (pedidoResponse.ok) {
+                                const pedidoData = await pedidoResponse.json();
+                                // Tentar encontrar agendamentoId na proposta aceita
+                                const propostaAceita = pedidoData.pedido?.propostas?.find(p => p.status === 'aceita');
+                                agendamentoId = propostaAceita?.agendamentoId || pedidoData.pedido?.agendamentoId || null;
+                            }
+
+                            // Preparar parâmetros para navegação
+                            const params = new URLSearchParams({
+                                id: profissionalId,
+                                origem: 'pedido_urgente',
+                                pedidoId: pedidoId
+                            });
+
+                            if (agendamentoId) {
+                                params.set('agendamentoId', agendamentoId);
+                            }
+
+                            if (servico) {
+                                params.set('servico', servico);
+                            }
+
+                            // Buscar foto do pedido do localStorage se disponível
+                            const pidClean = String(pedidoId).match(/[a-fA-F0-9]{24}/)?.[0] || '';
+                            if (pidClean) {
+                                const fotoCache = localStorage.getItem(`fotoPedido:${pidClean}`) 
+                                    || localStorage.getItem('fotoUltimoServicoConcluido')
+                                    || localStorage.getItem('ultimaFotoPedido');
+                                if (fotoCache) {
+                                    params.set('foto', fotoCache);
+                                }
+                            }
+
+                            // Navegar para o perfil com a seção de avaliação
+                            console.log('🔗 Navegando para avaliação:', `/perfil?${params.toString()}#secao-avaliacao`);
+                            console.log('🔗 Parâmetros sendo passados:', {
+                                id: profissionalId,
+                                origem: 'pedido_urgente',
+                                pedidoId: pedidoId,
+                                agendamentoId: agendamentoId || 'não fornecido',
+                                servico: servico || 'não fornecido'
+                            });
+                            window.location.href = `/perfil?${params.toString()}#secao-avaliacao`;
+                        } catch (error) {
+                            console.error('❌ Erro ao buscar dados do pedido:', error);
+                            // Mesmo assim, tentar navegar sem agendamentoId
+                            const params = new URLSearchParams({
+                                id: profissionalId,
+                                origem: 'pedido_urgente',
+                                pedidoId: pedidoId
+                            });
+                            if (servico) {
+                                params.set('servico', servico);
+                            }
+                            window.location.href = `/perfil?${params.toString()}#secao-avaliacao`;
+                        }
+                    });
+                });
         } catch (error) {
             console.error('Erro ao carregar meus pedidos urgentes:', error);
             listaMeusPedidosUrgentes.innerHTML = '<p style="color: var(--error-color);">Erro ao carregar seus pedidos. Tente novamente.</p>';
         }
     }
 
-    // Event listener para filtrar meus pedidos
-    if (btnFiltrarMeusPedidos && filtroStatusMeusPedidos) {
-        btnFiltrarMeusPedidos.addEventListener('click', async () => {
-            const status = filtroStatusMeusPedidos.value || null;
-            await carregarMeusPedidosUrgentes(status);
+
+    // A função adicionarBotoesAcaoRapida já foi definida acima e cuida tanto de trabalhador quanto cliente
+
+    // Listener para o botão "Concluídos"
+    // Função para carregar pedidos concluídos em modal separado
+    async function carregarPedidosConcluidos() {
+        if (!listaPedidosConcluidos) return;
+
+        try {
+            listaPedidosConcluidos.innerHTML = '<p>Carregando pedidos concluídos...</p>';
+            
+            // Buscar pedidos concluídos que foram avaliados
+            const response = await fetch('/api/pedidos-urgentes/meus?status=concluido', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            const data = await response.json();
+            
+            if (data.success) {
+                const pedidosConcluidos = data.pedidosAtivos || data.pedidos || [];
+                
+                // Verificar quais pedidos foram avaliados
+                const pedidosComAvaliacao = await Promise.all(
+                    pedidosConcluidos.map(async (pedido) => {
+                        try {
+                            const avaliacaoResponse = await fetch(`/api/avaliacoes-verificadas/pedido/${pedido._id}`, {
+                                headers: {
+                                    'Authorization': `Bearer ${token}`
+                                }
+                            });
+                            
+                            if (avaliacaoResponse.ok) {
+                                const avaliacaoData = await avaliacaoResponse.json();
+                                // Verificar se há avaliação deste cliente para este pedido
+                                const temAvaliacao = avaliacaoData.success && avaliacaoData.avaliacoes && avaliacaoData.avaliacoes.some(av => {
+                                    const clienteId = av.clienteId?._id || av.clienteId?.id || av.clienteId;
+                                    return clienteId && String(clienteId) === String(userId);
+                                });
+                                if (temAvaliacao) {
+                                    pedido.avaliado = true;
+                                    return pedido;
+                                }
+                                return null;
+                            }
+                            return null;
+                        } catch (error) {
+                            console.error('Erro ao verificar avaliação do pedido:', error);
+                            return null;
+                        }
+                    })
+                );
+                
+                const pedidosParaMostrar = pedidosComAvaliacao.filter(p => p !== null);
+
+                if (pedidosParaMostrar.length === 0) {
+                    listaPedidosConcluidos.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-secondary);">Você ainda não tem pedidos concluídos avaliados.</p>';
+                    return;
+                }
+
+                // Usar a mesma função de renderização
+                function renderPedidoCard(pedido) {
+                    const numPropostas = pedido.propostas?.length || 0;
+                    const statusBadge = '<span class="badge-status badge-concluido">Concluído</span>';
+
+                    // Encontrar proposta aceita
+                    const propostaAceita = pedido.propostas?.find(p => p.status === 'aceita');
+                    const profissionalAceito = propostaAceita?.profissionalId;
+                    const valorAceito = propostaAceita?.valor;
+
+                    // Verifica se tem múltiplas fotos ou apenas uma
+                    const temFotos = pedido.fotos && Array.isArray(pedido.fotos) && pedido.fotos.length > 0;
+                    const temFotoUnica = pedido.foto && !temFotos;
+                    const fotosParaMostrar = temFotos ? pedido.fotos : (temFotoUnica ? [pedido.foto] : []);
+
+                    return `
+                        <div class="pedido-urgente-card" style="margin-bottom: 20px; overflow: visible !important; overflow-x: visible !important; overflow-y: visible !important; max-height: none !important; height: auto !important;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                <div>
+                                    <strong style="font-size: 18px;">${pedido.servico}</strong>
+                                    ${statusBadge}
+                                </div>
+                            </div>
+                            
+                            ${fotosParaMostrar.length > 0 ? `
+                                <div class="pedido-foto-servico" style="display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0; overflow: visible; overflow-x: visible; overflow-y: visible;">
+                                    ${fotosParaMostrar.length > 1 ? 
+                                        fotosParaMostrar.map((foto, idx) => `
+                                            <img src="${foto}" alt="Foto do serviço ${idx + 1}" class="foto-pedido-clickable" data-foto-url="${foto}" style="width: calc(50% - 2.5px); max-width: 150px; height: 100px; object-fit: cover; border-radius: 8px; cursor: pointer; flex-shrink: 0;">
+                                        `).join('') :
+                                        `<img src="${fotosParaMostrar[0]}" alt="Foto do serviço" class="foto-pedido-clickable" data-foto-url="${fotosParaMostrar[0]}" style="width: 100%; max-height: 300px; object-fit: cover; border-radius: 8px; cursor: pointer;">`
+                                    }
+                                </div>
+                            ` : ''}
+                            
+                            ${pedido.descricao ? `<p class="pedido-descricao">${pedido.descricao}</p>` : ''}
+                            
+                            <div class="pedido-localizacao">
+                                <i class="fas fa-map-marker-alt"></i> 
+                                ${pedido.localizacao.endereco}, ${pedido.localizacao.cidade} - ${pedido.localizacao.estado}
+                            </div>
+
+                            ${propostaAceita && profissionalAceito ? `
+                                <div class="proposta-aceita-clickable" 
+                                     data-profissional-id="${profissionalAceito._id || profissionalAceito.id}" 
+                                     data-pedido-id="${pedido._id}"
+                                     data-servico="${pedido.servico || ''}"
+                                     style="margin-top: 15px; padding: 15px; background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(40, 167, 69, 0.05) 100%); border: 1px solid rgba(40, 167, 69, 0.3); border-radius: 8px; cursor: pointer; transition: all 0.2s ease;"
+                                     onmouseover="this.style.background='linear-gradient(135deg, rgba(40, 167, 69, 0.15) 0%, rgba(40, 167, 69, 0.1) 100%)'; this.style.borderColor='rgba(40, 167, 69, 0.5)';"
+                                     onmouseout="this.style.background='linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(40, 167, 69, 0.05) 100%)'; this.style.borderColor='rgba(40, 167, 69, 0.3)';">
+                                    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 10px;">
+                                        <div style="flex: 1;">
+                                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                                                <i class="fas fa-check-circle" style="color: #28a745; font-size: 16px;"></i>
+                                                <strong style="color: #28a745; font-size: 14px;">Proposta Aceita</strong>
+                                            </div>
+                                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                                ${profissionalAceito.foto || profissionalAceito.avatarUrl ? `
+                                                    <img src="${profissionalAceito.foto || profissionalAceito.avatarUrl}" 
+                                                         alt="${profissionalAceito.nome}" 
+                                                         style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(40, 167, 69, 0.3); pointer-events: none;">
+                                                ` : ''}
+                                                <div style="flex: 1; min-width: 150px; pointer-events: none;">
+                                                    <div style="font-weight: 600; color: var(--text-primary); font-size: 15px;">
+                                                        ${profissionalAceito.nome || 'Profissional'}
+                                                    </div>
+                                                    ${profissionalAceito.cidade && profissionalAceito.estado ? `
+                                                        <div style="font-size: 12px; color: var(--text-secondary);">
+                                                            <i class="fas fa-map-marker-alt"></i> ${profissionalAceito.cidade} - ${profissionalAceito.estado}
+                                                        </div>
+                                                    ` : ''}
+                                                </div>
+                                                ${valorAceito ? `
+                                                    <div style="text-align: right; pointer-events: none;">
+                                                        <div style="font-size: 18px; font-weight: 700; color: #28a745;">
+                                                            R$ ${parseFloat(valorAceito).toFixed(2)}
+                                                        </div>
+                                                        <div style="font-size: 11px; color: var(--text-secondary);">
+                                                            Valor aceito
+                                                        </div>
+                                                    </div>
+                                                ` : ''}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ` : `
+                                <div style="margin-top: 15px; padding: 15px; background: var(--bg-secondary); border-radius: 8px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <strong><i class="fas fa-hand-holding-usd"></i> Propostas Recebidas: ${numPropostas}</strong>
+                                    </div>
+                                </div>
+                            `}
+                        </div>
+                    `;
+                }
+
+                let html = '<h4 style="margin-bottom: 10px;">Pedidos Concluídos e Avaliados</h4>';
+                html += pedidosParaMostrar.map(p => renderPedidoCard(p)).join('');
+
+                listaPedidosConcluidos.innerHTML = html;
+
+                // Adicionar listeners para fotos clicáveis (abrir modal)
+                document.querySelectorAll('#lista-pedidos-concluidos .foto-pedido-clickable').forEach(img => {
+                    img.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        const fotoUrl = img.dataset.fotoUrl || img.src;
+                        if (typeof window.abrirModalImagem === 'function') {
+                            window.abrirModalImagem(fotoUrl);
+                        }
+                    });
+                });
+            } else {
+                listaPedidosConcluidos.innerHTML = '<p style="color: var(--error-color);">Erro ao carregar pedidos concluídos.</p>';
+            }
+        } catch (error) {
+            console.error('Erro ao carregar pedidos concluídos:', error);
+            listaPedidosConcluidos.innerHTML = '<p style="color: var(--error-color);">Erro ao carregar pedidos concluídos. Tente novamente.</p>';
+        }
+    }
+
+    // Listener para o botão "Concluídos"
+    if (btnPedidosConcluidos) {
+        btnPedidosConcluidos.addEventListener('click', async () => {
+            // Fechar modal de pedidos abertos
+            if (modalMeusPedidosUrgentes) {
+                modalMeusPedidosUrgentes.classList.add('hidden');
+            }
+            // Abrir modal de pedidos concluídos
+            if (modalPedidosConcluidos) {
+                await carregarPedidosConcluidos();
+                modalPedidosConcluidos.classList.remove('hidden');
+            }
         });
     }
 
-    // Adicionar botão na lateral se for cliente (após a função estar definida)
-    if (userType === 'cliente' && !btnMeusPedidosUrgentes) {
-        const acoesRapidas = document.querySelector('.filtro-acoes-rapidas');
-        if (acoesRapidas) {
-            const btnNovo = document.createElement('button');
-            btnNovo.id = 'btn-meus-pedidos-urgentes';
-            btnNovo.className = 'btn-acao-lateral';
-            btnNovo.innerHTML = '<i class="fas fa-list"></i> Meus Pedidos Urgentes';
-            btnNovo.style.marginTop = '10px';
-            acoesRapidas.appendChild(btnNovo);
-            
-            btnNovo.addEventListener('click', async () => {
-                await carregarMeusPedidosUrgentes();
-                modalMeusPedidosUrgentes?.classList.remove('hidden');
+    // Carregar pedidos abertos automaticamente quando o modal abrir
+    if (modalMeusPedidosUrgentes) {
+        // Observer para detectar quando o modal é aberto
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    const isHidden = modalMeusPedidosUrgentes.classList.contains('hidden');
+                    if (!isHidden && modoVisualizacaoMeusPedidos === 'abertos') {
+                        // Modal foi aberto e está em modo 'abertos', carregar pedidos
+                        carregarMeusPedidosUrgentes('abertos');
+                    }
+                }
             });
-        }
+        });
+        
+        observer.observe(modalMeusPedidosUrgentes, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
+        
+        // Também carregar quando clicar no botão de ações rápidas (já está sendo feito no listener acima)
     }
 
     if (formEnviarProposta) {

@@ -157,9 +157,14 @@
                 
                 return `
                     <div class="pedido-card-servico" data-pedido-id="${pedido._id}" style="${estiloDestacado}">
-                        ${pedido.foto ? `
-                            <div class="pedido-foto-servico">
-                                <img src="${pedido.foto}" alt="Foto do serviço" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px;">
+                        ${pedido.foto || (pedido.fotos && pedido.fotos.length > 0) ? `
+                            <div class="pedido-foto-servico" style="display: flex; flex-wrap: wrap; gap: 5px; margin: 10px 0; overflow: visible; overflow-x: visible; overflow-y: visible;">
+                                ${pedido.fotos && pedido.fotos.length > 0 ? 
+                                    pedido.fotos.map((foto, idx) => `
+                                        <img src="${foto}" alt="Foto do serviço ${idx + 1}" class="foto-pedido-clickable" data-foto-url="${foto}" style="width: calc(50% - 2.5px); max-width: 150px; height: 100px; object-fit: cover; border-radius: 8px; cursor: pointer; flex-shrink: 0;">
+                                    `).join('') :
+                                    `<img src="${pedido.foto}" alt="Foto do serviço" class="foto-pedido-clickable" data-foto-url="${pedido.foto}" style="width: 100%; max-height: 200px; object-fit: cover; border-radius: 8px; cursor: pointer;">`
+                                }
                             </div>
                         ` : ''}
                         <div class="pedido-info-servico">
@@ -241,6 +246,26 @@
                         } catch (error) {
                             console.error('Erro ao cancelar serviço:', error);
                             alert('Erro ao cancelar serviço.');
+                        }
+                    }
+                });
+            });
+
+            // Adicionar listeners para fotos clicáveis (abrir modal)
+            document.querySelectorAll('.foto-pedido-clickable').forEach(img => {
+                img.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const fotoUrl = img.dataset.fotoUrl || img.src;
+                    if (typeof window.abrirModalImagem === 'function') {
+                        window.abrirModalImagem(fotoUrl);
+                    } else {
+                        // Fallback: usar função local se disponível
+                        const modalImagem = document.getElementById('image-modal-pedido');
+                        const imagemModal = document.getElementById('modal-image-pedido');
+                        if (modalImagem && imagemModal) {
+                            imagemModal.src = fotoUrl;
+                            modalImagem.classList.remove('hidden');
+                            document.body.style.overflow = 'hidden';
                         }
                     }
                 });
@@ -409,7 +434,7 @@
                 // Feedback visual de sucesso
                 const toast = document.createElement('div');
                 toast.className = 'toast-sucesso';
-                toast.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #28a745; color: white; padding: 15px 20px; border-radius: 8px; z-index: 10000; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
+                toast.style.cssText = 'position: fixed; top: 80px; right: 20px; background: #28a745; color: white; padding: 15px 20px; border-radius: 8px; z-index: 10000; box-shadow: 0 4px 6px rgba(0,0,0,0.1);';
                 toast.innerHTML = '<span>✔</span> Proposta aceita! Agora é só aguardar o profissional.';
                 document.body.appendChild(toast);
                 setTimeout(() => {

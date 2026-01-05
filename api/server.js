@@ -445,7 +445,8 @@ const pedidoUrgenteSchema = new mongoose.Schema({
     clienteId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     servico: { type: String, required: true }, // Tipo de serviço necessário
     descricao: { type: String },
-    foto: { type: String }, // URL da foto do serviço
+    foto: { type: String }, // URL da foto do serviço (mantido para compatibilidade)
+    fotos: [{ type: String }], // Array de URLs das fotos do serviço
     localizacao: {
         endereco: { type: String, required: true }, // Rua completa (pode incluir número/bairro)
         rua: { type: String },
@@ -714,18 +715,73 @@ app.use('/api', (req, res, next) => {
 // Segredo JWT com fallback seguro em desenvolvimento (evita erro 500 se variável não estiver definida)
 const JWT_SECRET = process.env.JWT_SECRET || 'helpy-dev-secret-2024';
 
+// Helper para comparar IDs de forma consistente (ObjectId ou string)
+function compareIds(id1, id2) {
+    if (!id1 || !id2) {
+        console.log('⚠️ compareIds: um dos IDs é null/undefined', { id1, id2 });
+        return false;
+    }
+    
+    // Função auxiliar para normalizar qualquer tipo de ID para string
+    const normalizeId = (id) => {
+        // Se for null ou undefined
+        if (!id) return '';
+        
+        // Se for objeto populado (tem _id)
+        if (id._id) {
+            const normalized = String(id._id);
+            console.log('📌 ID normalizado (objeto populado):', normalized);
+            return normalized;
+        }
+        
+        // Se tiver método toString (ObjectId do mongoose)
+        if (id.toString && typeof id.toString === 'function') {
+            const str = id.toString();
+            console.log('📌 ID normalizado (toString):', str, 'tipo:', typeof id, 'constructor:', id.constructor?.name);
+            return str;
+        }
+        
+        // Caso padrão: converte para string
+        const normalized = String(id);
+        console.log('📌 ID normalizado (string):', normalized);
+        return normalized;
+    };
+    
+    const str1 = normalizeId(id1);
+    const str2 = normalizeId(id2);
+    
+    const result = str1 === str2 && str1 !== '';
+    console.log('🔍 Comparação:', { str1, str2, result });
+    
+    return result;
+}
+
 function authMiddleware(req, res, next) {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return res.status(401).json({ message: 'Token não fornecido ou inválido.' });
     }
     const token = authHeader.split(' ')[1];
+    
+    // Validação adicional: verifica se o token não é null, undefined ou string vazia
+    if (!token || token === 'null' || token === 'undefined' || token.trim() === '') {
+        return res.status(401).json({ message: 'Token não fornecido ou inválido.' });
+    }
+    
     try {
         const decoded = jwt.verify(token, JWT_SECRET);
         req.user = decoded;
         next();
     } catch (error) {
-        console.error('Erro ao verificar token JWT:', error.message);
+        // Não loga erro se for apenas token malformado ou expirado (evita spam de logs)
+        if (error.message === 'jwt malformed' || error.message === 'jwt expired') {
+            // Log apenas em desenvolvimento
+            if (process.env.NODE_ENV !== 'production') {
+                console.warn('Token JWT inválido ou expirado:', error.message);
+            }
+        } else {
+            console.error('Erro ao verificar token JWT:', error.message);
+        }
         return res.status(401).json({ message: 'Token inválido.' });
     }
 }
@@ -2081,8 +2137,13 @@ app.post('/api/posts/:postId/comment', authMiddleware, async (req, res) => {
         const { content } = req.body;
         const userId = req.user.id;
 
+        // Garante que userId seja ObjectId válido
+        const userIdObjectId = mongoose.Types.ObjectId.isValid(userId) 
+            ? new mongoose.Types.ObjectId(userId) 
+            : userId;
+
         const newComment = {
-            userId,
+            userId: userIdObjectId,
             content,
             likes: [],
             replies: [],
@@ -2146,6 +2207,11 @@ app.post('/api/posts/:postId/comments/:commentId/reply', authMiddleware, async (
         const { content } = req.body;
         const userId = req.user.id;
 
+        // Garante que userId seja ObjectId válido
+        const userIdObjectId = mongoose.Types.ObjectId.isValid(userId) 
+            ? new mongoose.Types.ObjectId(userId) 
+            : userId;
+
         const post = await Postagem.findById(postId);
         if (!post) return res.status(404).json({ message: 'Post não encontrado' });
 
@@ -2153,7 +2219,7 @@ app.post('/api/posts/:postId/comments/:commentId/reply', authMiddleware, async (
         if (!comment) return res.status(404).json({ message: 'Comentário não encontrado' });
 
         const newReply = {
-            userId,
+            userId: userIdObjectId,
             content,
             likes: [],
             createdAt: new Date()
@@ -2180,13 +2246,69 @@ app.delete('/api/posts/:postId/comments/:commentId', authMiddleware, async (req,
         const post = await Postagem.findById(postId);
         if (!post) return res.status(404).json({ message: 'Post não encontrado' });
 
-        // Verifica se é o dono do post
-        if (post.userId.toString() !== userId) {
-            return res.status(403).json({ success: false, message: 'Ação não permitida.' });
-        }
-
         const comment = post.comments.id(commentId);
         if (!comment) return res.status(404).json({ message: 'Comentário não encontrado' });
+
+        // Função auxiliar para normalizar ID para string
+        const normalizeId = (id) => {
+            if (!id) return '';
+            // Se for ObjectId do mongoose, usa toString()
+            if (id.toString && typeof id.toString === 'function' && id.constructor && id.constructor.name === 'ObjectId') {
+                return id.toString();
+            }
+            // Se for objeto populado (tem _id)
+            if (id._id) {
+                return String(id._id);
+            }
+            // Caso padrão: converte para string
+            return String(id);
+        };
+
+        // Normaliza todos os IDs
+        const postUserIdStr = normalizeId(post.userId);
+        const commentUserIdStr = normalizeId(comment.userId);
+        const currentUserIdStr = normalizeId(userId);
+        
+        // Comparação direta (mais confiável)
+        const isPostOwner = postUserIdStr === currentUserIdStr && postUserIdStr !== '';
+        const isCommentOwner = commentUserIdStr === currentUserIdStr && commentUserIdStr !== '';
+        
+        // Log detalhado para debug
+        console.log('🔍 Verificando permissão de deletar comentário:', {
+            postUserId: postUserIdStr,
+            commentUserId: commentUserIdStr,
+            currentUserId: currentUserIdStr,
+            postUserIdRaw: post.userId,
+            commentUserIdRaw: comment.userId,
+            currentUserIdRaw: userId,
+            postUserIdType: typeof post.userId,
+            commentUserIdType: typeof comment.userId,
+            commentUserIdConstructor: comment.userId?.constructor?.name,
+            isPostOwner,
+            isCommentOwner,
+            lengths: {
+                postUserId: postUserIdStr.length,
+                commentUserId: commentUserIdStr.length,
+                currentUserId: currentUserIdStr.length
+            }
+        });
+
+        if (!isPostOwner && !isCommentOwner) {
+            console.log('❌ Permissão negada:', { 
+                isPostOwner, 
+                isCommentOwner,
+                postUserId: postUserIdStr,
+                commentUserId: commentUserIdStr,
+                currentUserId: currentUserIdStr,
+                comparison: {
+                    postMatch: postUserIdStr === currentUserIdStr,
+                    commentMatch: commentUserIdStr === currentUserIdStr
+                }
+            });
+            return res.status(403).json({ success: false, message: 'Ação não permitida.' });
+        }
+        
+        console.log('✅ Permissão concedida:', { isPostOwner, isCommentOwner });
 
         comment.deleteOne(); // Remove o subdocumento
         await post.save();
@@ -2224,7 +2346,7 @@ app.post('/api/posts/:postId/comments/:commentId/replies/:replyId/like', authMid
     }
 });
 
-// Deletar uma Resposta (Reply) (Dono do Post)
+// Deletar uma Resposta (Reply) (Dono do Post OU dono da resposta)
 app.delete('/api/posts/:postId/comments/:commentId/replies/:replyId', authMiddleware, async (req, res) => {
     try {
         const { postId, commentId, replyId } = req.params;
@@ -2233,15 +2355,72 @@ app.delete('/api/posts/:postId/comments/:commentId/replies/:replyId', authMiddle
         const post = await Postagem.findById(postId);
         if (!post) return res.status(404).json({ message: 'Post não encontrado' });
 
-        if (post.userId.toString() !== userId) {
-            return res.status(403).json({ success: false, message: 'Ação não permitida.' });
-        }
-
         const comment = post.comments.id(commentId);
         if (!comment) return res.status(404).json({ message: 'Comentário não encontrado' });
         
         const reply = comment.replies.id(replyId);
         if (!reply) return res.status(404).json({ message: 'Resposta não encontrada' });
+
+        // Função auxiliar para normalizar ID para string
+        const normalizeId = (id) => {
+            if (!id) return '';
+            // Se for ObjectId do mongoose, usa toString()
+            if (id.toString && typeof id.toString === 'function' && id.constructor && id.constructor.name === 'ObjectId') {
+                return id.toString();
+            }
+            // Se for objeto populado (tem _id)
+            if (id._id) {
+                return String(id._id);
+            }
+            // Caso padrão: converte para string
+            return String(id);
+        };
+
+        // Normaliza todos os IDs
+        const postUserIdStr = normalizeId(post.userId);
+        const replyUserIdStr = normalizeId(reply.userId);
+        const currentUserIdStr = normalizeId(userId);
+        
+        // Comparação direta (mais confiável)
+        const isPostOwner = postUserIdStr === currentUserIdStr && postUserIdStr !== '';
+        const isReplyOwner = replyUserIdStr === currentUserIdStr && replyUserIdStr !== '';
+        
+        // Log detalhado para debug
+        console.log('🔍 Verificando permissão de deletar resposta:', {
+            postUserId: postUserIdStr,
+            replyUserId: replyUserIdStr,
+            currentUserId: currentUserIdStr,
+            postUserIdRaw: post.userId,
+            replyUserIdRaw: reply.userId,
+            currentUserIdRaw: userId,
+            postUserIdType: typeof post.userId,
+            replyUserIdType: typeof reply.userId,
+            replyUserIdConstructor: reply.userId?.constructor?.name,
+            isPostOwner,
+            isReplyOwner,
+            lengths: {
+                postUserId: postUserIdStr.length,
+                replyUserId: replyUserIdStr.length,
+                currentUserId: currentUserIdStr.length
+            }
+        });
+
+        if (!isPostOwner && !isReplyOwner) {
+            console.log('❌ Permissão negada (reply):', { 
+                isPostOwner, 
+                isReplyOwner,
+                postUserId: postUserIdStr,
+                replyUserId: replyUserIdStr,
+                currentUserId: currentUserIdStr,
+                comparison: {
+                    postMatch: postUserIdStr === currentUserIdStr,
+                    replyMatch: replyUserIdStr === currentUserIdStr
+                }
+            });
+            return res.status(403).json({ success: false, message: 'Ação não permitida.' });
+        }
+        
+        console.log('✅ Permissão concedida (reply):', { isPostOwner, isReplyOwner });
 
         reply.deleteOne(); // Remove o subdocumento
         await post.save();
@@ -2777,7 +2956,68 @@ app.post('/api/avaliacao-verificada', authMiddleware, async (req, res) => {
             return res.status(400).json({ success: false, message: 'É necessário informar um agendamentoId ou pedidoUrgenteId.' });
         }
 
-        // Permite múltiplas avaliações verificadas por agendamento/pedido (cada vez que o serviço for concluído e acessado pela notificação)
+        // Garantir que pedidoUrgenteId seja ObjectId se fornecido
+        let pedidoUrgenteIdFinal = pedidoUrgenteId;
+        if (pedidoUrgenteId && mongoose.Types.ObjectId.isValid(pedidoUrgenteId)) {
+            pedidoUrgenteIdFinal = new mongoose.Types.ObjectId(pedidoUrgenteId);
+        }
+        
+        // Garantir que clienteId seja ObjectId
+        let clienteIdFinal = clienteId;
+        if (clienteId && mongoose.Types.ObjectId.isValid(clienteId)) {
+            clienteIdFinal = new mongoose.Types.ObjectId(clienteId);
+        }
+
+        // Marca o pedido/agendamento como concluído ANTES de criar a avaliação
+        if (pedidoUrgenteIdFinal) {
+            const pedido = await PedidoUrgente.findById(pedidoUrgenteIdFinal);
+            if (pedido && pedido.status !== 'concluido') {
+                pedido.status = 'concluido';
+                await pedido.save();
+                console.log('✅ Pedido urgente marcado como concluído antes de criar avaliação:', pedidoUrgenteIdFinal);
+            }
+        }
+        
+        if (agendamentoId) {
+            const agendamento = await Agendamento.findById(agendamentoId);
+            if (agendamento && agendamento.status !== 'concluido') {
+                agendamento.status = 'concluido';
+                await agendamento.save();
+                console.log('✅ Agendamento marcado como concluído antes de criar avaliação:', agendamentoId);
+                
+                // Se o agendamento tem um pedido urgente associado, marca ele também como concluído
+                if (agendamento.pedidoUrgenteId) {
+                    const pedidoAssociado = await PedidoUrgente.findById(agendamento.pedidoUrgenteId);
+                    if (pedidoAssociado && pedidoAssociado.status !== 'concluido') {
+                        pedidoAssociado.status = 'concluido';
+                        await pedidoAssociado.save();
+                        console.log('✅ Pedido urgente associado marcado como concluído:', agendamento.pedidoUrgenteId);
+                    }
+                }
+            }
+        }
+
+        // Verifica se já existe uma avaliação verificada para este serviço específico
+        // Evita avaliações duplicadas do mesmo cliente para o mesmo serviço
+        let queryDuplicata = {
+            profissionalId,
+            clienteId: clienteIdFinal
+        };
+        
+        // Adiciona condição específica para pedido ou agendamento
+        if (pedidoUrgenteIdFinal) {
+            queryDuplicata.pedidoUrgenteId = pedidoUrgenteIdFinal;
+        } else if (agendamentoId) {
+            queryDuplicata.agendamentoId = agendamentoId;
+        }
+        
+        const avaliacaoExistente = await AvaliacaoVerificada.findOne(queryDuplicata);
+        if (avaliacaoExistente) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Você já avaliou este serviço. Cada serviço só pode ser avaliado uma vez.' 
+            });
+        }
 
         // Cria a avaliação verificada
         console.log('💾 Criando avaliação verificada com:', {
@@ -2792,9 +3032,9 @@ app.post('/api/avaliacao-verificada', authMiddleware, async (req, res) => {
         
         const novaAvaliacao = new AvaliacaoVerificada({
             profissionalId,
-            clienteId,
+            clienteId: clienteIdFinal,
             agendamentoId: agendamentoId || undefined,
-            pedidoUrgenteId: pedidoUrgenteId || undefined,
+            pedidoUrgenteId: pedidoUrgenteIdFinal || undefined,
             estrelas,
             comentario,
             servico: nomeServico,
@@ -2802,7 +3042,15 @@ app.post('/api/avaliacao-verificada', authMiddleware, async (req, res) => {
         });
 
         await novaAvaliacao.save();
-        console.log('✅ Avaliação verificada salva com servico:', novaAvaliacao.servico);
+        console.log('✅ Avaliação verificada salva:', {
+            servico: novaAvaliacao.servico,
+            pedidoUrgenteId: novaAvaliacao.pedidoUrgenteId,
+            pedidoUrgenteIdType: typeof novaAvaliacao.pedidoUrgenteId,
+            pedidoUrgenteIdString: String(novaAvaliacao.pedidoUrgenteId),
+            clienteId: novaAvaliacao.clienteId,
+            clienteIdType: typeof novaAvaliacao.clienteId,
+            clienteIdString: String(novaAvaliacao.clienteId)
+        });
 
         // Atualiza XP do profissional baseado na avaliação verificada
         let xpGanho = 0;
@@ -2946,6 +3194,206 @@ app.get('/api/avaliacoes-verificadas/:profissionalId', async (req, res) => {
     } catch (error) {
         console.error('Erro ao buscar avaliações verificadas:', error);
         res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Rota para buscar avaliações verificadas por pedidoId
+app.get('/api/avaliacoes-verificadas/pedido/:pedidoId', authMiddleware, async (req, res) => {
+    try {
+        const { pedidoId } = req.params;
+        const clienteId = req.user.id;
+        
+        console.log('🔍 Buscando avaliações para pedido:', pedidoId, 'Cliente:', clienteId);
+        
+        // Converter para ObjectId se válido
+        let pedidoIdObj = null;
+        if (mongoose.Types.ObjectId.isValid(pedidoId)) {
+            try {
+                pedidoIdObj = new mongoose.Types.ObjectId(pedidoId);
+            } catch (e) {
+                console.warn('⚠️ Erro ao converter pedidoId para ObjectId:', e);
+            }
+        }
+        
+        // Converter clienteId para ObjectId se necessário
+        let clienteIdObj = clienteId;
+        if (mongoose.Types.ObjectId.isValid(clienteId)) {
+            try {
+                clienteIdObj = new mongoose.Types.ObjectId(clienteId);
+            } catch (e) {
+                console.warn('⚠️ Erro ao converter clienteId para ObjectId:', e);
+            }
+        }
+        
+        // Normalizar o pedidoId para comparação
+        const pedidoIdNormalizado = String(pedidoId).trim();
+        const pedidoIdNormalizadoObj = pedidoIdObj ? String(pedidoIdObj) : null;
+        
+        // Buscar avaliações usando múltiplas estratégias para garantir que encontre
+        let avaliacoes = [];
+        try {
+            // ESTRATÉGIA 1: Buscar todas as avaliações do cliente com pedidoUrgenteId
+            // Depois filtrar manualmente (mais confiável)
+            console.log('🔍 Buscando todas as avaliações do cliente...');
+            console.log('🔍 Parâmetros de busca:', {
+                clienteId: String(clienteIdObj),
+                clienteIdType: typeof clienteIdObj,
+                pedidoIdBuscado: pedidoIdNormalizado,
+                pedidoIdObj: pedidoIdObj ? String(pedidoIdObj) : null
+            });
+            
+            const todasAvaliacoesCliente = await AvaliacaoVerificada.find({ 
+                clienteId: clienteIdObj,
+                pedidoUrgenteId: { $exists: true, $ne: null }
+            })
+                .populate('clienteId', 'nome foto avatarUrl _id')
+                .populate('profissionalId', 'nome foto avatarUrl')
+                .sort({ createdAt: -1 })
+                .lean()
+                .exec();
+            
+            console.log('📋 Total de avaliações do cliente com pedidoUrgenteId:', todasAvaliacoesCliente.length);
+            
+            // Debug: mostrar todas as avaliações encontradas
+            if (todasAvaliacoesCliente.length > 0) {
+                console.log('🔍 Todas as avaliações do cliente:', todasAvaliacoesCliente.map(av => ({
+                    _id: String(av._id),
+                    pedidoUrgenteId: av.pedidoUrgenteId ? String(av.pedidoUrgenteId) : null,
+                    pedidoUrgenteIdType: typeof av.pedidoUrgenteId,
+                    clienteId: av.clienteId?._id ? String(av.clienteId._id) : String(av.clienteId),
+                    servico: av.servico
+                })));
+            }
+            
+            // Filtrar manualmente comparando strings e ObjectIds
+            avaliacoes = todasAvaliacoesCliente.filter(av => {
+                if (!av.pedidoUrgenteId) {
+                    console.log('⚠️ Avaliação sem pedidoUrgenteId:', String(av._id));
+                    return false;
+                }
+                
+                // Converter para string para comparação (normalizar)
+                const avPedidoIdStr = String(av.pedidoUrgenteId).trim();
+                const pedidoIdBuscadoStr = pedidoIdNormalizado.trim();
+                
+                // Comparar com todas as variações possíveis
+                const match1 = avPedidoIdStr === pedidoIdBuscadoStr;
+                const match2 = pedidoIdNormalizadoObj && avPedidoIdStr === pedidoIdNormalizadoObj.trim();
+                const match3 = pedidoIdObj && avPedidoIdStr === String(pedidoIdObj).trim();
+                
+                // Comparação adicional: verificar se são ObjectIds equivalentes
+                let match4 = false;
+                if (pedidoIdObj && mongoose.Types.ObjectId.isValid(av.pedidoUrgenteId)) {
+                    try {
+                        const avObjId = new mongoose.Types.ObjectId(av.pedidoUrgenteId);
+                        match4 = avObjId.equals(pedidoIdObj);
+                    } catch (e) {
+                        // Ignora erro de conversão
+                    }
+                }
+                
+                const match = match1 || match2 || match3 || match4;
+                
+                if (match) {
+                    console.log('✅ Match encontrado:', {
+                        pedidoIdBuscado: pedidoIdBuscadoStr,
+                        pedidoUrgenteIdEncontrado: avPedidoIdStr,
+                        match1,
+                        match2,
+                        match3,
+                        match4
+                    });
+                } else {
+                    console.log('❌ Não match:', {
+                        pedidoIdBuscado: pedidoIdBuscadoStr,
+                        pedidoUrgenteIdEncontrado: avPedidoIdStr,
+                        comparacao: avPedidoIdStr === pedidoIdBuscadoStr
+                    });
+                }
+                
+                return match;
+            });
+            
+            console.log('📋 Avaliações encontradas após filtro manual:', avaliacoes.length);
+            
+            // Se encontrou, converter de volta para documentos Mongoose
+            if (avaliacoes.length > 0) {
+                const ids = avaliacoes.map(av => av._id);
+                avaliacoes = await AvaliacaoVerificada.find({ _id: { $in: ids } })
+                    .populate('clienteId', 'nome foto avatarUrl')
+                    .populate('profissionalId', 'nome foto avatarUrl')
+                    .sort({ createdAt: -1 })
+                    .exec();
+            } else {
+                // Debug: mostrar algumas avaliações para entender o formato
+                if (todasAvaliacoesCliente.length > 0) {
+                    console.log('🔍 Debug - Primeiras 3 avaliações do cliente:', todasAvaliacoesCliente.slice(0, 3).map(av => ({
+                        pedidoUrgenteId: av.pedidoUrgenteId,
+                        pedidoUrgenteIdString: String(av.pedidoUrgenteId),
+                        pedidoUrgenteIdType: typeof av.pedidoUrgenteId,
+                        pedidoIdBuscado: pedidoIdNormalizado,
+                        match: String(av.pedidoUrgenteId).trim() === pedidoIdNormalizado
+                    })));
+                }
+            }
+        } catch (error) {
+            console.error('❌ Erro ao buscar avaliações:', error);
+            console.error('❌ Stack trace:', error.stack);
+            avaliacoes = [];
+        }
+        
+        // Se não encontrou, mostrar debug detalhado
+        if (avaliacoes.length === 0) {
+            console.log('⚠️ Não encontrou avaliação para pedido:', pedidoIdNormalizado, 'cliente:', clienteId);
+            console.log('⚠️ Tentou buscar com:', {
+                pedidoIdNormalizado,
+                pedidoIdObj: pedidoIdObj ? String(pedidoIdObj) : null,
+                clienteIdObj: String(clienteIdObj)
+            });
+        }
+
+        console.log('📋 Avaliações encontradas:', avaliacoes.length, 'para pedido:', pedidoId);
+        if (avaliacoes.length > 0) {
+            console.log('✅ Primeira avaliação:', {
+                _id: avaliacoes[0]._id,
+                pedidoUrgenteId: avaliacoes[0].pedidoUrgenteId,
+                pedidoUrgenteIdType: typeof avaliacoes[0].pedidoUrgenteId,
+                pedidoUrgenteIdString: String(avaliacoes[0].pedidoUrgenteId),
+                clienteId: avaliacoes[0].clienteId?._id || avaliacoes[0].clienteId
+            });
+        } else {
+            // Debug: tentar buscar todas as avaliações do cliente para ver o formato
+            try {
+                const todasAvaliacoesCliente = await AvaliacaoVerificada.find({ 
+                    clienteId: clienteIdObj,
+                    pedidoUrgenteId: { $exists: true, $ne: null }
+                })
+                    .limit(3)
+                    .lean()
+                    .exec();
+                
+                if (todasAvaliacoesCliente.length > 0) {
+                    console.log('🔍 Debug - Primeiras 3 avaliações do cliente:', todasAvaliacoesCliente.map(av => ({
+                        pedidoUrgenteId: av.pedidoUrgenteId,
+                        pedidoUrgenteIdString: String(av.pedidoUrgenteId),
+                        pedidoUrgenteIdType: typeof av.pedidoUrgenteId,
+                        pedidoIdBuscado: pedidoId,
+                        pedidoIdNormalizado: pedidoIdNormalizado,
+                        match: String(av.pedidoUrgenteId).trim() === pedidoIdNormalizado
+                    })));
+                }
+            } catch (debugError) {
+                console.error('❌ Erro ao buscar avaliações para debug:', debugError);
+            }
+        }
+        
+        res.json({ success: true, avaliacoes });
+    } catch (error) {
+        console.error('❌ Erro ao buscar avaliações verificadas por pedido:', error);
+        console.error('❌ Stack trace:', error.stack);
+        console.error('❌ PedidoId:', req.params.pedidoId);
+        console.error('❌ ClienteId:', req.user?.id);
+        res.status(500).json({ success: false, message: 'Erro ao buscar avaliações verificadas.', error: error.message });
     }
 });
 
@@ -3216,57 +3664,167 @@ app.get('/api/projetos-time', async (req, res) => {
 
 // 🚨 NOVO: Rotas de Pedidos Urgentes ("Preciso Agora!")
 // Criar Pedido Urgente
-app.post('/api/pedidos-urgentes', authMiddleware, upload.single('foto'), async (req, res) => {
+// Middleware para tratar erros do multer
+const handleMulterError = (err, req, res, next) => {
+    if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Arquivo muito grande. Tamanho máximo: 10MB por arquivo.' 
+            });
+        }
+        if (err.code === 'LIMIT_FILE_COUNT') {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Muitos arquivos. Máximo: 10 arquivos.' 
+            });
+        }
+        return res.status(400).json({ 
+            success: false, 
+            message: `Erro no upload: ${err.message}` 
+        });
+    }
+    if (err) {
+        return res.status(400).json({ 
+            success: false, 
+            message: err.message || 'Erro ao processar arquivos.' 
+        });
+    }
+    next();
+};
+
+app.post('/api/pedidos-urgentes', authMiddleware, upload.array('fotos', 10), handleMulterError, async (req, res) => {
     try {
+        console.log('📤 Recebendo pedido urgente:', {
+            servico: req.body.servico,
+            temFotos: req.files ? req.files.length : 0,
+            categoria: req.body.categoria,
+            localizacao: req.body.localizacao ? (typeof req.body.localizacao === 'string' ? 'string' : 'object') : 'undefined'
+        });
+        
         const { servico, descricao, localizacao, categoria, prazoHoras, tipoAtendimento, dataAgendada } = req.body;
         const clienteId = req.user.id;
+        
+        if (!clienteId) {
+            console.error('❌ ClienteId não encontrado');
+            return res.status(401).json({ success: false, message: 'Usuário não autenticado.' });
+        }
+        
+        console.log('✅ Cliente autenticado:', clienteId);
 
-        // Processa a foto se foi enviada
-        let fotoUrl = null;
-        if (req.file) {
+        // Processa as fotos se foram enviadas
+        let fotoUrl = null; // Mantido para compatibilidade (primeira foto)
+        let fotosUrls = []; // Array com todas as fotos
+        
+        if (req.files && Array.isArray(req.files) && req.files.length > 0) {
             try {
                 const sharp = getSharp();
-                let imageBuffer = req.file.buffer;
-
-                if (sharp) {
-                    imageBuffer = await sharp(req.file.buffer)
-                        .resize(800, 600, { fit: 'cover' })
-                        .toFormat('jpeg', { quality: 90 })
-                        .toBuffer();
-                }
-                    
-                // Tenta enviar para o S3 se estiver configurado
-                if (s3Client) {
-                    try {
-                    const key = `pedidos-urgentes/${clienteId}/${Date.now()}_${path.basename(req.file.originalname)}`;
-                    const uploadCommand = new PutObjectCommand({
-                        Bucket: bucketName,
-                        Key: key,
-                        Body: imageBuffer,
-                        ContentType: 'image/jpeg'
-                    });
-                    await s3Client.send(uploadCommand);
-                    fotoUrl = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
-                    } catch (s3Error) {
-                        console.warn('Falha ao enviar foto de pedido urgente para S3, usando fallback local:', s3Error);
-                    }
-                }
-
-                // Fallback local se não houver S3 ou se o upload falhar
-                if (!s3Client || !fotoUrl) {
-                    const uploadsDir = path.join(__dirname, '../public/uploads/pedidos-urgentes');
+                const uploadsDir = path.join(__dirname, '../public/uploads/pedidos-urgentes');
+                
+                // Garante que o diretório existe
+                try {
                     if (!fs.existsSync(uploadsDir)) {
                         fs.mkdirSync(uploadsDir, { recursive: true });
                     }
-                    const fileName = `${Date.now()}_${path.basename(req.file.originalname || 'pedido-urgente.jpg')}`;
-                    const filePath = path.join(uploadsDir, fileName);
-                    fs.writeFileSync(filePath, imageBuffer);
-                    // URL relativa servida via express.static
-                    fotoUrl = `/uploads/pedidos-urgentes/${fileName}`;
-                    console.log('✅ Foto de pedido urgente salva localmente:', fotoUrl);
+                } catch (dirError) {
+                    console.error('Erro ao criar diretório de uploads:', dirError);
+                    throw new Error('Não foi possível criar o diretório de uploads');
                 }
-            } catch (fotoError) {
-                console.error('Erro ao processar foto do pedido urgente:', fotoError);
+
+                // Processa cada foto sequencialmente para evitar problemas de concorrência
+                for (let i = 0; i < req.files.length; i++) {
+                    const file = req.files[i];
+                    try {
+                        if (!file) {
+                            console.warn(`Arquivo ${i + 1} é null ou undefined`);
+                            continue;
+                        }
+                        
+                        if (!file.buffer || !Buffer.isBuffer(file.buffer)) {
+                            console.warn(`Arquivo ${i + 1} não tem buffer válido`);
+                            continue;
+                        }
+
+                        let imageBuffer = file.buffer;
+
+                        // Processa a imagem com Sharp se disponível
+                        if (sharp && file.buffer) {
+                            try {
+                                imageBuffer = await sharp(file.buffer)
+                                    .resize(800, 600, { fit: 'cover' })
+                                    .toFormat('jpeg', { quality: 90 })
+                                    .toBuffer();
+                            } catch (sharpError) {
+                                console.warn(`Erro ao processar imagem ${i + 1} com Sharp, usando buffer original:`, sharpError.message);
+                                imageBuffer = file.buffer; // Usa buffer original se Sharp falhar
+                            }
+                        }
+                            
+                        let urlFoto = null;
+                        const timestamp = Date.now();
+                        const randomStr = Math.random().toString(36).substring(2, 15);
+                        const originalName = file.originalname || 'pedido-urgente.jpg';
+                        const fileExt = path.extname(originalName) || '.jpg';
+                        const baseName = path.basename(originalName, fileExt);
+                        const safeBaseName = baseName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 20);
+                        
+                        // Tenta enviar para o S3 se estiver configurado
+                        if (s3Client && bucketName && process.env.AWS_REGION) {
+                            try {
+                                const key = `pedidos-urgentes/${clienteId}/${timestamp}_${i}_${randomStr}_${safeBaseName}.jpg`;
+                                const uploadCommand = new PutObjectCommand({
+                                    Bucket: bucketName,
+                                    Key: key,
+                                    Body: imageBuffer,
+                                    ContentType: 'image/jpeg'
+                                });
+                                await s3Client.send(uploadCommand);
+                                urlFoto = `https://${bucketName}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+                                console.log(`✅ Foto ${i + 1} enviada para S3: ${key}`);
+                            } catch (s3Error) {
+                                console.warn(`Falha ao enviar foto ${i + 1} para S3, usando fallback local:`, s3Error.message);
+                            }
+                        }
+
+                        // Fallback local se não houver S3 ou se o upload falhar
+                        if (!urlFoto) {
+                            try {
+                                const fileName = `${timestamp}_${i}_${randomStr}_${safeBaseName}.jpg`;
+                                const filePath = path.join(uploadsDir, fileName);
+                                fs.writeFileSync(filePath, imageBuffer);
+                                urlFoto = `/uploads/pedidos-urgentes/${fileName}`;
+                                console.log(`✅ Foto ${i + 1} salva localmente: ${fileName}`);
+                            } catch (fsError) {
+                                console.error(`Erro ao salvar foto ${i + 1} localmente:`, fsError.message);
+                                console.error('Stack:', fsError.stack);
+                                continue; // Pula esta foto e continua com as próximas
+                            }
+                        }
+
+                        if (urlFoto) {
+                            fotosUrls.push(urlFoto);
+                            // A primeira foto também é salva em fotoUrl para compatibilidade
+                            if (!fotoUrl) {
+                                fotoUrl = urlFoto;
+                            }
+                        }
+                    } catch (fotoError) {
+                        console.error(`Erro ao processar foto ${i + 1} do pedido urgente:`, fotoError);
+                        console.error('Stack:', fotoError.stack);
+                        // Continua processando as outras fotos mesmo se uma falhar
+                    }
+                }
+                
+                if (fotosUrls.length > 0) {
+                    console.log(`✅ ${fotosUrls.length} de ${req.files.length} foto(s) de pedido urgente processada(s) com sucesso`);
+                } else {
+                    console.warn('⚠️ Nenhuma foto foi processada com sucesso, mas o pedido será criado sem fotos');
+                }
+            } catch (error) {
+                console.error('Erro geral ao processar fotos do pedido urgente:', error);
+                console.error('Stack:', error.stack);
+                // Não bloqueia a criação do pedido se houver erro no processamento de fotos
+                // O pedido será criado sem fotos
             }
         }
 
@@ -3301,24 +3859,84 @@ app.post('/api/pedidos-urgentes', authMiddleware, upload.single('foto'), async (
             try {
                 localizacaoObj = JSON.parse(localizacao);
             } catch (e) {
+                console.warn('Erro ao fazer parse da localização:', e);
                 localizacaoObj = {};
             }
         }
+        
+        // Valida e normaliza localização
+        if (!localizacaoObj || typeof localizacaoObj !== 'object') {
+            console.error('Localização inválida recebida:', localizacao);
+            return res.status(400).json({ success: false, message: 'A localização é obrigatória e deve ser um objeto válido.' });
+        }
 
-        const novoPedido = new PedidoUrgente({
+        // Validação básica antes de criar o pedido
+        if (!servico || typeof servico !== 'string' || !servico.trim()) {
+            console.error('Serviço inválido recebido:', servico);
+            return res.status(400).json({ success: false, message: 'O serviço é obrigatório.' });
+        }
+
+        if (!localizacaoObj.cidade || !localizacaoObj.estado) {
+            console.error('Localização incompleta recebida:', localizacaoObj);
+            return res.status(400).json({ 
+                success: false, 
+                message: 'A localização (cidade e estado) é obrigatória.',
+                recebido: localizacaoObj
+            });
+        }
+
+        // Prepara dados do pedido
+        const dadosPedido = {
             clienteId,
-            servico,
-            descricao,
-            foto: fotoUrl,
+            servico: servico.trim(),
+            descricao: descricao ? descricao.trim() : '',
+            foto: fotoUrl, // Mantido para compatibilidade (primeira foto)
+            fotos: fotosUrls.length > 0 ? fotosUrls : (fotoUrl ? [fotoUrl] : []), // Array com todas as fotos
             localizacao: localizacaoObj,
-            categoria,
+            categoria: categoria || 'outros',
             tipoAtendimento: tipoAt,
             prazoHoras: horas,
             dataAgendada: dataAgendadaDate,
             dataExpiracao
+        };
+        
+        console.log('📝 Dados do pedido a serem salvos:', {
+            servico: dadosPedido.servico,
+            temFoto: !!dadosPedido.foto,
+            numFotos: dadosPedido.fotos ? dadosPedido.fotos.length : 0,
+            categoria: dadosPedido.categoria,
+            cidade: dadosPedido.localizacao?.cidade,
+            estado: dadosPedido.localizacao?.estado,
+            tipoAtendimento: dadosPedido.tipoAtendimento,
+            prazoHoras: dadosPedido.prazoHoras,
+            temDataExpiracao: !!dadosPedido.dataExpiracao
         });
 
-        await novoPedido.save();
+        let novoPedido;
+        try {
+            console.log('🔄 Criando instância do PedidoUrgente...');
+            novoPedido = new PedidoUrgente(dadosPedido);
+            console.log('🔄 Salvando pedido no banco...');
+            await novoPedido.save();
+            console.log(`✅ Pedido urgente criado com sucesso: ${novoPedido._id} (${fotosUrls.length} foto(s))`);
+        } catch (saveError) {
+            console.error('❌ Erro ao salvar pedido urgente no banco:', saveError);
+            console.error('Erro completo:', {
+                message: saveError.message,
+                name: saveError.name,
+                code: saveError.code,
+                errors: saveError.errors,
+                stack: saveError.stack
+            });
+            
+            // Se for erro de validação do Mongoose, retorna mensagem mais específica
+            if (saveError.name === 'ValidationError') {
+                const validationErrors = Object.values(saveError.errors || {}).map(e => e.message).join(', ');
+                throw new Error(`Erro de validação: ${validationErrors}`);
+            }
+            
+            throw new Error(`Erro ao salvar pedido: ${saveError.message || 'Erro desconhecido'}`);
+        }
 
         // Busca profissionais online na região e categoria (case-insensitive, parcial)
         const queryProfissionais = {
@@ -3372,9 +3990,17 @@ app.post('/api/pedidos-urgentes', authMiddleware, upload.single('foto'), async (
         }
 
         // Salva os IDs dos profissionais e das notificações geradas (se precisar rastrear)
-        novoPedido.notificacoesEnviadas = profissionais.map(p => p._id);
-        if (notificacoesCriadas.length > 0) novoPedido.notificacoesCriadas = notificacoesCriadas;
-        await novoPedido.save();
+        try {
+            novoPedido.notificacoesEnviadas = profissionais.map(p => p._id);
+            if (notificacoesCriadas.length > 0) {
+                novoPedido.notificacoesCriadas = notificacoesCriadas;
+            }
+            await novoPedido.save();
+            console.log(`✅ Pedido atualizado com notificações: ${novoPedido._id}`);
+        } catch (updateError) {
+            console.error('⚠️ Erro ao atualizar pedido com notificações (não crítico):', updateError);
+            // Não bloqueia a resposta se houver erro ao atualizar notificações
+        }
 
         res.status(201).json({ 
             success: true, 
@@ -3383,8 +4009,31 @@ app.post('/api/pedidos-urgentes', authMiddleware, upload.single('foto'), async (
             profissionaisNotificados: profissionais.length
         });
     } catch (error) {
-        console.error('Erro ao criar pedido urgente:', error);
-        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+        console.error('❌ Erro ao criar pedido urgente:', error);
+        console.error('Tipo do erro:', typeof error);
+        console.error('Mensagem do erro:', error.message);
+        console.error('Stack trace:', error.stack);
+        
+        // Se a resposta já foi enviada, não tenta enviar novamente
+        if (res.headersSent) {
+            console.error('⚠️ Resposta já foi enviada, não é possível enviar erro');
+            return;
+        }
+        
+        // Retorna mensagem de erro mais específica em desenvolvimento
+        const errorMessage = process.env.NODE_ENV === 'development' 
+            ? `Erro ao criar pedido urgente: ${error.message || 'Erro desconhecido'}` 
+            : 'Erro interno do servidor ao criar pedido urgente.';
+        
+        try {
+            res.status(500).json({ 
+                success: false, 
+                message: errorMessage,
+                error: process.env.NODE_ENV === 'development' ? (error.message || String(error)) : undefined
+            });
+        } catch (responseError) {
+            console.error('❌ Erro ao enviar resposta de erro:', responseError);
+        }
     }
 });
 
@@ -3558,6 +4207,7 @@ app.get('/api/pedidos-urgentes/:pedidoId([a-fA-F0-9]{24})', authMiddleware, asyn
                 servico: pedido.servico,
                 descricao: pedido.descricao,
                 foto: pedido.foto,
+                fotos: pedido.fotos || (pedido.foto ? [pedido.foto] : []),
                 localizacao: pedido.localizacao,
                 categoria: pedido.categoria,
                 clienteId: pedido.clienteId

@@ -5,6 +5,12 @@
     box-sizing: border-box;
 }
 
+html {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
 /* Variáveis de Tema */
 :root {
     --bg-primary: #f0f2f5;
@@ -79,6 +85,9 @@ body {
     align-items: center;
     min-height: 100vh;
     overflow-x: hidden; /* Evita rolagem lateral em qualquer página */
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 /* Cabeçalho */
@@ -154,6 +163,33 @@ header {
 
     .search {
         display: block;
+    }
+    
+    /* Remover rolagem vertical das postagens em todas as telas maiores */
+    .post {
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
+    }
+    
+    .post-comments {
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
+    }
+    
+    .post-comments .comment-list {
+        overflow-y: visible !important;
+        max-height: none !important;
+    }
+    
+    /* Garantir que postagens no perfil não tenham rolagem */
+    .secao-perfil .post,
+    #secao-postagens .post,
+    .minhas-postagens .post {
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
     }
 }
 
@@ -311,21 +347,27 @@ header {
 }
 
 /* Layout, Categorias, Filtros, Configurações... */
-.conteudo { display: flex; justify-content: center; gap: 25px; padding: 25px 20px; max-width: 1200px; margin: 90px auto 0 auto; width: 100%; }
-.categorias { flex-basis: 250px; flex-shrink: 0; background: var(--bg-secondary); border-radius: 8px; padding: 20px; box-shadow: 0 2px 5px var(--shadow-color); height: fit-content; position: sticky; top: 90px; }
-.categorias h2 { font-size: 1.5em; color: var(--text-primary); margin-bottom: 10px; text-align: center; } 
-.categorias p { font-size: 14px; color: var(--text-secondary); margin-bottom: 15px; text-align: center; } 
-.filtro-botoes { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
-.filtro-btn { width: 100%; padding: 10px; font-size: 14px; font-weight: bold; border: 1px solid var(--border-color); border-radius: 5px; background-color: var(--bg-secondary); color: var(--text-secondary); cursor: pointer; transition: all 0.2s ease; text-align: left; }
+.conteudo { display: flex; justify-content: center; gap: 25px; padding: 25px 20px; max-width: 1400px; margin: 90px auto 0 auto; width: 100%; box-sizing: border-box; overflow-x: hidden; }
+@media (max-width: 768px) {
+    .conteudo {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+}
+.categorias { flex-basis: 250px; flex-shrink: 1; min-width: 220px; background: var(--bg-secondary); border-radius: 8px; padding: 20px; box-shadow: 0 2px 5px var(--shadow-color); height: fit-content; position: sticky; top: 115px; box-sizing: border-box; max-width: 100%; overflow-x: hidden; }
+.categorias h2 { font-size: 1.5em; color: var(--text-primary); margin-bottom: 10px; text-align: center; word-wrap: break-word; } 
+.categorias p { font-size: 14px; color: var(--text-secondary); margin-bottom: 15px; text-align: center; word-wrap: break-word; } 
+.filtro-botoes { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; width: 100%; box-sizing: border-box; }
+.filtro-btn { width: 100%; padding: 10px; font-size: 14px; font-weight: bold; border: 1px solid var(--border-color); border-radius: 5px; background-color: var(--bg-secondary); color: var(--text-secondary); cursor: pointer; transition: all 0.2s ease; text-align: left; box-sizing: border-box; word-wrap: break-word; white-space: normal; }
 .filtro-btn i { margin-right: 10px; width: 20px; text-align: center; }
 .filtro-btn:hover { background-color: var(--bg-hover); border-color: var(--border-color); } 
 .filtro-btn.ativo { background-color: var(--btn-filter-active-bg); color: white; border-color: var(--btn-filter-active-bg); }
-.filtro-localizacao { border-top: 1px solid var(--border-color); padding-top: 15px; } 
-.filtro-localizacao h4 { font-size: 16px; color: var(--text-primary); margin-bottom: 10px; } 
-#filtro-cidade { width: 100%; padding: 8px; border: 1px solid var(--border-color); background-color: var(--bg-input); color: var(--text-primary); border-radius: 5px; margin-bottom: 10px; }
-#filtro-cidade-btn { width: 100%; padding: 8px; background-color: var(--btn-primary-bg); color: white; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; } 
+.filtro-localizacao { border-top: 1px solid var(--border-color); padding-top: 15px; width: 100%; box-sizing: border-box; overflow-x: hidden; } 
+.filtro-localizacao h4 { font-size: 16px; color: var(--text-primary); margin-bottom: 10px; word-wrap: break-word; } 
+#filtro-cidade { width: 100%; padding: 8px; border: 1px solid var(--border-color); background-color: var(--bg-input); color: var(--text-primary); border-radius: 5px; margin-bottom: 10px; box-sizing: border-box; }
+#filtro-cidade-btn { width: 100%; padding: 8px; background-color: var(--btn-primary-bg); color: white; border: none; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; box-sizing: border-box; } 
 #filtro-cidade-btn:hover { background-color: var(--btn-primary-hover); } 
-.filtro-configuracoes { border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: 20px; padding-bottom: 30px; } 
+.filtro-configuracoes { border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: 20px; padding-bottom: 30px; width: 100%; box-sizing: border-box; overflow-x: hidden; } 
 .filtro-configuracoes h4 { font-size: 16px; color: var(--text-primary); margin-bottom: 10px; } 
 .filtro-config-btn { display: block; padding: 8px 10px; font-size: 14px; color: var(--text-secondary); text-decoration: none; border-radius: 5px; transition: background-color 0.2s; }
 .filtro-config-btn i { margin-right: 10px; width: 20px; text-align: center; color: var(--text-secondary); } 
@@ -387,14 +429,24 @@ header {
 }
 
 /* Área Central do Feed */
-main { flex-grow: 1; max-width: 700px; }
+main { flex-grow: 1; max-width: 850px; min-width: 550px; box-sizing: border-box; flex: 1 1 auto; overflow-x: hidden; }
+@media (max-width: 768px) {
+    main {
+        min-width: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+}
 
 /* Área de Publicação */
-.publicar { background: var(--bg-secondary); border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: 0 2px 5px var(--shadow-color); } 
+.publicar { background: var(--bg-secondary); border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: 0 2px 5px var(--shadow-color); max-width: 100%; box-sizing: border-box; overflow-x: hidden; } 
 .publicar h2 { font-size: 1.3em; color: var(--text-primary); margin-bottom: 15px; } 
 
 textarea#post-content-input {
     width: 100%;
+    max-width: 100%;
     padding: 10px;
     margin-bottom: 15px;
     border: 1px solid var(--border-color); 
@@ -404,8 +456,10 @@ textarea#post-content-input {
     font-size: 1em;
     resize: none; 
     overflow-y: hidden; 
+    overflow-x: hidden;
     height: auto; 
     min-height: 80px; 
+    box-sizing: border-box;
 }
 textarea#post-content-input::placeholder { color: var(--text-placeholder); } 
 
@@ -425,7 +479,7 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 .form-message.error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
 .form-message.info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
 #posts-container { padding-top: 5px; }
-.post { background: var(--bg-secondary); border-radius: 8px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 5px var(--shadow-color); word-wrap: break-word; position: relative; transition: opacity 0.3s ease, transform 0.3s ease, height 0.3s ease; } 
+.post { background: var(--bg-secondary); border-radius: 8px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 5px var(--shadow-color); word-wrap: break-word; position: relative; transition: opacity 0.3s ease, transform 0.3s ease, height 0.3s ease; max-width: 100%; box-sizing: border-box; overflow-x: hidden; overflow-y: visible !important; max-height: none !important; } 
 .post.hidden { opacity: 0; transform: scale(0.95); height: 0; padding: 0; margin: 0; overflow: hidden; border: none; }
 
 /* Garantir que postagens antigas não apareçam no grid de miniaturas */
@@ -465,6 +519,24 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     .post-thumbnail {
         min-width: 0 !important;
     }
+    
+    /* Remover rolagem vertical das postagens em tablets */
+    .post {
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
+    }
+    
+    .post-comments {
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
+    }
+    
+    .post-comments .comment-list {
+        overflow-y: visible !important;
+        max-height: none !important;
+    }
 }
 
 /* Desktop pequeno - transição gradual até tablets */
@@ -473,6 +545,24 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
         grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)) !important;
         gap: 12px !important;
     }
+    
+    /* Remover rolagem vertical das postagens em telas maiores */
+    .post {
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
+    }
+    
+    .post-comments {
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
+    }
+    
+    .post-comments .comment-list {
+        overflow-y: visible !important;
+        max-height: none !important;
+    }
 }
 
 /* Desktop grande */
@@ -480,6 +570,33 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     .postagens-grid {
         grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)) !important;
         gap: 12px !important;
+    }
+    
+    /* Remover rolagem vertical das postagens em telas grandes */
+    .post {
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
+    }
+    
+    .post-comments {
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
+    }
+    
+    .post-comments .comment-list {
+        overflow-y: visible !important;
+        max-height: none !important;
+    }
+    
+    /* Garantir que postagens no perfil não tenham rolagem */
+    .secao-perfil .post,
+    #secao-postagens .post,
+    .minhas-postagens .post {
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
     }
 }
 
@@ -661,6 +778,139 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     margin-bottom: 15px;
 }
 
+/* Modal de Imagem Flutuante para Pedidos */
+.image-modal-overlay {
+    display: none !important;
+    position: fixed !important;
+    z-index: 99999 !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-color: rgba(0, 0, 0, 0.9) !important;
+    justify-content: center !important;
+    align-items: center !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: opacity 0.3s ease;
+}
+
+.image-modal-overlay.hidden {
+    display: none !important;
+}
+
+/* Modal só aparece quando NÃO tem classe hidden E tem display flex no style inline */
+.image-modal-overlay:not(.hidden)[style*="display: flex"],
+#image-modal-pedido:not(.hidden)[style*="display: flex"] {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    z-index: 99999 !important;
+}
+
+/* Garantir que mesmo com classe hidden removida via JS, o modal apareça apenas se tiver display flex no style */
+#image-modal-pedido[style*="display: flex"] {
+    display: flex !important;
+}
+
+.image-modal-content {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 5px;
+    background-color: var(--bg-secondary);
+    object-fit: contain;
+    position: relative;
+}
+
+#image-modal-pedido {
+    position: relative;
+    display: none !important; /* Começar oculto por padrão */
+    align-items: center;
+    justify-content: center;
+}
+
+#image-modal-pedido.hidden {
+    display: none !important;
+}
+
+#image-modal-pedido > div {
+    position: relative;
+    display: inline-block;
+    max-width: 90vw;
+    max-height: 90vh;
+}
+
+#image-modal-pedido .image-modal-content {
+    position: relative;
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+#close-image-modal-pedido {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    color: #fff;
+    font-size: 35px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 10002;
+    background: rgba(0, 0, 0, 0.7);
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s;
+    margin: 0;
+    padding: 0;
+    line-height: 1;
+}
+
+#close-image-modal-pedido:hover {
+    background: rgba(0, 0, 0, 0.9);
+}
+
+/* Ajustar posição do X em telas menores */
+@media (max-width: 768px) {
+    #close-image-modal-pedido {
+        top: 3px;
+        right: 3px;
+        width: 40px;
+        height: 40px;
+        font-size: 30px;
+    }
+}
+
+#close-image-modal-pedido:hover {
+    background: rgba(0, 0, 0, 0.9);
+}
+
+.close-btn-modal {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    color: #fff;
+    font-size: 35px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 10002;
+    background: rgba(0, 0, 0, 0.7);
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s;
+}
+
+.close-btn-modal:hover {
+    background: rgba(0, 0, 0, 0.9);
+}
+
 /* Aumentar espaço da área da postagem */
 #modal-postagem-completa .post-header {
     padding-top: 15px;
@@ -698,17 +948,28 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     display: flex;
     flex-direction: column;
     overflow: visible;
+    overflow-x: hidden;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
-/* Ajustes para formulário de comentários no modal */
+/* Ajustes para formulário de comentários no modal - fixo na parte inferior */
 #modal-postagem-completa .comment-form {
     display: flex;
     gap: 5px;
-    margin-top: 10px;
+    margin-top: auto;
     padding: 10px;
     padding-bottom: 10px;
     flex-wrap: nowrap;
     align-items: center;
+    position: sticky;
+    bottom: 0;
+    background-color: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    z-index: 10;
+    flex-shrink: 0;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 #modal-postagem-completa .comment-input {
@@ -743,34 +1004,31 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 /* Ajustes específicos para tablets e celulares */
 @media (max-width: 1023px) {
     #modal-postagem-completa .modal-content {
-        max-height: 98vh;
-        max-width: 98vw;
-        padding: 20px;
-        padding-bottom: 0;
-        overflow: hidden;
+        max-height: none !important;
+        max-width: 75vw !important;
+        width: 75vw !important;
+        padding: 12px;
+        padding-bottom: 12px;
+        overflow: visible !important;
+        overflow-y: visible !important;
         display: flex;
         flex-direction: column;
+        height: auto !important;
+        margin: 0 auto;
+        border-radius: 12px;
     }
     
-    /* Toda a postagem com scroll - adapta ao tamanho sem cortar */
+    /* Toda a postagem sem scroll - expande completamente */
     #modal-postagem-completa .post {
         display: flex;
         flex-direction: column;
-        max-height: calc(98vh - 40px);
-        overflow-y: auto;
+        max-height: none !important;
+        overflow-y: visible !important;
         overflow-x: hidden;
         min-height: 0;
-        padding-bottom: 70px; /* Espaço para o formulário não ser cortado */
-    }
-    
-    /* Scroll sem barra em tablets */
-    #modal-postagem-completa .post {
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-    }
-    
-    #modal-postagem-completa .post::-webkit-scrollbar {
-        display: none;
+        padding-bottom: 0;
+        height: auto !important;
+        overflow: visible !important;
     }
     
     /* Área da postagem - sem scroll individual, faz parte do scroll geral */
@@ -781,98 +1039,188 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
         overflow: visible;
     }
     
-    /* Comentários sem scroll individual - faz parte do scroll geral */
+    /* Comentários com scroll, formulário fixo */
     #modal-postagem-completa .post-comments {
         padding-bottom: 0;
         display: flex;
         flex-direction: column;
         flex-shrink: 0;
-        overflow: visible;
+        overflow: hidden !important;
+        overflow-x: hidden !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        max-height: calc(100vh - 300px) !important;
+        position: relative;
     }
     
     #modal-postagem-completa .comment-list {
-        overflow: visible !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
         padding-bottom: 10px;
-        max-height: none !important;
-        overflow-y: visible !important;
+        max-height: calc(100vh - 380px) !important;
+        max-width: 100% !important;
+        flex: 1;
+        min-height: 0;
+        box-sizing: border-box !important;
+        padding-right: 5px;
     }
     
-    /* Formulário sempre visível no final - não corta */
+    #modal-postagem-completa .comment {
+        max-width: 100%;
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+    
+    #modal-postagem-completa .comment-body-container {
+        max-width: 100%;
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+    
+    #modal-postagem-completa .comment-body {
+        max-width: 100%;
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+    
+    #modal-postagem-completa .comment-body p {
+        overflow-x: hidden;
+    }
+    
+    #modal-postagem-completa .comment-actions {
+        max-width: 100%;
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+    
+    /* Formulário sempre visível no final - fixo */
     #modal-postagem-completa .comment-form {
-        flex-shrink: 0;
-        background-color: var(--bg-secondary);
-        border-top: 1px solid var(--border-color);
-        margin-top: 0;
-        margin-bottom: 0;
-        position: sticky;
-        bottom: 0;
-        z-index: 10;
-        padding: 10px;
-        padding-bottom: 10px;
+        flex-shrink: 0 !important;
+        background-color: var(--bg-secondary) !important;
+        border-top: 1px solid var(--border-color) !important;
+        margin-top: auto !important;
+        margin-bottom: 0 !important;
+        position: sticky !important;
+        bottom: 0 !important;
+        z-index: 20 !important;
+        padding: 10px !important;
+        padding-bottom: 10px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        display: flex !important;
     }
 }
 
 /* Ajustes específicos para celular */
 @media (max-width: 767px) {
     #modal-postagem-completa .modal-content {
-        padding: 15px;
-        padding-bottom: 0;
-        max-height: 98vh;
-        max-width: 98vw;
+        padding: 12px;
+        padding-bottom: 12px;
+        max-height: none !important;
+        max-width: 75vw !important;
+        width: 75vw !important;
+        overflow: visible !important;
+        overflow-y: visible !important;
+        height: auto !important;
+        margin: 0 auto;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
     }
     
     /* Toda a postagem com scroll em celular - adapta sem cortar */
     #modal-postagem-completa .post {
-        overflow-y: auto;
+        overflow-y: visible !important;
         overflow-x: hidden;
-        max-height: calc(98vh - 30px);
-        padding-bottom: 70px; /* Espaço para o formulário não ser cortado */
+        max-height: none !important;
+        padding-bottom: 0;
+        height: auto !important;
     }
     
-    /* Scroll sem barra na área da postagem em celular */
-    #modal-postagem-completa .post {
-        scrollbar-width: none;
-        -ms-overflow-style: none;
-    }
-    
-    #modal-postagem-completa .post::-webkit-scrollbar {
-        display: none;
-    }
-    
-    /* Comentários sem scroll individual - faz parte do scroll geral */
+    /* Comentários com scroll, formulário fixo */
     #modal-postagem-completa .post-comments {
         padding-bottom: 0;
-        display: flex;
-        flex-direction: column;
+        display: flex !important;
+        flex-direction: column !important;
         margin-top: 10px;
-        overflow: visible;
+        overflow: hidden !important;
+        overflow-x: hidden;
+        max-width: 100%;
+        max-height: calc(100vh - 300px) !important;
+        box-sizing: border-box;
+        position: relative;
     }
     
     #modal-postagem-completa .comment-list {
-        overflow: visible !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
         padding-bottom: 10px;
-        max-height: none !important;
-        overflow-y: visible !important;
+        max-height: calc(100vh - 380px) !important;
+        max-width: 100% !important;
+        flex: 1;
+        min-height: 0;
+        box-sizing: border-box !important;
+        padding-right: 5px;
     }
     
-    /* Formulário sempre visível no final - não corta */
+    #modal-postagem-completa .comment {
+        max-width: 100%;
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+    
+    #modal-postagem-completa .comment-body-container {
+        max-width: 100%;
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+    
+    #modal-postagem-completa .comment-body {
+        max-width: 100%;
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+    
+    #modal-postagem-completa .comment-body p {
+        overflow-x: hidden;
+    }
+    
+    #modal-postagem-completa .comment-actions {
+        max-width: 100%;
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+    
+    /* Formulário sempre visível no final - fixo */
     #modal-postagem-completa .comment-form {
-        position: sticky;
-        bottom: 0;
+        position: sticky !important;
+        bottom: 0 !important;
         z-index: 10;
         background-color: var(--bg-secondary);
         border-top: 1px solid var(--border-color);
         padding: 10px;
         padding-bottom: 10px;
-        margin-top: 0;
+        margin-top: auto;
         margin-bottom: 0;
+        flex-shrink: 0;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     /* Garantir que a imagem não seja cortada */
     #modal-postagem-completa .post-image {
-        max-height: min(400px, calc(100vh - 400px));
+        max-height: none !important;
         margin-top: 15px;
         margin-bottom: 15px;
+        height: auto !important;
     }
     
     /* Aumentar espaçamento em celular */
@@ -895,14 +1243,69 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
         padding: 10px;
         padding-bottom: 10px;
         gap: 4px;
-        margin-top: 0;
+        margin-top: auto;
         margin-bottom: 0;
         flex-shrink: 0;
-        position: sticky;
-        bottom: 0;
+        position: sticky !important;
+        bottom: 0 !important;
         background-color: var(--bg-secondary);
         border-top: 1px solid var(--border-color);
         z-index: 10;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    /* Garantir estrutura flex para fixar formulário */
+    #modal-postagem-completa .post-comments {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        max-height: calc(100vh - 300px) !important;
+        position: relative;
+    }
+    
+    #modal-postagem-completa .comment-list {
+        overflow-y: auto !important;
+        max-height: calc(100vh - 380px) !important;
+    }
+    
+    #modal-postagem-completa .comment-form {
+        z-index: 20 !important;
+        background-color: var(--bg-secondary) !important;
+    }
+    
+    /* Estilo específico para o botão "Carregar Mais" no modal */
+    #modal-postagem-completa .load-more-comments-text {
+        cursor: pointer !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        pointer-events: auto !important;
+        z-index: 15 !important;
+        position: relative;
+        transition: opacity 0.2s ease, color 0.2s ease;
+        padding: 4px 0 !important;
+        margin-top: -12px !important;
+        margin-bottom: -3px !important;
+        background: transparent !important;
+        border: none !important;
+    }
+    
+    #modal-postagem-completa .load-more-comments-text:hover {
+        opacity: 0.8;
+        text-decoration: underline;
+        color: var(--text-link) !important;
+    }
+    
+    #modal-postagem-completa .load-more-comments-text:active {
+        opacity: 0.6;
+    }
+    
+    #modal-postagem-completa .comment-list {
+        overflow-y: visible !important;
+        overflow-x: hidden !important;
+        flex: 1;
+        min-height: 0;
+        max-height: none !important;
     }
     
     #modal-postagem-completa .comment-input {
@@ -921,40 +1324,107 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     
     /* Garantir que o modal não corte o botão */
     #modal-postagem-completa .modal-content {
-        padding-bottom: 0;
-        max-height: 95vh;
-        overflow: hidden;
+        padding-bottom: 20px;
+        max-height: none !important;
+        overflow: visible !important;
+        overflow-y: visible !important;
         display: flex;
         flex-direction: column;
+        height: auto !important;
     }
     
-    /* Toda a postagem com scroll - não apenas comentários */
+    /* Postagem com estrutura flex para fixar formulário */
     #modal-postagem-completa .post {
         display: flex;
         flex-direction: column;
-        max-height: 95vh;
-        overflow-y: auto;
+        max-height: none !important;
+        overflow-y: visible !important;
+        overflow-x: hidden;
+        height: auto !important;
+    }
+    
+    /* Seção de comentários com flex para fixar formulário */
+    #modal-postagem-completa .post-comments {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        overflow: hidden;
+        overflow-x: hidden;
+        max-height: calc(100vh - 300px) !important;
+        margin-top: 10px;
+        position: relative;
+    }
+    
+    /* Lista de comentários com scroll */
+    #modal-postagem-completa .comment-list {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        max-height: calc(100vh - 380px) !important;
+        max-width: 100% !important;
+        flex: 1;
+        min-height: 0;
+        padding-bottom: 10px;
+        padding-right: 5px;
+        box-sizing: border-box !important;
+    }
+    
+    /* Formulário fixo */
+    #modal-postagem-completa .comment-form {
+        position: sticky !important;
+        bottom: 0 !important;
+        margin-top: auto !important;
+        flex-shrink: 0 !important;
+        z-index: 20 !important;
+        background-color: var(--bg-secondary) !important;
+        border-top: 1px solid var(--border-color) !important;
+    }
+    
+    #modal-postagem-completa .comment {
+        max-width: 100%;
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+    
+    #modal-postagem-completa .comment-body-container {
+        max-width: 100%;
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+    
+    #modal-postagem-completa .comment-body {
+        max-width: 100%;
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+    
+    #modal-postagem-completa .comment-body p {
         overflow-x: hidden;
     }
     
-    /* Comentários sem scroll individual */
-    #modal-postagem-completa .comment-list {
-        overflow: visible !important;
-        overflow-y: visible !important;
-        overflow-x: visible !important;
-        max-height: none !important;
+    #modal-postagem-completa .comment-actions {
+        max-width: 100%;
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
     }
 }
 
 /* Estilos para telas maiores (desktop) - apenas comentários com scroll */
 @media (min-width: 1024px) {
     #modal-postagem-completa .modal-content {
-        max-height: 75vh;
-        max-width: 900px;
-        padding: 10px;
+        max-height: none !important;
+        max-width: 500px !important;
+        width: 500px !important;
+        padding: 20px;
+        overflow: visible !important;
+        overflow-y: visible !important;
+        height: auto !important;
     }
     
-    /* Postagem sem scroll - altura limitada e reduzida */
+    /* Postagem sem scroll - altura automática */
     #modal-postagem-completa .post {
         display: flex;
         flex-direction: column;
@@ -963,6 +1433,13 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
         overflow-y: visible !important;
         overflow-x: visible !important;
         height: auto;
+    }
+    
+    /* Reduzir largura da lista de comentários em telas maiores */
+    #modal-postagem-completa .comment-list {
+        max-width: 85% !important;
+        width: 85% !important;
+        margin: 0 auto;
     }
     
     /* Reduzir padding da área da postagem */
@@ -1002,28 +1479,167 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
         display: flex;
         flex-direction: column;
         flex-shrink: 0;
-        max-height: 280px;
-        overflow: visible;
+        max-height: calc(100vh - 300px) !important;
+        overflow: hidden !important;
+        overflow-x: hidden;
+        max-width: 100%;
         margin-top: 5px;
+        box-sizing: border-box;
+        position: relative;
     }
     
-    /* Lista de comentários com scroll */
+    /* Lista de comentários com scroll - reduzida em telas maiores */
     #modal-postagem-completa .comment-list {
         overflow-y: auto !important;
         overflow-x: hidden !important;
-        max-height: 220px !important;
+        max-height: calc(100vh - 380px) !important;
+        max-width: 85% !important;
+        width: 85% !important;
         padding-right: 5px;
         flex: 1;
+        min-height: 0;
+        box-sizing: border-box !important;
+        margin: 0 auto;
     }
     
-    /* Formulário sempre visível */
+    /* Formulário fixo */
+    #modal-postagem-completa .comment-form {
+        position: sticky !important;
+        bottom: 0 !important;
+        margin-top: auto !important;
+        flex-shrink: 0 !important;
+        z-index: 20 !important;
+        background-color: var(--bg-secondary) !important;
+        border-top: 1px solid var(--border-color) !important;
+    }
+    
+    #modal-postagem-completa .comment {
+        max-width: 100%;
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+    
+    #modal-postagem-completa .comment-body-container {
+        max-width: 100%;
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+    
+    #modal-postagem-completa .comment-body {
+        max-width: 100%;
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+    
+    #modal-postagem-completa .comment-body p {
+        overflow-x: hidden;
+    }
+    
+    #modal-postagem-completa .comment-actions {
+        max-width: 100%;
+        width: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+    
+    /* Formulário sempre visível - fixo */
     #modal-postagem-completa .comment-form {
         flex-shrink: 0;
         background-color: var(--bg-secondary);
         border-top: 1px solid var(--border-color);
-        margin-top: 5px;
+        margin-top: auto;
         padding-top: 6px;
         padding-bottom: 6px;
+        position: sticky !important;
+        bottom: 0 !important;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    /* Evita que o final (últimos comentários / "Carregar Mais") fique escondido atrás do formulário fixo */
+    #modal-postagem-completa .comment-list {
+        padding-bottom: 30px !important;
+    }
+
+    /* Dá um respiro e "desce" um pouco o bloco de escrever comentário + enviar */
+    #modal-postagem-completa .comment-form {
+        padding-top: 14px !important;
+    }
+
+    #modal-postagem-completa .load-more-comments-text {
+        margin: 10px 0 14px 0 !important;
+    }
+
+    /* ====== FIX: no desktop, NÃO rolar a caixa principal; rolar SOMENTE a .comment-list ====== */
+    #modal-postagem-completa.modal-overlay {
+        overflow: hidden !important;
+    }
+
+    #modal-postagem-completa .modal-content.modal-grande {
+        display: flex !important;
+        flex-direction: column !important;
+        /* mantém o tamanho “do jeito que está”, mas limita para não gerar scroll do overlay */
+        max-height: calc(100vh - 140px) !important;
+        /* trava de vez: não cresce ao carregar mais comentários */
+        height: calc(100vh - 140px) !important;
+        overflow: hidden !important;
+    }
+
+    /* O body do modal precisa ser flex e ocupar o restante da altura */
+    #modal-postagem-completa #modal-postagem-content {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    #modal-postagem-completa .post {
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important; /* essencial para o flex permitir scroll interno */
+        overflow: hidden !important;
+        transition: none !important; /* evita “animação de crescimento” ao inserir comentários */
+    }
+
+    /* Cabeçalho/conteúdo/ações sempre fixos (não rolam) */
+    #modal-postagem-completa .post-header,
+    #modal-postagem-completa .post-content,
+    #modal-postagem-completa .post-actions {
+        flex-shrink: 0 !important;
+    }
+
+    /* Área de comentários ocupa o resto e não expande o modal */
+    #modal-postagem-completa .post-comments {
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        overflow: hidden !important;
+        max-height: none !important;
+    }
+
+    /* Só aqui tem rolagem */
+    #modal-postagem-completa .comment-list {
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        padding-bottom: 70px !important; /* espaço para não esconder atrás do form fixo */
+        max-height: none !important;
+    }
+
+    /* Formulário não “desce”: fica sempre visível */
+    #modal-postagem-completa .comment-form {
+        display: flex !important;
+        flex: 0 0 auto !important;
+        margin-top: 0 !important;
+        position: static !important;
+        bottom: auto !important;
     }
 }
 
@@ -1072,11 +1688,11 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 .post-author-city { font-size: 0.8em; color: var(--text-secondary); display: inline; } 
 .delete-post-btn { background-color: transparent; color: var(--text-secondary); padding: 5px; margin-left: auto; display: flex; align-items: center; gap: 5px; border: none; cursor: pointer; font-size: 12px; border-radius: 5px; } 
 .delete-post-btn:hover { background-color: var(--bg-hover); color: #dc3545; } 
-.post-content { margin-bottom: 10px; color: var(--text-primary); line-height: 1.5; } 
+.post-content { margin-bottom: 10px; color: var(--text-primary); line-height: 1.5; max-width: 100%; word-wrap: break-word; overflow-wrap: break-word; box-sizing: border-box; } 
 .post-image { 
-    max-width: 100%; 
+    max-width: 100% !important; 
+    width: 100% !important;
     max-height: 600px; 
-    width: auto; 
     height: auto; 
     border-radius: 8px; 
     margin-top: 10px; 
@@ -1084,8 +1700,9 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     object-fit: contain; 
     margin-left: auto;
     margin-right: auto;
+    box-sizing: border-box;
 }
-.post-video { max-width: 100%; height: auto; border-radius: 8px; margin-top: 10px; display: block; background-color: #000; }
+.post-video { max-width: 100% !important; width: 100% !important; height: auto; border-radius: 8px; margin-top: 10px; display: block; background-color: #000; box-sizing: border-box; }
 .post-actions { display: flex; gap: 10px; padding: 10px 0; border-top: 1px solid var(--border-color); margin-top: 10px; } 
 .action-btn { background-color: var(--bg-action); border: none; border-radius: 5px; padding: 8px 12px; cursor: pointer; color: var(--text-secondary); font-weight: bold; display: flex; align-items: center; gap: 5px; transition: background-color 0.2s; font-size: 14px; } 
 .action-btn:hover { background-color: var(--bg-action-hover); } 
@@ -1094,8 +1711,281 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 .btn-like.liked i { color: var(--text-link); } 
 
 /* --- Seção de Comentários (Base) --- */
-.post-comments { padding: 10px 0 0 0; border-top: 1px solid var(--border-color); margin-top: 10px; display: none; } 
-.post-comments.visible { display: block; }
+.post-comments { 
+    padding: 10px 0 0 0; 
+    border-top: 1px solid var(--border-color); 
+    margin-top: 10px; 
+    display: none;
+    position: relative;
+    max-height: none !important;
+    max-width: 100%;
+    overflow-y: visible !important;
+    overflow-x: hidden;
+    box-sizing: border-box;
+    height: auto !important;
+} 
+
+.post-comments.visible { 
+    display: flex !important;
+    flex-direction: column !important;
+    position: relative !important;
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
+    max-height: none !important;
+    height: auto !important;
+}
+
+/* Área de comentários sem rolagem - expande conforme necessário */
+.post-comments .comment-list {
+    flex: 1;
+    overflow-y: visible;
+    overflow-x: hidden;
+    max-height: none;
+    max-width: 100%;
+    padding-right: 5px;
+    margin-bottom: 0;
+    box-sizing: border-box;
+}
+
+/* Garantir que nomes e botões dos comentários sempre fiquem visíveis */
+.post-comments .comment-list .comment {
+    overflow: visible !important;
+    max-height: none !important;
+}
+
+.post-comments .comment-list .comment .comment-body-container {
+    overflow: visible !important;
+    max-height: none !important;
+}
+
+.post-comments .comment-list .comment .comment-body strong {
+    position: relative;
+    z-index: 2;
+    overflow: visible !important;
+}
+
+.post-comments .comment-list .comment .comment-actions {
+    position: relative;
+    z-index: 2;
+    overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Regras específicas para postagens no perfil - garantir visibilidade completa */
+.secao-perfil .post,
+#secao-postagens .post,
+.minhas-postagens .post {
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
+    max-height: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    position: relative !important;
+}
+
+/* Garantir que a caixa principal da postagem não tenha rolagem vertical */
+.secao-perfil .post > *,
+#secao-postagens .post > *,
+.minhas-postagens .post > * {
+    overflow-y: visible !important;
+    max-height: none !important;
+}
+
+/* Remover TODA rolagem vertical da caixa principal em telas maiores */
+@media (min-width: 769px) {
+    .secao-perfil .post,
+    #secao-postagens .post,
+    .minhas-postagens .post {
+        overflow: visible !important;
+        overflow-y: visible !important;
+        overflow-x: hidden !important;
+        max-height: none !important;
+        height: auto !important;
+        position: relative !important;
+    }
+    
+    /* Garantir que nenhum elemento interno tenha rolagem */
+    .secao-perfil .post *,
+    #secao-postagens .post *,
+    .minhas-postagens .post * {
+        overflow-y: visible !important;
+        max-height: none !important;
+    }
+    
+    /* Garantir que o formulário fique sempre visível */
+    .secao-perfil .post-comments .comment-form,
+    #secao-postagens .post-comments .comment-form,
+    .minhas-postagens .post-comments .comment-form {
+        position: sticky !important;
+        bottom: 0 !important;
+        z-index: 100 !important;
+        background: var(--bg-secondary) !important;
+    }
+}
+
+.secao-perfil .post-comments,
+#secao-postagens .post-comments,
+.minhas-postagens .post-comments {
+    display: flex !important;
+    flex-direction: column !important;
+    position: relative !important;
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
+    max-height: none !important;
+    height: auto !important;
+}
+
+.secao-perfil .post-comments .comment-list,
+#secao-postagens .post-comments .comment-list,
+.minhas-postagens .post-comments .comment-list {
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
+    max-height: none !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+}
+
+.secao-perfil .post-comments .comment,
+#secao-postagens .post-comments .comment,
+.minhas-postagens .post-comments .comment {
+    overflow: visible !important;
+    max-height: none !important;
+    min-height: auto !important;
+}
+
+.secao-perfil .post-comments .comment .comment-body strong,
+#secao-postagens .post-comments .comment .comment-body strong,
+.minhas-postagens .post-comments .comment .comment-body strong {
+    overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+    position: relative !important;
+    z-index: 2 !important;
+}
+
+.secao-perfil .post-comments .comment .comment-actions,
+#secao-postagens .post-comments .comment .comment-actions,
+.minhas-postagens .post-comments .comment .comment-actions {
+    overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: flex !important;
+    position: relative !important;
+    z-index: 2 !important;
+    flex-shrink: 0 !important;
+}
+
+/* Garantir que o formulário de comentários fique sempre visível nas postagens do perfil */
+.secao-perfil .post-comments .comment-form,
+#secao-postagens .post-comments .comment-form,
+.minhas-postagens .post-comments .comment-form {
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 20 !important;
+    background: var(--bg-secondary) !important;
+    padding: 10px 0 !important;
+    margin-top: auto !important;
+    border-top: 1px solid var(--border-color) !important;
+    display: flex !important;
+    gap: 5px !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    flex-shrink: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+.secao-perfil .post-comments .comment-form .comment-input,
+#secao-postagens .post-comments .comment-form .comment-input,
+.minhas-postagens .post-comments .comment-form .comment-input {
+    flex: 1 !important;
+    min-width: 0 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: block !important;
+}
+
+.secao-perfil .post-comments .comment-form .btn-send-comment,
+#secao-postagens .post-comments .comment-form .btn-send-comment,
+.minhas-postagens .post-comments .comment-form .btn-send-comment {
+    flex-shrink: 0 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    display: inline-block !important;
+    white-space: nowrap !important;
+}
+
+/* Barra de rolagem personalizada para comentários */
+.post-comments .comment-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.post-comments .comment-list::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 10px;
+}
+
+.post-comments .comment-list::-webkit-scrollbar-thumb {
+    background: var(--text-secondary);
+    border-radius: 10px;
+    opacity: 0.3;
+}
+
+.post-comments .comment-list::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+    opacity: 0.6;
+}
+
+/* Formulário de comentário fixo na parte inferior */
+.post-comments .comment-form {
+    position: sticky !important;
+    bottom: 0 !important;
+    background: var(--bg-secondary) !important;
+    padding: 10px 0 !important;
+    margin-top: auto !important;
+    border-top: 1px solid var(--border-color) !important;
+    z-index: 100 !important;
+    display: flex !important;
+    gap: 5px !important;
+    align-items: center !important;
+    flex-wrap: nowrap !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    overflow: visible !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+}
+
+/* Em telas maiores, garantir que o formulário fique sempre visível */
+@media (min-width: 769px) {
+    .post-comments .comment-form {
+        position: sticky !important;
+        bottom: 0 !important;
+        z-index: 100 !important;
+        background: var(--bg-secondary) !important;
+        margin-top: auto !important;
+    }
+    
+    /* Garantir que a postagem não tenha rolagem que esconda o formulário */
+    .post {
+        overflow: visible !important;
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
+    }
+    
+    .post-comments {
+        overflow: visible !important;
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
+    }
+}
 
 /* 🆕 Faixa de miniaturas sobre o feed (estilo stories, menor) */
 .top-strip {
@@ -1429,21 +2319,425 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     gap: 10px;
     margin-top: 14px;
 }
-.comment-list { margin-top: 10px; max-height: 400px; overflow-y: auto; padding-right: 5px; } 
-.comment-form { display: flex; gap: 5px; margin-top: 10px; }
-.comment-input { flex-grow: 1; border: 1px solid var(--border-color); background-color: var(--bg-input); color: var(--text-primary); border-radius: 20px; padding: 8px 12px; font-size: 14px; } 
-.comment-input:focus { outline: none; border-color: var(--btn-filter-active-bg); } 
-.comment-input::placeholder { color: var(--text-placeholder); } 
-.btn-send-comment { border: none; background: var(--btn-secondary-bg); color: white; border-radius: 20px; padding: 8px 12px; cursor: pointer; font-size: 14px; font-weight: bold; transition: background-color 0.2s; } 
-.btn-send-comment:hover { background: var(--btn-secondary-hover); } 
+.comment-list { 
+    margin-top: 10px; 
+    display: flex;
+    flex-direction: column;
+}
+
+/* Comentários ocultos inicialmente */
+.comment-hidden {
+    display: none !important;
+}
+
+/* Texto "Carregar mais" - apenas texto, não botão */
+.load-more-comments {
+    color: var(--text-link);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 8px 12px;
+    text-align: left;
+    transition: color 0.2s;
+    user-select: none;
+    margin-top: 5px;
+}
+
+.load-more-comments:hover {
+    color: var(--text-primary);
+    text-decoration: underline;
+}
+
+/* Texto "Carregar Mais" no modal - apenas texto, não botão */
+.load-more-comments-text {
+    color: var(--text-link);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0;
+    margin-top: -15px;
+    margin-bottom: -5px;
+    text-align: center;
+    transition: color 0.2s;
+    user-select: none;
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-weight: normal;
+    text-decoration: none;
+    display: block;
+    width: 100%;
+    line-height: 1.2;
+}
+
+.load-more-comments-text:hover {
+    color: var(--text-primary);
+    text-decoration: underline;
+}
+
+/* Comentários expandidos com rolagem lateral em telas menores */
+@media (max-width: 767px) {
+    #modal-postagem-completa .comment-list.comments-expanded {
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: visible;
+        max-height: none !important;
+        gap: 15px;
+        padding: 10px 0;
+        scroll-snap-type: x mandatory;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    #modal-postagem-completa .comment-list.comments-expanded .comment {
+        flex: 0 0 auto;
+        min-width: calc(100% - 30px);
+        max-width: calc(100% - 30px);
+        scroll-snap-align: start;
+    }
+    
+    /* Barra de rolagem personalizada para comentários horizontais */
+    #modal-postagem-completa .comment-list.comments-expanded::-webkit-scrollbar {
+        height: 6px;
+    }
+    
+    #modal-postagem-completa .comment-list.comments-expanded::-webkit-scrollbar-track {
+        background: transparent;
+        border-radius: 10px;
+    }
+    
+    #modal-postagem-completa .comment-list.comments-expanded::-webkit-scrollbar-thumb {
+        background: var(--text-secondary);
+        border-radius: 10px;
+        opacity: 0.3;
+    }
+    
+    #modal-postagem-completa .comment-list.comments-expanded::-webkit-scrollbar-thumb:hover {
+        background: var(--text-secondary);
+        opacity: 0.6;
+    }
+} 
+/* .comment-form já está definido acima com estilos completos */
+/* .comment-form já está definido acima com position sticky */
+
+.comment-input { 
+    flex-grow: 1; 
+    border: 1px solid var(--border-color); 
+    background-color: var(--bg-input); 
+    color: var(--text-primary); 
+    border-radius: 20px; 
+    padding: 10px 16px; 
+    font-size: 14px;
+    font-family: inherit;
+    resize: none;
+    overflow-y: auto;
+    min-height: 44px;
+    max-height: 120px;
+    line-height: 1.5;
+    width: 100%;
+    transition: border-color 0.2s, max-height 0.2s;
+} 
+
+/* Expansão automática em telas maiores */
+@media (min-width: 768px) {
+    .comment-input {
+        min-height: 50px;
+        max-height: 200px;
+    }
+    
+    /* Aplica as mesmas regras de telas menores para evitar rolagem lateral */
+    .post-comments {
+        max-width: 100%;
+        overflow-x: hidden;
+        overflow-y: visible;
+    }
+    
+    .comment-list {
+        max-width: 100%;
+        overflow-x: hidden;
+        word-wrap: break-word;
+    }
+    
+    .comment {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .comment-body-container {
+        max-width: 100%;
+        width: 100%;
+        min-width: 0;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+    
+    .comment-body {
+        max-width: 100%;
+        width: 100%;
+        min-width: 0;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        overflow-x: hidden;
+        box-sizing: border-box;
+    }
+    
+    .comment-body p {
+        overflow-x: hidden;
+    }
+    
+    .comment-actions {
+        overflow-x: hidden;
+    }
+}
+
+/* Limite de 3 linhas em telas menores */
+@media (max-width: 767px) {
+    .comment-input {
+        min-height: 44px;
+        max-height: 66px; /* Aproximadamente 3 linhas (22px por linha) */
+        overflow-y: auto;
+    }
+    
+    /* Largura máxima para evitar rolagem lateral */
+    .post-comments {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .comment-list {
+        max-width: 100%;
+        overflow-x: hidden;
+        word-wrap: break-word;
+    }
+    
+    .comment {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .comment-body-container {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .comment-body {
+        max-width: 100%;
+        width: 100%;
+        min-width: 0;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        box-sizing: border-box;
+    }
+    
+    .comment-body-container {
+        max-width: 100%;
+        width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+    
+    /* Limitar comentários publicados a 5 linhas em mobile - APENAS para comentários longos */
+    .comment-body p.comment-long {
+        max-height: 110px !important; /* Aproximadamente 5 linhas */
+        overflow: hidden !important;
+        position: relative;
+        transition: max-height 0.3s ease;
+        display: -webkit-box;
+        -webkit-line-clamp: 5;
+        line-clamp: 5;
+        -webkit-box-orient: vertical;
+    }
+    
+    .comment-body p.comment-long.expanded {
+        max-height: none !important;
+        overflow: visible !important;
+        display: block;
+        -webkit-line-clamp: unset;
+        line-clamp: unset;
+        -webkit-box-orient: unset;
+    }
+    
+    /* Botão "Carregar comentário" posicionado após o texto limitado */
+    .comment-body p.comment-long::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 100%;
+        height: 20px;
+        background: linear-gradient(to bottom, transparent, var(--bg-comment));
+        pointer-events: none;
+    }
+    
+    .comment-body p.comment-long.expanded::after {
+        display: none;
+    }
+    
+    /* Garantir que comentários SEM a classe comment-long não tenham limite */
+    .comment-body p:not(.comment-long) {
+        max-height: none !important;
+        overflow: visible !important;
+        overflow-y: visible !important;
+        overflow-x: visible !important;
+        height: auto !important;
+    }
+    
+    /* Garantir que a área de comentários possa expandir */
+    .post-comments {
+        max-height: none !important;
+        overflow-y: visible !important;
+    }
+    
+    .comment-list {
+        max-height: none !important;
+        overflow-y: visible !important;
+    }
+    
+    /* Botão "Carregar comentário" posicionado após o parágrafo */
+    .load-comment-text {
+        color: var(--text-link);
+        cursor: pointer;
+        font-size: 13px;
+        margin-top: 5px;
+        display: block;
+        transition: color 0.2s;
+        padding: 0;
+        position: relative;
+        z-index: 2;
+        background: var(--bg-comment);
+        padding-top: 3px;
+        width: 100%;
+    }
+    
+    .load-comment-text:hover {
+        color: var(--text-primary);
+        text-decoration: underline;
+    }
+}
+
+/* Barra de rolagem personalizada para o textarea */
+.comment-input::-webkit-scrollbar {
+    width: 6px;
+}
+
+.comment-input::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 10px;
+}
+
+.comment-input::-webkit-scrollbar-thumb {
+    background: var(--text-secondary);
+    border-radius: 10px;
+    opacity: 0.4;
+}
+
+.comment-input::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+    opacity: 0.7;
+}
+
+.comment-input:focus { 
+    outline: none; 
+    border-color: var(--btn-filter-active-bg); 
+} 
+
+.comment-input::placeholder { 
+    color: var(--text-placeholder); 
+} 
+
+.btn-send-comment { 
+    border: none; 
+    background: var(--btn-secondary-bg); 
+    color: white; 
+    border-radius: 20px; 
+    padding: 8px 12px; 
+    cursor: pointer; 
+    font-size: 14px; 
+    font-weight: bold; 
+    transition: background-color 0.2s; 
+    flex-shrink: 0;
+} 
+
+.btn-send-comment:hover { 
+    background: var(--btn-secondary-hover); 
+} 
 
 
 /* 🛑 ESTILOS DOS COMENTÁRIOS AVANÇADOS (CURTIR, RESPONDER, DELETAR) */
+.post-comments {
+    /* Remove limite de altura - permite expansão conforme necessário */
+    max-height: none !important;
+    max-width: 100%;
+    overflow-y: visible !important;
+    overflow-x: hidden !important; /* Remove rolagem lateral */
+    padding-right: 5px;
+    box-sizing: border-box;
+    display: flex !important;
+    flex-direction: column !important;
+    position: relative !important;
+    height: auto !important;
+    overflow: visible !important;
+}
+
+/* Barra de rolagem personalizada para comentários */
+.post-comments::-webkit-scrollbar {
+    width: 6px;
+}
+
+.post-comments::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 10px;
+}
+
+.post-comments::-webkit-scrollbar-thumb {
+    background: var(--text-secondary);
+    border-radius: 10px;
+    opacity: 0.3;
+}
+
+.post-comments::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+    opacity: 0.6;
+}
+
+.comment-list {
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+    overflow-x: hidden; /* Remove rolagem lateral */
+    max-height: none;
+}
+
+/* Comentários ocultos inicialmente */
+.comment-hidden {
+    display: none !important;
+}
+
+/* Texto "Carregar mais" */
+.load-more-comments {
+    color: var(--text-link);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 8px 12px;
+    text-align: left;
+    transition: color 0.2s;
+    user-select: none;
+}
+
+.load-more-comments:hover {
+    color: var(--text-primary);
+    text-decoration: underline;
+}
+
 .comment {
     display: flex;
     gap: 8px;
     margin-bottom: 10px;
-    position: relative; 
+    position: relative;
+    overflow: visible;
+    overflow-x: hidden; /* Remove rolagem lateral */
+    max-height: none;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
 }
 .comment-avatar {
     width: 32px;
@@ -1456,31 +2750,72 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     display: flex;
     flex-direction: column;
     width: 100%;
+    max-width: 100%;
+    overflow: visible;
+    overflow-x: hidden; /* Remove rolagem lateral */
+    max-height: none;
+    min-width: 0; /* Permite que o elemento encolha */
+    box-sizing: border-box;
 }
 .comment-body {
     background-color: var(--bg-comment);
     border-radius: 10px;
     padding: 8px 12px;
     font-size: 14px;
-    width: fit-content; 
+    width: 100%; 
     max-width: 100%;
+    min-width: 0; /* Permite que o elemento encolha */
     word-wrap: break-word;
+    overflow-wrap: break-word;
     position: relative;
     padding-right: 25px; /* Espaço para o botão de deletar */
+    overflow: visible !important;
+    overflow-x: hidden !important; /* Remove rolagem lateral */
+    max-height: none !important;
+    box-sizing: border-box; /* Inclui padding no cálculo da largura */
 }
 .comment-body strong {
     display: block;
     font-size: 13px;
     color: var(--text-primary);
+    flex-shrink: 0; /* Garante que o nome não seja cortado */
+    white-space: nowrap; /* Evita quebra de linha no nome */
+    overflow: visible !important;
+    max-width: 100%;
+    text-overflow: ellipsis; /* Se o nome for muito longo, mostra ... */
 }
 .comment-body p {
     margin: 0;
     color: var(--text-primary);
     line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    overflow: visible !important;
+    overflow-x: hidden !important; /* Remove rolagem lateral */
+    max-height: none !important;
+    height: auto !important;
 }
 
-/* Ações do Comentário (Curtir, Responder, Deletar) */
+/* Garantir que comentários normais não tenham rolagem */
+.comment-body p:not(.comment-long) {
+    overflow: visible !important;
+    overflow-x: hidden !important; /* Remove rolagem lateral */
+    max-height: none !important;
+    height: auto !important;
+    overflow-y: visible !important;
+}
+
+/* Garantir que os botões de ação não sejam cortados */
 .comment-actions {
+    margin-top: 5px;
+    flex-shrink: 0;
+    overflow: visible;
+    overflow-x: hidden; /* Remove rolagem lateral */
+    position: relative;
+    z-index: 1;
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
     display: flex;
     align-items: center;
     gap: 15px;
@@ -1488,7 +2823,10 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     color: var(--text-secondary);
     padding-left: 12px; 
     margin-top: 2px;
+    white-space: nowrap; /* Garante que os botões não quebrem linha */
 }
+
+/* Ações do Comentário (Curtir, Responder, Deletar) - removido duplicação */
 .comment-action-btn {
     background: none;
     border: none;
@@ -1512,27 +2850,20 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     border: none;
     color: var(--text-secondary);
     cursor: pointer;
-    font-size: 13px;
-    padding: 2px 5px;
-    border-radius: 50%;
+    font-size: 11px;
+    padding: 2px 4px;
+    border-radius: 3px;
     position: absolute; 
     top: 5px;
     right: 5px;
-    display: none; 
-}
-.comment:hover .btn-delete-comment {
-    display: block; 
+    display: inline-block;
+    opacity: 0.6;
+    transition: opacity 0.2s, color 0.2s;
 }
 .btn-delete-comment:hover {
     color: #dc3545; 
-    background-color: var(--bg-hover);
-}
-.post.is-owner .btn-delete-comment {
-    display: block;
-    opacity: 0.5; 
-}
-.post.is-owner .comment:hover .btn-delete-comment {
     opacity: 1;
+    background-color: rgba(220, 53, 69, 0.1);
 }
 
 
@@ -1601,17 +2932,25 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     color: var(--text-link);
 }
 .btn-delete-reply {
-    background: none; border: none;
+    background: none;
+    border: none;
     color: var(--text-secondary);
-    cursor: pointer; font-size: 11px;
-    padding: 2px 4px; border-radius: 50%;
-    position: absolute; top: 2px; right: 2px;
-    display: none;
+    cursor: pointer;
+    font-size: 11px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    display: inline-block;
+    opacity: 0.6;
+    transition: opacity 0.2s, color 0.2s;
 }
-.reply:hover .btn-delete-reply { display: block; }
-.btn-delete-reply:hover { color: #dc3545; background-color: var(--bg-hover); }
-.post.is-owner .btn-delete-reply { display: block; opacity: 0.5; }
-.post.is-owner .reply:hover .btn-delete-reply { opacity: 1; }
+.btn-delete-reply:hover {
+    color: #dc3545;
+    opacity: 1;
+    background-color: rgba(220, 53, 69, 0.1);
+}
 
 /* Formulário de Resposta (Oculto) */
 .reply-form {
@@ -1643,7 +2982,7 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
 
 /* --- Resto (Anúncio, Modais, Responsividade) --- */
-.anuncio { width: min(360px, 100%); flex: 0 0 auto; background: transparent; border-radius: 0; padding: 0; box-shadow: none; height: auto; position: static; top: auto; } 
+.anuncio { width: min(360px, 100%); flex: 0 1 auto; flex-shrink: 1; min-width: 250px; max-width: 360px; background: transparent; border-radius: 0; padding: 0; box-shadow: none; height: auto; position: static; top: auto; box-sizing: border-box; } 
 .anuncio h3 { display: none; } 
 .caixa-anuncio { background: transparent; border: none; border-radius: 0; padding: 0; text-align: center; color: var(--text-anuncio); font-size: 0.9em; overflow: hidden; display: flex; width: 100%; justify-content: center; } 
 .caixa-anuncio img,
@@ -1659,9 +2998,133 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 .popup-conteudo button { background-color: var(--btn-secondary-bg); color: white; border: none; padding: 12px 25px; border-radius: 5px; cursor: pointer; font-size: 1.1em; margin: 5px; transition: background-color 0.2s; } 
 .popup-conteudo button:hover { background-color: var(--btn-secondary-hover); } 
 .oculto { display: none !important; }
-.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 10px; box-sizing: border-box; }
-.modal-content { background-color: var(--bg-secondary); padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); max-width: 400px; width: 90%; max-height: 90vh; overflow-y: auto; }
-.modal-grande { max-width: 600px; text-align: left; }
+.modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100dvh; background-color: rgba(0, 0, 0, 0.6); display: flex; justify-content: center; align-items: flex-start; z-index: 1000; padding: 20px; box-sizing: border-box; overflow-y: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
+
+/* Garantir margens adequadas no overlay para telas menores */
+@media (max-width: 767px) {
+    .modal-overlay {
+        padding: 15px;
+        align-items: flex-start;
+        padding-top: 20px;
+    }
+
+    /* Reduz o espaço acima do modal de postagem completa (distância do topo da tela) */
+    #modal-postagem-completa.modal-overlay {
+        padding-top: 4px !important;
+    }
+
+    /* Em telas menores, o modal grande não pode "cortar": limita pela altura da tela e permite rolagem interna */
+    .modal-overlay .modal-content.modal-grande {
+        max-height: calc(100dvh - 16px) !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-overlay {
+        padding: 10px;
+        padding-top: 15px !important;
+    }
+
+    /* Ainda menor em telas bem pequenas */
+    #modal-postagem-completa.modal-overlay {
+        padding-top: 3px !important;
+    }
+
+    .modal-overlay .modal-content.modal-grande {
+        max-height: calc(100dvh - 12px) !important;
+    }
+}
+.modal-content { background-color: var(--bg-secondary); padding: 30px; border-radius: 10px; text-align: center; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); max-width: 400px; width: 90%; max-height: none !important; overflow-y: visible !important; height: auto !important; overflow: visible !important; box-sizing: border-box; }
+.modal-grande { max-width: 500px; text-align: left; }
+
+/* Reduzir largura do modal de postagem em todas as telas */
+#modal-postagem-completa .modal-content.modal-grande {
+    max-width: 500px !important;
+    width: 500px !important;
+}
+
+/* Em telas maiores, o overlay usa align-items:flex-start e o modal pode ficar "alto".
+   Empurra a caixa um pouco para baixo só no modal de postagem completa. */
+@media (min-width: 1024px) {
+    #modal-postagem-completa.modal-overlay {
+        padding-top: 120px;
+    }
+}
+
+/* Tablets */
+@media (min-width: 768px) and (max-width: 1023px) {
+    #modal-postagem-completa .modal-content.modal-grande {
+        max-width: 480px !important;
+        width: 480px !important;
+    }
+}
+
+/* Reduzir bastante a largura do modal em telas menores */
+@media (max-width: 767px) {
+    .modal-grande {
+        max-width: 75vw !important;
+        width: 75vw !important;
+    }
+    
+    #modal-postagem-completa .modal-content.modal-grande {
+        max-width: 75vw !important;
+        width: 75vw !important;
+        /* reduz um pouco a parte de baixo (altura visual) em telas menores */
+        padding: 2px 12px 0 !important;
+        margin: 0 auto;                                                  
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Aumenta o espaço interno da postagem (article.post) no modal em telas menores */
+    #modal-postagem-completa article.post {
+        padding: 18px !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal-grande {
+        max-width: 80vw !important;
+        width: 80vw !important;
+    }
+    
+    #modal-postagem-completa .modal-content.modal-grande {
+        max-width: 80vw !important;
+        width: 80vw !important;
+        /* reduz um pouco a parte de baixo (altura visual) em telas menores */
+        padding: 2px 10px 0 !important;
+        margin: 0 auto;
+        border-radius: 12px;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    #modal-postagem-completa article.post {
+        padding: 16px !important;
+    }
+}
+
+@media (max-width: 360px) {
+    .modal-grande {
+        max-width: 85vw !important;
+        width: 85vw !important;
+    }
+    
+    #modal-postagem-completa .modal-content.modal-grande {
+        max-width: 85vw !important;
+        width: 85vw !important;
+        /* reduz um pouco a parte de baixo (altura visual) em telas menores */
+        padding: 1px 8px 0 !important;
+        margin: 0 auto;
+        border-radius: 10px;
+        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    #modal-postagem-completa article.post {
+        padding: 14px !important;
+    }
+}
 .modal-grande h2 { text-align: center; margin-bottom: 20px; color: var(--text-primary); }
 .modal-grande .form-group { margin-bottom: 15px; }
 .modal-header {
@@ -1683,6 +3146,14 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 .btn-confirm-no { background-color: #6c757d; color: white; }
 .btn-confirm-no:hover { background-color: #5a6268; }
 .hidden { display: none !important; }
+
+/* Exceção para modal de imagem - deve aparecer quando não tiver classe hidden E tiver display flex no style */
+#image-modal-pedido:not(.hidden)[style*="display: flex"],
+.image-modal-overlay:not(.hidden)[style*="display: flex"] {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
 
 /* Dropdown compacto de notificações no header */
 #modal-notificacoes.modal-overlay {
@@ -1829,8 +3300,90 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
 /* Modal de confirmação menor e central */
 .modal-confirmacao {
-    max-width: 400px;
-    padding: 0;
+    max-width: 450px;
+    padding: 25px;
+    text-align: center;
+}
+
+.modal-confirmacao h3 {
+    margin: 0 0 15px 0;
+    color: var(--text-primary);
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.modal-confirmacao #confirmacao-texto {
+    color: var(--text-secondary);
+    font-size: 15px;
+    line-height: 1.5;
+    margin-bottom: 20px;
+}
+
+.modal-confirmacao .modal-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+.modal-confirmacao .btn-confirm-yes,
+.modal-confirmacao .btn-confirm-no {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 120px;
+}
+
+.modal-confirmacao .btn-confirm-yes {
+    background-color: #dc3545;
+    color: white;
+}
+
+.modal-confirmacao .btn-confirm-yes:hover {
+    background-color: #c82333;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+.modal-confirmacao .btn-confirm-no {
+    background-color: #6c757d;
+    color: white;
+}
+
+.modal-confirmacao .btn-confirm-no:hover {
+    background-color: #5a6268;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+}
+
+.modal-confirmacao #confirmacao-motivo-group {
+    text-align: left;
+    margin-bottom: 20px;
+}
+
+.modal-confirmacao #confirmacao-motivo-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.modal-confirmacao #confirmacao-motivo {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background-color: var(--bg-input);
+    color: var(--text-primary);
+    font-size: 14px;
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
 }
 
 /* Estilização do modal de aviso customizado */
@@ -1905,6 +3458,20 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     flex-wrap: wrap;
     gap: 8px;
     max-width: 100%;
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+}
+
+/* Remover rolagem das fotos em telas menores */
+@media (max-width: 1023px) {
+    .pedido-fotos-container {
+        overflow: visible !important;
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
+    }
 }
 
 .pedido-foto-item {
@@ -2059,26 +3626,315 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
         grid-template-columns: 1fr;
     }
 }
-@media (max-width: 992px) {
+
+/* Telas grandes (desktop) - 993px em diante */
+@media (min-width: 993px) {
+    .conteudo {
+        padding: 25px 15px;
+        gap: 15px;
+        max-width: 1400px;
+        box-sizing: border-box;
+        overflow-x: hidden;
+    }
+    .categorias {
+        flex-basis: 250px;
+        flex-shrink: 1;
+        min-width: 220px;
+        padding: 18px;
+        box-sizing: border-box;
+        top: 1px;
+        display: block !important;
+        position: sticky !important;
+    }
+    .mobile-sidebar-toggle {
+        display: none !important;
+    }
+    .mobile-sidebar-close {
+        display: none !important;
+    }
+    main {
+        flex: 1 1 auto;
+        min-width: 520px;
+        max-width: 850px;
+        box-sizing: border-box;
+    }
+    .anuncio {
+        flex: 0 1 auto;
+        flex-shrink: 1;
+        width: min(360px, 100%);
+        min-width: 240px;
+        max-width: 360px;
+        box-sizing: border-box;
+    }
+}
+
+/* Ajuste para telas grandes mas mais estreitas - garante que tudo caiba */
+@media (min-width: 993px) and (max-width: 1200px) {
+    .conteudo {
+        padding: 20px 15px;
+        gap: 15px;
+    }
+    .categorias {
+        min-width: 210px;
+        padding: 15px;
+    }
+    main {
+        min-width: 500px;
+    }
+    .anuncio {
+        min-width: 220px;
+    }
+}
+
+/* Telas médias (tablet) - 769px até 992px */
+@media (min-width: 769px) and (max-width: 992px) {
     .conteudo {
         flex-direction: column;
         align-items: center;
         margin-top: 80px;
+        padding: 20px 15px;
+        gap: 20px;
+        max-width: 100%;
+        width: 100%;
+        box-sizing: border-box;
+        overflow-x: hidden;
     }
-    .categorias,
     .anuncio {
         width: 100%;
-        max-width: 700px;
+        max-width: 100%;
         margin-bottom: 25px;
         position: static;
         top: auto;
+        box-sizing: border-box;
+        overflow-x: hidden;
     }
     main {
         width: 100%;
-        max-width: 700px;
+        max-width: 100%;
+        box-sizing: border-box;
+        overflow-x: hidden;
+    }
+    
+    /* Ajustes nos filtros para telas médias - dropdown ao lado dos destaques */
+    .top-strip {
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 8px !important;
+        margin-bottom: 12px !important;
+        position: relative !important;
+    }
+    
+    .top-strip .mobile-sidebar-toggle {
+        order: 1 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 44px !important;
+        height: 44px !important;
+        border-radius: 50% !important;
+        background: var(--bg-secondary) !important;
+        border: 1px solid var(--border-color) !important;
+        color: var(--text-primary) !important;
+        cursor: pointer !important;
+        flex-shrink: 0 !important;
+        margin: 0 !important;
+        margin-top: 0 !important;
+        transition: all 0.2s ease !important;
+        position: relative !important;
+        align-self: flex-start !important;
+    }
+    
+    .top-strip .barra-destaques {
+        order: 2 !important;
+        flex: 1 1 auto !important;
+        align-self: flex-start !important;
+    }
+    
+    .top-strip .mobile-sidebar-toggle:hover {
+        background: var(--bg-hover) !important;
+        transform: scale(1.05) !important;
+    }
+    
+    .top-strip .barra-destaques {
+        order: 2 !important;
+        flex: 1 1 auto !important;
+    }
+    
+    /* Dropdown de filtros posicionado abaixo do botão */
+    .categorias {
+        display: none !important;
+        position: fixed !important;
+        width: auto !important;
+        min-width: 320px !important;
+        max-width: 400px !important;
+        margin: 0 !important;
+        z-index: 9999 !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+        border-radius: 8px !important;
+        padding: 12px !important;
+        background: var(--bg-secondary) !important;
+        border: 1px solid var(--border-color) !important;
+        max-height: calc(100vh - 200px) !important;
+        overflow-y: auto !important;
+        transform: none !important;
+        flex-basis: auto !important;
+        flex-shrink: 0 !important;
+        height: auto !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+    
+    .categorias.aberta {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+    }
+    
+    /* Esconder backdrop em telas médias (não precisa) */
+    #mobile-sidebar-backdrop {
+        display: none !important;
+    }
+    
+    /* Estilo compacto para o dropdown */
+    .categorias h2 {
+        font-size: 1.2em !important;
+        margin-bottom: 8px !important;
+        padding-bottom: 8px !important;
+        border-bottom: 1px solid var(--border-color) !important;
+    }
+    
+    .categorias p {
+        font-size: 12px !important;
+        margin-bottom: 10px !important;
+    }
+    
+    .filtro-botoes {
+        flex-direction: column !important;
+        gap: 6px !important;
+        margin-bottom: 12px !important;
+    }
+    
+    .filtro-btn {
+        width: 100% !important;
+        padding: 8px 10px !important;
+        font-size: 13px !important;
+        min-width: auto !important;
+        max-width: 100% !important;
+    }
+    
+    .filtro-localizacao {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+        padding-top: 12px !important;
+        border-top: 1px solid var(--border-color) !important;
+    }
+    
+    .filtro-localizacao h4 {
+        display: block !important;
+        font-size: 13px !important;
+        margin-bottom: 4px !important;
+    }
+    
+    #filtro-cidade {
+        width: 100% !important;
+        margin-bottom: 0 !important;
+        padding: 8px !important;
+    }
+    
+    #filtro-cidade-btn {
+        width: 100% !important;
+        padding: 8px !important;
+    }
+    
+    .filtro-acoes-rapidas {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+        margin-top: 12px !important;
+        padding-top: 12px !important;
+        border-top: 1px solid var(--border-color) !important;
+    }
+    
+    .filtro-acoes-rapidas h4 {
+        font-size: 13px !important;
+        margin-bottom: 4px !important;
+    }
+    
+    .filtro-acoes-rapidas > button {
+        width: 100% !important;
+    }
+    
+    .btn-preciso-agora-lateral,
+    .btn-acao-lateral {
+        width: 100% !important;
+        padding: 8px 12px !important;
+        font-size: 13px !important;
+    }
+    
+    .filtro-times-locais {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+        margin-top: 12px !important;
+        padding-top: 12px !important;
+        border-top: 1px solid var(--border-color) !important;
+    }
+    
+    .filtro-times-locais .section-header-lateral {
+        flex-direction: row !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        margin-bottom: 4px !important;
+    }
+    
+    .filtro-times-locais .section-header-lateral h4 {
+        font-size: 13px !important;
+        margin-bottom: 0 !important;
+    }
+    
+    .filtro-times-locais .times-container-lateral {
+        width: 100% !important;
+    }
+    
+    .filtro-configuracoes {
+        margin-top: 12px !important;
+        padding-top: 12px !important;
+        border-top: 1px solid var(--border-color) !important;
+        padding-bottom: 8px !important;
+    }
+    
+    .filtro-configuracoes h4 {
+        font-size: 13px !important;
+        margin-bottom: 8px !important;
+    }
+    
+    .filtro-config-btn {
+        padding: 6px 8px !important;
+        font-size: 13px !important;
+    }
+    
+    .mobile-sidebar-close {
+        display: block !important;
+        position: absolute !important;
+        top: 8px !important;
+        right: 8px !important;
+        width: 28px !important;
+        height: 28px !important;
+        border-radius: 50% !important;
+        background: var(--bg-hover) !important;
+        border: 1px solid var(--border-color) !important;
+        color: var(--text-primary) !important;
+        font-size: 18px !important;
+        line-height: 1 !important;
+        padding: 0 !important;
+        cursor: pointer !important;
     }
 }
 
+/* Telas pequenas (mobile) - até 768px */
 @media (max-width: 768px) {
     header {
         flex-wrap: wrap;
@@ -2150,7 +4006,49 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
         /* Espaço maior para não deixar o header cobrir o início do feed */
         margin-top: 110px;
         flex-direction: column;
-        padding: 10px;
+        padding: 10px 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        box-sizing: border-box;
+        overflow-x: hidden !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    
+    main {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-sizing: border-box;
+        overflow-x: hidden !important;
+    }
+    
+    .top-strip {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+        overflow-x: hidden !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding: 0 8px !important;
+    }
+    
+    .barra-destaques {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+        overflow-x: hidden !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+    
+    .destaques-scroll {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
     }
 
     .categorias,
@@ -2160,18 +4058,19 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
         top: auto;
         max-width: 100%;
         margin-bottom: 15px;
+        box-sizing: border-box;
     }
 
     /* Aside vira painel sobreposto quando aberto pelo botão flutuante */
     .categorias {
         display: none;
         position: fixed;
-        inset: 70px 0 0 0; /* abaixo do header */
+        inset: 75px 0 0 0; /* abaixo do header + 3px para não cortar as letras */
         z-index: 900; /* abaixo dos modais (1000) para que eles apareçam por cima */
         max-width: none;
         border-radius: 0;
         overflow-y: auto;
-        height: calc(100vh - 70px);
+        height: calc(100vh - 73px);
         padding-top: 40px; /* espaço para o botão X */
     }
 
@@ -2196,25 +4095,111 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
     .publicar,
     .post {
-        padding: 15px;
+        padding: 15px 10px !important;
+        max-width: calc(100% - 4px) !important;
+        width: calc(100% - 4px) !important;
+        box-sizing: border-box;
+        overflow-x: hidden !important;
+        margin-left: 2px !important;
+        margin-right: 2px !important;
+    }
+    
+    .publicar *,
+    .post * {
+        max-width: 100% !important;
+        box-sizing: border-box;
+    }
+    
+    .post-header {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+        overflow-x: hidden !important;
+    }
+    
+    .post-content {
+        max-width: 100% !important;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        box-sizing: border-box;
+        overflow-x: hidden !important;
+    }
+    
+    .post-image,
+    .post-video {
+        max-width: 100% !important;
+        width: 100% !important;
+        height: auto !important;
+        box-sizing: border-box;
+    }
+    
+    .post-actions {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+        overflow-x: hidden !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+    
+    .action-btn {
+        flex-shrink: 1 !important;
+        min-width: auto !important;
+        padding: 8px 10px !important;
+        font-size: 13px !important;
     }
 
     /* Em telas menores, manter os botões fixos nos cantos da área (como em telas maiores) */
     .botoes-postar {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        gap: 10px;
+        flex-direction: row !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 8px !important;
+        flex-wrap: wrap !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     .upload-area {
-        width: auto;
+        width: auto !important;
+        flex-shrink: 0 !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
     }
 
-    .upload-button,
+    .upload-button {
+        flex-shrink: 0 !important;
+        min-width: 38px !important;
+        max-width: 38px !important;
+        width: 38px !important;
+    }
+
     .btn-enviar {
-        width: auto;
-        text-align: center;
+        flex-shrink: 1 !important;
+        min-width: auto !important;
+        padding: 10px 15px !important;
+        font-size: 0.9em !important;
+        white-space: nowrap !important;
+    }
+    
+    .post-fotos-wrapper {
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        overflow-x: hidden !important;
+    }
+    
+    textarea#post-content-input {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 10px 8px !important;
+        overflow-x: hidden !important;
+    }
+    
+    .publicar h2 {
+        max-width: 100% !important;
+        word-wrap: break-word !important;
     }
 
     .filtro-botoes {
@@ -2307,7 +4292,150 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
     .conteudo {
         margin-top: 120px;
-        padding: 8px;
+        padding: 8px 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+        box-sizing: border-box;
+        overflow-x: hidden !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    
+    main {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-sizing: border-box;
+        overflow-x: hidden !important;
+    }
+    
+    .top-strip {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+        overflow-x: hidden !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .barra-destaques {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+        overflow-x: hidden !important;
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding-left: 6px !important;
+        padding-right: 6px !important;
+    }
+    
+    .destaques-scroll {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box;
+    }
+    
+    .publicar {
+        width: calc(100% - 4px) !important;
+        max-width: calc(100% - 4px) !important;
+        margin-left: 2px !important;
+        margin-right: 2px !important;
+        padding: 15px 8px !important;
+        box-sizing: border-box;
+        overflow-x: hidden !important;
+    }
+    
+    .publicar * {
+        max-width: 100% !important;
+        box-sizing: border-box;
+    }
+    
+    .botoes-postar {
+        gap: 6px !important;
+        flex-wrap: wrap !important;
+    }
+    
+    .btn-enviar {
+        padding: 10px 12px !important;
+        font-size: 0.85em !important;
+    }
+    
+    .post {
+        width: calc(100% - 4px) !important;
+        max-width: calc(100% - 4px) !important;
+        margin-left: 2px !important;
+        margin-right: 2px !important;
+        padding: 15px 8px !important;
+        box-sizing: border-box;
+        overflow-x: hidden !important;
+    }
+    
+    .post * {
+        max-width: 100% !important;
+        box-sizing: border-box;
+    }
+    
+    .post-header {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+        flex-wrap: wrap !important;
+        gap: 8px !important;
+    }
+    
+    .post-header .post-meta {
+        min-width: 0 !important;
+        flex: 1 1 auto !important;
+        overflow-x: hidden !important;
+    }
+    
+    .post-header .user-name,
+    .post-header .post-date-display {
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        max-width: 100% !important;
+    }
+    
+    .post-content {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+    }
+    
+    .post-actions {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+    }
+    
+    .action-btn {
+        padding: 8px 8px !important;
+        font-size: 12px !important;
+        flex-shrink: 1 !important;
+        min-width: auto !important;
+    }
+    
+    textarea#post-content-input {
+        width: 100% !important;
+        max-width: 100% !important;
+        box-sizing: border-box !important;
+        padding: 10px 8px !important;
+    }
+    
+    .botoes-postar {
+        width: 100% !important;
+        max-width: 100% !important;
+        gap: 6px !important;
+    }
+    
+    .btn-enviar {
+        padding: 10px 10px !important;
+        font-size: 0.8em !important;
+        white-space: nowrap !important;
     }
 
     /* Ajuste específico do modal "Profissionais Próximos" para caber em telas estreitas */
@@ -2383,6 +4511,9 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     margin-top: 20px;
     padding-top: 20px;
     border-top: 1px solid var(--border-color);
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
 }
 
 .filtro-acoes-rapidas h4,
@@ -2390,6 +4521,7 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     margin-bottom: 10px;
     color: var(--text-primary);
     font-size: 1em;
+    word-wrap: break-word;
 }
 
 .btn-preciso-agora-lateral {
@@ -2409,6 +4541,9 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     gap: 8px;
     width: 100%;
     margin: 5px 0;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    white-space: normal;
 }
 
 .btn-preciso-agora-lateral:hover {
@@ -2432,6 +4567,9 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     gap: 6px;
     width: 100%;
     margin: 5px 0;
+    box-sizing: border-box;
+    word-wrap: break-word;
+    white-space: normal;
 }
 
 .btn-acao-lateral:hover {
@@ -2555,10 +4693,52 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     text-align: left;
 }
 
+/* Ajustes específicos para modal de pedidos urgentes em telas menores */
+@media (max-width: 1023px) {
+    #modal-pedidos-urgentes-profissional .modal-content.modal-grande {
+        max-height: 95vh;
+        height: auto;
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        overflow: visible;
+        padding: 15px;
+    }
+    
+    #modal-pedidos-urgentes-profissional .modal-body {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: visible;
+        min-height: 0;
+        padding: 0;
+    }
+    
+    #modal-pedidos-urgentes-profissional .lista-propostas,
+    #modal-pedidos-urgentes-profissional #lista-pedidos-urgentes {
+        flex: 1;
+        overflow-y: auto;
+        overflow-x: hidden;
+        min-height: 0;
+        padding: 10px;
+        box-sizing: border-box;
+        max-height: calc(95vh - 200px);
+    }
+    
+    /* Garantir que os cards não ultrapassem o container */
+    #modal-pedidos-urgentes-profissional .pedido-urgente-card {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        margin-left: 0;
+        margin-right: 0;
+    }
+}
+
 /* 🆕 Feedback visual (toast) para sucesso */
 .toast-sucesso {
     position: fixed;
-    top: 20px;
+    top: 80px; /* 70px (header) + 10px (espaçamento) */
     right: 20px;
     background: #28a745;
     color: #fff;
@@ -2573,6 +4753,27 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     transition: opacity 0.25s ease, transform 0.25s ease;
     z-index: 2000;
     font-size: 14px;
+}
+
+/* Ajuste para telas menores */
+@media (max-width: 768px) {
+    .toast-sucesso {
+        top: 80px; /* Mantém abaixo do header em mobile também */
+        right: 10px;
+        left: 10px;
+        max-width: calc(100% - 20px);
+    }
+}
+
+@media (max-width: 480px) {
+    .toast-sucesso {
+        top: 80px;
+        right: 10px;
+        left: 10px;
+        max-width: calc(100% - 20px);
+        font-size: 13px;
+        padding: 10px 15px;
+    }
 }
 
 .toast-sucesso.show {
@@ -3097,9 +5298,27 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     display: flex;
     flex-direction: column;
     gap: 15px;
+    padding: 10px;
     max-height: 500px;
     overflow-y: auto;
-    padding: 10px;
+    overflow-x: hidden;
+}
+
+/* Em telas menores, mantém rolagem principal mas remove do pedido */
+@media (max-width: 1023px) {
+    .lista-propostas {
+        max-height: calc(90vh - 150px);
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        flex: 1;
+        min-height: 0;
+    }
+    
+    /* Garantir que os cards dentro da lista possam expandir completamente */
+    .lista-propostas .pedido-urgente-card {
+        flex-shrink: 0;
+        flex-grow: 0;
+    }
 }
 
 .proposta-card {
@@ -3287,6 +5506,188 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     border-left: 4px solid #ffc107;
     margin-bottom: 15px;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Garantir que em telas menores o pedido apareça completo sem rolagem */
+@media (max-width: 1023px) {
+    .pedido-urgente-card,
+    div.pedido-urgente-card,
+    .lista-propostas .pedido-urgente-card,
+    #lista-pedidos-urgentes .pedido-urgente-card,
+    #modal-pedidos-urgentes-profissional .pedido-urgente-card {
+        overflow: visible !important;
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
+        min-height: auto !important;
+        width: 100%;
+        box-sizing: border-box;
+        padding: 15px !important;
+        display: block !important;
+        position: relative !important;
+    }
+    
+    /* Garantir que TODOS os elementos dentro do pedido não tenham rolagem (exceto imagens) */
+    .pedido-urgente-card *:not(img):not(video):not(canvas),
+    .pedido-urgente-card *::before,
+    .pedido-urgente-card *::after,
+    div.pedido-urgente-card *:not(img):not(video):not(canvas),
+    .lista-propostas .pedido-urgente-card *:not(img):not(video):not(canvas),
+    #lista-pedidos-urgentes .pedido-urgente-card *:not(img):not(video):not(canvas),
+    #modal-pedidos-urgentes-profissional .pedido-urgente-card *:not(img):not(video):not(canvas),
+    .pedido-urgente-card > *:not(img):not(video):not(canvas),
+    .pedido-urgente-card > * > *:not(img):not(video):not(canvas) {
+        overflow: visible !important;
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
+        min-height: auto !important;
+    }
+    
+    /* Imagens não precisam de overflow visible - apenas os containers */
+    .pedido-urgente-card img,
+    .pedido-urgente-card video,
+    .pedido-urgente-card canvas {
+        overflow: unset !important;
+    }
+    
+    /* Garantir que nenhum wrapper tenha rolagem - regras mais específicas */
+    .pedido-urgente-card,
+    .pedido-urgente-card > div,
+    .pedido-urgente-card > div > div,
+    [class*="pedido-urgente-card"],
+    [style*="pedido-urgente-card"] {
+        overflow: visible !important;
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
+        min-height: auto !important;
+    }
+    
+    /* Forçar remoção de rolagem mesmo com estilos inline */
+    .pedido-urgente-card[style*="overflow"],
+    .pedido-urgente-card[style*="max-height"],
+    .pedido-urgente-card[style*="height"] {
+        overflow: visible !important;
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
+    }
+    
+    /* Remover qualquer restrição de altura de elementos filhos */
+    .pedido-urgente-card div:not(.pedido-foto-servico),
+    .pedido-urgente-card p,
+    .pedido-urgente-card span,
+    .pedido-urgente-card strong,
+    div.pedido-urgente-card div:not(.pedido-foto-servico),
+    .lista-propostas .pedido-urgente-card div:not(.pedido-foto-servico),
+    #lista-pedidos-urgentes .pedido-urgente-card div:not(.pedido-foto-servico) {
+        max-height: none !important;
+        height: auto !important;
+        overflow: visible !important;
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+    }
+    
+    /* Container de fotos sem rolagem mas sem overflow nas imagens */
+    .pedido-urgente-card .pedido-foto-servico {
+        overflow: visible !important;
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
+    }
+    
+    .pedido-urgente-card .pedido-foto-servico img {
+        overflow: unset !important;
+    }
+    
+    /* Exceto para elementos que precisam de scroll (como textarea) */
+    .pedido-urgente-card textarea {
+        overflow-y: auto !important;
+        max-height: 200px !important;
+    }
+    
+    /* Garantir que elementos específicos do pedido não tenham restrições */
+    .pedido-urgente-card .pedido-cliente-header,
+    .pedido-urgente-card .pedido-header,
+    .pedido-urgente-card .pedido-descricao,
+    .pedido-urgente-card .pedido-localizacao,
+    .pedido-urgente-card .pedido-info-atendimento {
+        overflow: visible !important;
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
+    }
+    
+    /* Garantir que o container de fotos não tenha rolagem e não coma bordas */
+    .pedido-urgente-card .pedido-foto-servico {
+        overflow: visible !important;
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
+        width: 100%;
+        box-sizing: border-box;
+        margin: 10px 0 !important;
+        padding: 0;
+        gap: 5px;
+        display: flex !important;
+        flex-wrap: wrap !important;
+    }
+    
+    /* Garantir que as imagens dentro do pedido não ultrapassem as bordas */
+    .pedido-urgente-card .pedido-foto-servico img {
+        max-width: calc(50% - 2.5px) !important;
+        width: calc(50% - 2.5px) !important;
+        box-sizing: border-box;
+        flex-shrink: 0;
+        height: auto !important;
+        max-height: none !important;
+        overflow: unset !important;
+    }
+    
+    /* Se for apenas uma foto, ocupa 100% mas respeita padding */
+    .pedido-urgente-card .pedido-foto-servico img:only-child {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+    
+    /* Garantir que botões não sejam cortados */
+    .pedido-urgente-card .btn-enviar-proposta {
+        width: 100%;
+        box-sizing: border-box;
+        margin-top: 10px;
+        overflow: visible !important;
+    }
+    
+    /* REGRA FINAL: Garantir que o pedido inteiro não tenha rolagem */
+    .pedido-urgente-card,
+    .pedido-urgente-card *:not(textarea):not(img):not(video):not(canvas) {
+        overflow: visible !important;
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
+    }
+    
+    /* Garantir que a lista de pedidos tenha rolagem apenas quando necessário */
+    #modal-pedidos-urgentes-profissional .lista-propostas,
+    #modal-pedidos-urgentes-profissional #lista-pedidos-urgentes {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+    }
+    
+    /* Garantir que o modal aumente de acordo com o conteúdo */
+    #modal-pedidos-urgentes-profissional .modal-content.modal-grande {
+        height: auto !important;
+        max-height: 95vh !important;
+    }
 }
 
 .pedido-urgente-card:hover {
@@ -3551,6 +5952,24 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     margin-bottom: 15px;
     padding-bottom: 10px;
     border-bottom: 1px solid var(--border-color);
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    max-height: none !important;
+    height: auto !important;
+}
+
+/* Garantir que em telas menores não haja rolagem */
+@media (max-width: 1023px) {
+    .pedido-cliente-header,
+    .pedido-info-atendimento,
+    .tempo-restante {
+        overflow: visible !important;
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
+    }
 }
 
 .avatar-pequeno-pedido {
@@ -3559,6 +5978,18 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     border-radius: 50%;
     object-fit: cover;
     border: 2px solid var(--border-color);
+    flex-shrink: 0;
+    display: block;
+}
+
+/* Garantir que o avatar fique redondo mesmo em diferentes contextos */
+.pedido-cliente-header .avatar-pequeno-pedido,
+.pedido-cliente-header .clickable-avatar {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    overflow: hidden !important;
 }
 
 .nome-cliente-clickable {
@@ -3584,6 +6015,9 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 
 .pedido-foto-servico {
     margin: 10px 0;
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
 }
 
 .pedido-foto-servico img {
@@ -3592,6 +6026,21 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     object-fit: cover;
     border-radius: 8px;
     border: 1px solid var(--border-color);
+}
+
+/* Remover rolagem das fotos em telas menores */
+@media (max-width: 1023px) {
+    .pedido-foto-servico {
+        overflow: visible !important;
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+        max-height: none !important;
+        height: auto !important;
+    }
+    
+    .pedido-foto-servico img {
+        max-height: 200px;
+    }
 }
 
 .btn-enviar-proposta {
@@ -4105,4 +6554,7 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
 .avaliacao-oculta {
     display: none;
 }
+
+
+
 

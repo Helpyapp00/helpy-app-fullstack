@@ -1,4 +1,103 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // Configurar modal de imagem se não estiver configurado (caso novas-funcionalidades.js não esteja carregado)
+    if (typeof window.abrirModalImagem !== 'function') {
+        window.abrirModalImagem = function abrirModalImagem(fotoUrl) {
+            // Verificar se a URL é válida e não é um avatar
+            if (!fotoUrl || 
+                typeof fotoUrl !== 'string' ||
+                fotoUrl.includes('avatar') || 
+                fotoUrl.includes('default-user') ||
+                fotoUrl.includes('perfil') ||
+                fotoUrl === '' ||
+                fotoUrl === 'undefined') {
+                console.warn('⚠️ Tentativa de abrir modal com URL inválida ou avatar - ignorando:', fotoUrl);
+                return;
+            }
+            
+            const modalImagem = document.getElementById('image-modal-pedido');
+            const imagemModal = document.getElementById('modal-image-pedido');
+            const btnFecharModal = document.getElementById('close-image-modal-pedido');
+            
+            if (modalImagem && imagemModal) {
+                imagemModal.src = fotoUrl;
+                modalImagem.classList.remove('hidden');
+                modalImagem.style.display = 'flex';
+                modalImagem.style.opacity = '1';
+                modalImagem.style.visibility = 'visible';
+                modalImagem.style.zIndex = '10001';
+                document.body.style.overflow = 'hidden';
+                console.log('✅ Modal de imagem aberto');
+            } else {
+                console.error('❌ Elementos do modal não encontrados');
+            }
+        };
+        
+        window.fecharModalImagem = function fecharModalImagem() {
+            const modal = document.getElementById('image-modal-pedido');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+                modal.style.opacity = '0';
+                modal.style.visibility = 'hidden';
+                document.body.style.overflow = '';
+                console.log('✅ Modal de imagem fechado');
+            }
+        };
+        
+        // Configurar botão de fechar
+        const btnFecharModal = document.getElementById('close-image-modal-pedido');
+        if (btnFecharModal) {
+            btnFecharModal.addEventListener('click', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                if (typeof window.fecharModalImagem === 'function') {
+                    window.fecharModalImagem();
+                }
+            }, true);
+        }
+        
+        // Fechar ao clicar no overlay
+        const modalImagem = document.getElementById('image-modal-pedido');
+        if (modalImagem) {
+            modalImagem.addEventListener('click', (e) => {
+                if (e.target === modalImagem || e.target.id === 'image-modal-pedido') {
+                    if (typeof window.fecharModalImagem === 'function') {
+                        window.fecharModalImagem();
+                    }
+                }
+            });
+        }
+    }
+    
+    // Fechar apenas o modal de imagem de pedidos ao carregar a página
+    setTimeout(() => {
+        // Fechar modal de imagem de pedidos (sempre fechar, não é relacionado a avaliação)
+        const modalImagemPedido = document.getElementById('image-modal-pedido');
+        if (modalImagemPedido && !modalImagemPedido.classList.contains('hidden')) {
+            console.log('🔒 Fechando modal de imagem de pedidos ao carregar página de perfil');
+            modalImagemPedido.classList.add('hidden');
+            modalImagemPedido.style.display = 'none';
+            modalImagemPedido.style.opacity = '0';
+            modalImagemPedido.style.visibility = 'hidden';
+            document.body.style.overflow = '';
+            
+            // Também tentar usar a função global se existir
+            if (typeof window.fecharModalImagem === 'function') {
+                window.fecharModalImagem();
+            }
+        }
+        
+        // Fechar qualquer outro modal de imagem que possa estar aberto
+        const modalImagem = document.getElementById('image-modal');
+        if (modalImagem && !modalImagem.classList.contains('hidden')) {
+            console.log('🔒 Fechando modal de imagem genérico ao carregar página de perfil');
+            modalImagem.classList.add('hidden');
+            modalImagem.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    }, 50);
+    
     // --- Identificação do Usuário ---
     const urlParams = new URLSearchParams(window.location.search);
     let agendamentoIdAvaliacao = urlParams.get('agendamentoId') || urlParams.get('agendamento');
@@ -8,21 +107,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const pedidoIdUltimoServicoConcluido = localStorage.getItem('pedidoIdUltimoServicoConcluido') || '';
     const agendamentoIdUltimoServico = localStorage.getItem('agendamentoIdUltimoServico') || '';
     
-    // IMPORTANTE: Quando vem de notificação, NUNCA usa localStorage - cada serviço tem seu próprio pedidoId
-    // Se não tem pedidoId/agendamentoId na URL quando vem de notificação, não usa localStorage
-    // Isso garante que cada serviço seja verificado independentemente
+    // IMPORTANTE: Quando vem de notificação, prioriza URL, mas se não tiver, usa localStorage
+    // Quando vem de "Meus Pedidos Urgentes", pode não ter na URL mas ter no localStorage
     if (!pedidoIdAvaliacao && !agendamentoIdAvaliacao && hashSecaoAvaliacao) {
-        // Só usa localStorage se NÃO veio de notificação explícita
-        if (origemAvaliacao !== 'servico_concluido') {
-            pedidoIdAvaliacao = pedidoIdUltimoServicoConcluido || '';
-            agendamentoIdAvaliacao = agendamentoIdUltimoServico || '';
-            console.log('🔍 Usando pedidoId/agendamentoId do localStorage (não veio de notificação):', { pedidoIdAvaliacao, agendamentoIdAvaliacao });
-        } else {
-            console.log('⚠️ Veio de notificação mas não tem pedidoId/agendamentoId na URL - NÃO usando localStorage (cada serviço tem seu próprio ID)');
-            // Limpa o localStorage para não confundir com serviço anterior
-            pedidoIdAvaliacao = '';
-            agendamentoIdAvaliacao = '';
-        }
+        // Usa localStorage se não tem na URL (pode vir de "Meus Pedidos Urgentes")
+        pedidoIdAvaliacao = pedidoIdUltimoServicoConcluido || '';
+        agendamentoIdAvaliacao = agendamentoIdUltimoServico || '';
+        console.log('🔍 Usando pedidoId/agendamentoId do localStorage (não estava na URL):', { pedidoIdAvaliacao, agendamentoIdAvaliacao });
     }
     
     // Verifica se veio de uma notificação de serviço concluído
@@ -30,6 +121,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const veioDeNotificacao = origemAvaliacao === 'servico_concluido' || 
                                (hashSecaoAvaliacao && (agendamentoIdAvaliacao || pedidoIdAvaliacao)) ||
                                hashSecaoAvaliacao; // Se tem hash, provavelmente veio de notificação
+    
+    // Fechar modal de lembrete de avaliação APENAS se NÃO veio de notificação
+    if (!veioDeNotificacao) {
+        setTimeout(() => {
+            const modalLembreteAvaliacao = document.getElementById('modal-lembrete-avaliacao');
+            if (modalLembreteAvaliacao && !modalLembreteAvaliacao.classList.contains('hidden')) {
+                console.log('🔒 Fechando modal de lembrete de avaliação (não veio de notificação)');
+                modalLembreteAvaliacao.classList.add('hidden');
+                modalLembreteAvaliacao.style.display = 'none';
+                modalLembreteAvaliacao.style.opacity = '0';
+                modalLembreteAvaliacao.style.visibility = 'hidden';
+                document.body.style.overflow = '';
+            }
+        }, 100);
+    }
     
     console.log('🔍 Debug notificação:', {
         pedidoIdDaURL: urlParams.get('pedidoId'),
@@ -56,10 +162,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // isFluxoServico é verdadeiro se:
-    // 1. Tem origem explícita de serviço concluído OU
+    // 1. Tem origem explícita de serviço concluído OU pedido urgente OU
     // 2. Tem hash de avaliação E parâmetros explícitos (pedidoId/agendamentoId) OU
     // 3. Tem hash de avaliação E veio de notificação (mesmo sem pedidoId/agendamentoId explícito)
     const isFluxoServico = !!(origemAvaliacao === 'servico_concluido' || 
+                              origemAvaliacao === 'pedido_urgente' ||
                               (hashSecaoAvaliacao && temParametrosExplicitos) ||
                               (hashSecaoAvaliacao && veioDeNotificacao));
     
@@ -97,6 +204,16 @@ document.addEventListener('DOMContentLoaded', () => {
         alert('Você precisa estar logado para acessar esta página.');
         window.location.href = '/login';
         return;
+    }
+
+    // Função helper para obter headers com token validado
+    function getAuthHeaders() {
+        const currentToken = localStorage.getItem('jwtToken');
+        if (!currentToken || currentToken === 'null' || currentToken === 'undefined') {
+            console.warn('⚠️ Token inválido ou não encontrado');
+            return {};
+        }
+        return { 'Authorization': `Bearer ${currentToken}` };
     }
 
     // --- Elementos do DOM (Header) ---
@@ -1059,12 +1176,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Se veio por slug (/perfil/:slug), resolve o _id antes de continuar
     (async () => {
+        console.log('🔍 Iniciando resolução do profileId...', {
+            profileId,
+            profileIdFromUrl,
+            slugFromPath,
+            loggedInUserId
+        });
+        
         if (!profileId && slugFromPath) {
+            console.log('🔍 Buscando usuário por slug:', slugFromPath);
             const usuario = await fetchUsuarioPorSlug(slugFromPath);
             if (!usuario) {
-                console.warn('Slug não encontrado, voltando para perfil pelo ID.');
+                console.warn('⚠️ Slug não encontrado, voltando para perfil pelo ID.');
                 if (profileIdFromUrl || loggedInUserId) {
                     profileId = profileIdFromUrl || loggedInUserId;
+                    console.log('✅ Usando profileId:', profileId);
                     // volta para a URL com id para não quebrar próximos acessos
                     window.history.replaceState({}, '', `/perfil.html?id=${profileId}`);
                 } else {
@@ -1072,16 +1198,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.location.href = '/';
                     return;
                 }
-            }
+            } else {
             profileId = usuario?._id || profileId;
+                console.log('✅ ProfileId resolvido do slug:', profileId);
+            }
         }
 
         // Se ainda não há profileId, cai para o logado
         if (!profileId) {
+            console.log('⚠️ ProfileId ainda não definido, usando loggedInUserId:', loggedInUserId);
             profileId = loggedInUserId;
         }
 
+        console.log('✅ ProfileId final:', profileId);
         isOwnProfile = (profileId === loggedInUserId);
+        console.log('✅ É próprio perfil?', isOwnProfile);
         atualizarChavesAvaliacao();
 
         inicializarPagina();
@@ -1175,17 +1306,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function fetchUserProfile() {
-        if (!profileId) { console.error("Nenhum ID de perfil para buscar."); return; }
+        console.log('🔍 fetchUserProfile chamado, profileId:', profileId);
+        if (!profileId) { 
+            console.error("❌ Nenhum ID de perfil para buscar. profileId:", profileId);
+            if (nomePerfil) nomePerfil.textContent = "Erro: ID de perfil não encontrado.";
+            return; 
+        }
         
         try {
+            console.log('📡 Fazendo fetch para /api/usuario/' + profileId);
+            const authHeaders = getAuthHeaders();
             const response = await fetch(`/api/usuario/${profileId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: authHeaders
             });
+            console.log('📡 Resposta recebida, status:', response.status);
             if (!response.ok) {
-                const errorData = await response.json();
+                const errorData = await response.json().catch(() => ({ message: 'Erro desconhecido' }));
+                console.error('❌ Erro na resposta:', errorData);
                 throw new Error(errorData.message || 'Falha ao buscar dados do perfil.');
             }
             const user = await response.json(); 
+            console.log('✅ Dados do usuário recebidos:', user); 
             
             if (isOwnProfile) {
                 localStorage.setItem('userName', user.nome);
@@ -1500,8 +1641,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!secaoAvaliacoesVerificadas || !listaAvaliacoes) return;
 
         try {
+            const authHeaders = getAuthHeaders();
             const response = await fetch(`/api/avaliacoes-verificadas/${profissionalId}`, {
-                headers: { 'Authorization': `Bearer ${token}` }
+                headers: authHeaders
             });
             if (!response.ok) throw new Error('Falha ao buscar avaliações verificadas.');
 
@@ -2374,9 +2516,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const isPostOwner = postCompleto.userId._id === loggedInUserId;
         const commentsArray = postCompleto.comments || [];
         console.log('📝 Renderizando comentários:', commentsArray.length);
-        const commentsHTML = renderComments(commentsArray, isPostOwner);
-        const comentariosVisiveis = (commentsArray.length > 0) ? 'visible' : '';
+        
+        // Em telas menores, mostrar apenas 2 comentários inicialmente
+        // Em telas maiores, mostrar apenas 3 comentários inicialmente
+        const isMobile = window.innerWidth <= 767;
+        const isDesktop = window.innerWidth >= 1024;
+        const initialCommentsCount = isMobile ? 2 : (isDesktop ? 3 : commentsArray.length);
+        const commentsToShow = commentsArray.slice(0, initialCommentsCount);
+        const hasMoreComments = commentsArray.length > initialCommentsCount;
+        
+        const commentsHTML = renderComments(commentsToShow, isPostOwner);
+        const allCommentsHTML = renderComments(commentsArray, isPostOwner);
+        // No modal de postagem completa, manter a seção de comentários sempre aberta
+        // para o usuário sempre ver "Escreva um comentário..." mesmo quando não há comentários.
+        const comentariosVisiveis = 'visible';
         console.log('📝 HTML dos comentários gerado:', commentsHTML.length > 0 ? 'Sim' : 'Não');
+        console.log('📝 Total de comentários:', commentsArray.length, '| Mostrando:', commentsToShow.length, '| Tem mais?', hasMoreComments);
+        
+        // HTML do "Carregar Mais" - mostrar sempre que houver mais comentários
+        const loadMoreHTML = hasMoreComments ? 
+            `<div class="load-more-comments-text" data-post-id="${postCompleto._id}" data-all-comments='${JSON.stringify(commentsArray)}' style="cursor: pointer; color: var(--text-link); text-align: center; font-size: 14px;">Carregar Mais</div>` : '';
         
         modalContent.innerHTML = `
             <article class="post" data-post-id="${postCompleto._id}">
@@ -2404,7 +2563,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     </button>
                 </div>
                 <div class="post-comments ${comentariosVisiveis}" id="comments-${postCompleto._id}">
-                    <div class="comment-list">${commentsHTML}</div>
+                    <div class="comment-list" data-all-comments='${JSON.stringify(commentsArray)}' data-initial-count="${initialCommentsCount}" data-post-id="${postCompleto._id}">
+                        ${commentsHTML}
+                        ${loadMoreHTML}
+                    </div>
                     <div class="comment-form">
                         <input type="text" class="comment-input" placeholder="Escreva um comentário...">
                         <button class="btn-send-comment" data-post-id="${postCompleto._id}">Enviar</button>
@@ -2434,35 +2596,136 @@ document.addEventListener('DOMContentLoaded', () => {
         modalPostagem.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
         
-        // Aguardar um pouco para garantir que o DOM foi atualizado
+        // Configurar listeners de interação imediatamente
+        setupPostModalListeners(postCompleto._id);
+        
+        // Função para lidar com o clique em "Carregar Mais"
+        const handleLoadMoreClick = (e) => {
+            const loadMoreText = e.target.closest('.load-more-comments-text');
+            if (!loadMoreText) return;
+            
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('📝 Clicou em "Carregar Mais"');
+            
+            const commentList = modalContent.querySelector('.comment-list');
+            let allCommentsData;
+            
+            try {
+                allCommentsData = JSON.parse(loadMoreText.dataset.allComments || '[]');
+            } catch (err) {
+                console.error('❌ Erro ao fazer parse dos comentários:', err);
+                return;
+            }
+            
+            const isPostOwner = postCompleto.userId._id === loggedInUserId;
+            
+            console.log('📝 Comentários totais:', allCommentsData.length);
+            console.log('📝 Lista de comentários encontrada:', commentList ? 'Sim' : 'Não');
+            
+            if (commentList && allCommentsData.length > 0) {
+                // Renderizar todos os comentários
+                const allCommentsHTML = renderComments(allCommentsData, isPostOwner);
+                console.log('📝 Renderizando', allCommentsData.length, 'comentários');
+                console.log('📝 HTML gerado tem', (allCommentsHTML.match(/class="comment"/g) || []).length, 'comentários no HTML');
+                console.log('📝 Tamanho do HTML:', allCommentsHTML.length, 'caracteres');
+                
+                // Limpar e inserir todos os comentários
+                commentList.innerHTML = '';
+                commentList.innerHTML = allCommentsHTML;
+                
+                // Verificar quantos comentários foram realmente inseridos
+                const insertedComments = commentList.querySelectorAll('.comment');
+                console.log('📝 Comentários inseridos no DOM:', insertedComments.length);
+                
+                // Garantir layout vertical; rolagem/altura ficam por conta do CSS do modal
+                commentList.classList.remove('comments-expanded');
+                commentList.style.display = 'flex';
+                commentList.style.flexDirection = 'column';
+                
+                // Remover completamente o texto "Carregar Mais"
+                loadMoreText.remove();
+                console.log('📝 Botão "Carregar Mais" removido');
+                
+                // Configurar listeners dos novos comentários com todas as funções
+                setTimeout(() => {
+                    const newComments = commentList.querySelectorAll('.comment');
+                    console.log('📝 Configurando listeners para', newComments.length, 'comentários');
+                    console.log('📝 IDs dos comentários:', Array.from(newComments).map(c => c.dataset.commentId));
+                    newComments.forEach(comment => {
+                        setupCommentListeners(comment, postCompleto._id);
+                    });
+                    
+                    // Configurar listeners de resposta, curtir, deletar, etc.
+                    setupPostModalListeners(postCompleto._id);
+                    
+                    // Verificar novamente após configurar listeners
+                    const finalComments = commentList.querySelectorAll('.comment');
+                    console.log('📝 Comentários finais visíveis:', finalComments.length);
+                }, 100);
+            } else {
+                console.error('❌ Erro: commentList ou allCommentsData vazio');
+                console.error('commentList:', commentList);
+                console.error('allCommentsData:', allCommentsData);
+            }
+        };
+        
+        // Usar delegação de eventos para garantir que funcione mesmo após mudanças no DOM
+        // Remover listener anterior se existir
+        if (modalContent._loadMoreHandler) {
+            modalContent.removeEventListener('click', modalContent._loadMoreHandler);
+        }
+        modalContent._loadMoreHandler = handleLoadMoreClick;
+        modalContent.addEventListener('click', handleLoadMoreClick, true); // Use capture phase
+        
+        // Também adicionar listener direto no botão se ele existir
         setTimeout(() => {
-            // Configurar listeners de interação
-            setupPostModalListeners(postCompleto._id);
-        }, 300);
+            const loadMoreText = modalContent.querySelector('.load-more-comments-text');
+            if (loadMoreText) {
+                console.log('📝 Botão "Carregar Mais" encontrado, adicionando listener direto');
+                loadMoreText.addEventListener('click', handleLoadMoreClick, true);
+            }
+        }, 100);
     }
     
     // Função para renderizar comentários
     function renderComments(comments, isPostOwner) {
-        if (!comments || comments.length === 0) return '';
+        if (!comments || comments.length === 0) {
+            console.log('⚠️ renderComments: Nenhum comentário fornecido');
+            return '';
+        }
         
-        return comments.map(comment => {
-            if (!comment.userId) return '';
+        console.log('📝 renderComments: Renderizando', comments.length, 'comentários');
+        
+        const htmlArray = comments.map((comment, index) => {
+            if (!comment.userId) {
+                console.warn('⚠️ renderComments: Comentário', index, 'sem userId');
+                return '';
+            }
+            
+            // Verifica se o usuário pode deletar este comentário
+            const isCommentOwner = comment.userId._id === loggedInUserId;
+            const canDeleteComment = isPostOwner || isCommentOwner;
             
             const commentPhoto = comment.userId.foto || comment.userId.avatarUrl || 'imagens/default-user.png';
             const isCommentLiked = comment.likes && Array.isArray(comment.likes) && comment.likes.includes(loggedInUserId);
             const replyCount = comment.replies?.length || 0;
             
             // Renderiza respostas
-            const repliesHTML = (comment.replies || []).map(reply => renderReply(reply, comment._id, isPostOwner)).join('');
+            const repliesHTML = (comment.replies || []).map(reply => {
+                const isReplyOwner = reply.userId && reply.userId._id === loggedInUserId;
+                const canDeleteReply = isPostOwner || isReplyOwner;
+                return renderReply(reply, comment._id, canDeleteReply);
+            }).join('');
             
-            return `
+            const commentHTML = `
                 <div class="comment" data-comment-id="${comment._id}">
                     <img src="${commentPhoto.includes('pixabay') ? 'imagens/default-user.png' : commentPhoto}" alt="Avatar" class="comment-avatar">
                     <div class="comment-body-container">
                         <div class="comment-body">
                             <strong>${comment.userId.nome}</strong>
                             <p>${comment.content}</p>
-                            ${isPostOwner ? `<button class="btn-delete-comment" data-comment-id="${comment._id}" title="Apagar comentário"><i class="fas fa-trash"></i></button>` : ''}
+                            ${canDeleteComment ? `<button class="btn-delete-comment" data-comment-id="${comment._id}" title="Apagar comentário"><i class="fas fa-trash"></i></button>` : ''}
                         </div>
                         <div class="comment-actions">
                             <button class="comment-action-btn btn-like-comment ${isCommentLiked ? 'liked' : ''}" data-comment-id="${comment._id}">
@@ -2480,11 +2743,20 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
             `;
-        }).join('');
+            
+            return commentHTML;
+        });
+        
+        const result = htmlArray.join('');
+        const validComments = htmlArray.filter(h => h !== '').length;
+        console.log('📝 renderComments: HTML gerado com', validComments, 'comentários válidos de', comments.length, 'total');
+        console.log('📝 renderComments: Tamanho do HTML resultante:', result.length, 'caracteres');
+        
+        return result;
     }
     
     // Função para renderizar resposta
-    function renderReply(reply, commentId, isPostOwner) {
+    function renderReply(reply, commentId, canDeleteReply) {
         if (!reply.userId) return '';
         const replyPhoto = reply.userId.foto || reply.userId.avatarUrl || 'imagens/default-user.png';
         const isReplyLiked = reply.likes && Array.isArray(reply.likes) && reply.likes.includes(loggedInUserId);
@@ -2496,7 +2768,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="reply-body">
                         <strong>${reply.userId.nome}</strong>
                         <p>${reply.content}</p>
-                        ${isPostOwner ? `<button class="btn-delete-reply" data-comment-id="${commentId}" data-reply-id="${reply._id}" title="Apagar resposta"><i class="fas fa-trash"></i></button>` : ''}
+                        ${canDeleteReply ? `<button class="btn-delete-reply" data-comment-id="${commentId}" data-reply-id="${reply._id}" title="Apagar resposta"><i class="fas fa-trash"></i></button>` : ''}
                     </div>
                     <div class="reply-actions">
                         <button class="reply-action-btn btn-like-reply ${isReplyLiked ? 'liked' : ''}" data-comment-id="${commentId}" data-reply-id="${reply._id}">
@@ -2593,13 +2865,22 @@ document.addEventListener('DOMContentLoaded', () => {
                     const data = await response.json();
                     if (data.success && data.comment) {
                         const commentList = postElement.querySelector('.comment-list');
-                        const isPostOwner = postElement.dataset.postId === loggedInUserId;
+                        // Verifica se é dono da postagem através do data-userid do avatar
+                        const postAuthorId = postElement.querySelector('.post-avatar')?.dataset.userid;
+                        const isPostOwner = postAuthorId === loggedInUserId;
                         const newCommentHTML = renderComments([data.comment], isPostOwner);
                         commentList.innerHTML += newCommentHTML;
                         
                         // Reconfigurar listeners do novo comentário
                         const newComment = commentList.lastElementChild;
                         setupCommentListeners(newComment, postId);
+                        
+                        // Verifica se o novo comentário é longo
+                        setTimeout(() => {
+                            if (newComment.offsetParent !== null) {
+                                checkLongComment(newComment);
+                            }
+                        }, 300);
                         
                         // Atualizar contador
                         const commentCount = commentList.children.length;
@@ -2678,6 +2959,13 @@ document.addEventListener('DOMContentLoaded', () => {
             comments.forEach((comment, index) => {
                 console.log(`📝 Configurando listeners para comentário ${index + 1}:`, comment);
                 setupCommentListeners(comment, postId);
+                
+                // Verifica se o comentário é longo após renderizar
+                setTimeout(() => {
+                    if (comment.offsetParent !== null) {
+                        checkLongComment(comment);
+                    }
+                }, 300);
             });
             
             // Debug: verificar se os listeners foram configurados
@@ -2709,9 +2997,95 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     // Configurar listeners de um comentário específico
+    // Função para verificar se um comentário é longo e precisa de "Carregar comentário"
+    function checkLongComment(commentElement) {
+        if (window.innerWidth > 767) {
+            // Em telas maiores, remove qualquer limite que possa ter sido aplicado
+            const commentText = commentElement.querySelector('.comment-body p');
+            if (commentText) {
+                commentText.classList.remove('comment-long', 'expanded');
+                const loadBtn = commentText.querySelector('.load-comment-text');
+                if (loadBtn) loadBtn.remove();
+            }
+            return;
+        }
+        
+        const commentText = commentElement.querySelector('.comment-body p');
+        if (!commentText) return;
+        
+        // Remove classes anteriores para medir corretamente
+        commentText.classList.remove('comment-long', 'expanded');
+        const existingLoadBtn = commentText.querySelector('.load-comment-text');
+        if (existingLoadBtn) existingLoadBtn.remove();
+        
+        // Força remoção de qualquer estilo inline que possa interferir
+        commentText.style.maxHeight = '';
+        commentText.style.height = '';
+        commentText.style.overflow = '';
+        commentText.style.overflowY = '';
+        commentText.style.overflowX = '';
+        
+        // Aguarda um frame para garantir que o navegador renderizou
+        requestAnimationFrame(() => {
+            // Mede a altura real do texto sem limite
+            const computedStyle = window.getComputedStyle(commentText);
+            const lineHeight = parseFloat(computedStyle.lineHeight) || 22;
+            const maxLines = 5;
+            const maxHeight = lineHeight * maxLines;
+            
+            // Altura real do conteúdo
+            const actualHeight = commentText.scrollHeight;
+            
+            if (actualHeight > maxHeight) {
+                // Comentário é longo, aplica limite e adiciona botão "Carregar comentário"
+                commentText.classList.add('comment-long');
+                
+                // Encontra o container do comentário para adicionar o botão após o parágrafo
+                const commentBody = commentText.closest('.comment-body');
+                if (commentBody) {
+                    // Garante que o botão não existe antes de adicionar
+                    const existingBtn = commentBody.querySelector('.load-comment-text');
+                    if (existingBtn) existingBtn.remove();
+                    
+                    const loadBtn = document.createElement('span');
+                    loadBtn.className = 'load-comment-text';
+                    loadBtn.textContent = 'Carregar comentário';
+                    loadBtn.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        commentText.classList.add('expanded');
+                        commentText.style.maxHeight = 'none';
+                        commentText.style.overflow = 'visible';
+                        commentText.style.display = 'block';
+                        commentText.style.webkitLineClamp = 'unset';
+                        commentText.style.webkitBoxOrient = 'unset';
+                        this.remove();
+                    });
+                    // Adiciona o botão após o parágrafo, dentro do comment-body
+                    commentBody.insertBefore(loadBtn, commentText.nextSibling);
+                }
+            } else {
+                // Garante que comentários curtos não tenham limite
+                commentText.classList.remove('comment-long', 'expanded');
+                commentText.style.maxHeight = '';
+                commentText.style.overflow = '';
+                commentText.style.overflowY = '';
+                commentText.style.overflowX = '';
+                commentText.style.height = '';
+            }
+        });
+    }
+
     function setupCommentListeners(commentElement, postId) {
         const commentId = commentElement.dataset.commentId;
         if (!commentId) return;
+        
+        // Verifica se o comentário é longo após configurar listeners
+        setTimeout(() => {
+            if (commentElement.offsetParent !== null) {
+                checkLongComment(commentElement);
+            }
+        }, 300);
         
         // Curtir comentário
         const btnLikeComment = commentElement.querySelector('.btn-like-comment');
@@ -2807,8 +3181,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     const data = await response.json();
                     if (data.success && data.reply) {
                         const replyList = commentElement.querySelector('.reply-list');
-                        const isPostOwner = document.querySelector(`[data-post-id="${postId}"]`)?.dataset.userId === loggedInUserId;
-                        const newReplyHTML = renderReply(data.reply, commentId, isPostOwner);
+                        const postElement = document.querySelector(`[data-post-id="${postId}"]`);
+                        // Verifica se é dono da postagem através do data-userid do avatar
+                        const postAuthorId = postElement?.querySelector('.post-avatar')?.dataset.userid;
+                        const isPostOwner = postAuthorId === loggedInUserId;
+                        // O usuário que acabou de criar a resposta sempre é o dono dela
+                        const isReplyOwner = data.reply.userId && data.reply.userId._id === loggedInUserId;
+                        const canDeleteReply = isPostOwner || isReplyOwner;
+                        const newReplyHTML = renderReply(data.reply, commentId, canDeleteReply);
                         replyList.innerHTML += newReplyHTML;
                         
                         // Reconfigurar listeners da nova resposta
@@ -3317,6 +3697,94 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         return null;
     };
+
+    // Função para buscar todas as fotos do pedido via API
+    async function buscarFotosPedido(pedidoId) {
+        if (!pedidoId) return null;
+        try {
+            const response = await fetch(`/api/pedidos-urgentes/${pedidoId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!response.ok) return null;
+            const data = await response.json();
+            if (data.success && data.pedido) {
+                // Retorna o array de fotos se existir, senão retorna a foto única
+                if (data.pedido.fotos && Array.isArray(data.pedido.fotos) && data.pedido.fotos.length > 0) {
+                    return data.pedido.fotos;
+                } else if (data.pedido.foto) {
+                    return [data.pedido.foto];
+                }
+            }
+            return null;
+        } catch (error) {
+            console.error('Erro ao buscar fotos do pedido:', error);
+            return null;
+        }
+    }
+
+    // Função para renderizar fotos na seção de avaliação
+    async function renderizarFotosSecaoAvaliacao() {
+        if (!secaoAvaliacao) return;
+        
+        // Remove fotos anteriores se existirem
+        const fotosContainerAnterior = secaoAvaliacao.querySelector('.fotos-pedido-container');
+        if (fotosContainerAnterior) {
+            fotosContainerAnterior.remove();
+        }
+
+        // Busca fotos do pedido
+        let fotosPedido = null;
+        if (pedidoIdAvaliacaoLimpo) {
+            fotosPedido = await buscarFotosPedido(pedidoIdAvaliacaoLimpo);
+        }
+
+        // Se não encontrou via API, tenta usar a foto do cache
+        if (!fotosPedido || fotosPedido.length === 0) {
+            if (fotoServicoAvaliacao) {
+                fotosPedido = [fotoServicoAvaliacao];
+            }
+        }
+
+        // Se tem fotos, cria o container e renderiza
+        if (fotosPedido && fotosPedido.length > 0) {
+            const fotosContainer = document.createElement('div');
+            fotosContainer.className = 'fotos-pedido-container';
+            fotosContainer.style.cssText = 'display: flex; flex-wrap: wrap; gap: 5px; margin: 15px 0; padding: 10px; background: var(--bg-secondary, #111827); border-radius: 8px; border: 1px solid var(--border-color, #1f2937);';
+            
+            fotosPedido.forEach((foto, idx) => {
+                const img = document.createElement('img');
+                if (fotosPedido.length > 1) {
+                    // Múltiplas fotos: mostra em miniatura
+                    img.style.cssText = 'width: calc(50% - 2.5px); max-width: 150px; height: 100px; object-fit: cover; border-radius: 8px; cursor: pointer;';
+                } else {
+                    // Uma foto: mostra grande
+                    img.style.cssText = 'width: 100%; max-height: 300px; object-fit: cover; border-radius: 8px; cursor: pointer;';
+                }
+                img.alt = `Foto do serviço ${idx + 1}`;
+                img.src = foto;
+                img.style.cursor = 'pointer';
+                img.className = 'foto-pedido-clickable';
+                img.dataset.fotoUrl = foto;
+                img.onclick = (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    if (typeof window.abrirModalImagem === 'function') {
+                        window.abrirModalImagem(foto);
+                    } else {
+                        console.error('❌ Função abrirModalImagem não encontrada');
+                    }
+                };
+                fotosContainer.appendChild(img);
+            });
+
+            // Insere antes do formulário de avaliação
+            if (formAvaliacao) {
+                secaoAvaliacao.insertBefore(fotosContainer, formAvaliacao);
+            } else {
+                secaoAvaliacao.appendChild(fotosContainer);
+            }
+        }
+    }
     // Busca o nome do serviço de várias fontes
     async function obterNomeServicoParaAvaliacao() {
         console.log('🔍 Buscando nome do serviço para avaliação...');
@@ -3495,15 +3963,27 @@ document.addEventListener('DOMContentLoaded', () => {
         servicoNomeAvaliacao = nomeServico || 'Serviço concluído';
         console.log('📝 Nome do serviço para exibição:', servicoNomeAvaliacao);
         
+        // Busca todas as fotos do pedido via API
+        let fotosPedido = null;
+        if (pedidoIdAvaliacaoLimpo) {
+            fotosPedido = await buscarFotosPedido(pedidoIdAvaliacaoLimpo);
+        }
+
+        // Se não encontrou via API, tenta usar a foto do cache
+        if (!fotosPedido || fotosPedido.length === 0) {
         if (!fotoServicoAvaliacao) {
             // Tenta capturar alguma foto já renderizada na página (pedidos/propostas)
             const fotoPage = tentarCapturarFotoDaPagina();
             if (fotoPage) {
                 fotoServicoAvaliacao = fotoPage;
+                    fotosPedido = [fotoPage];
+                }
+            } else {
+                fotosPedido = [fotoServicoAvaliacao];
             }
         }
 
-        if (!fotoServicoAvaliacao) {
+        if (!fotosPedido || fotosPedido.length === 0) {
             logSemFoto();
         }
 
@@ -3543,21 +4023,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const imgWrapper = document.createElement('div');
         imgWrapper.style.width = '100%';
-        imgWrapper.style.maxHeight = '260px';
         imgWrapper.style.borderRadius = '10px';
         imgWrapper.style.border = '1px solid var(--border-color, #1f2937)';
         imgWrapper.style.overflow = 'hidden';
         imgWrapper.style.background = 'rgba(255,255,255,0.03)';
         imgWrapper.style.display = 'flex';
-        imgWrapper.style.alignItems = 'center';
-        imgWrapper.style.justifyContent = 'center';
+        imgWrapper.style.flexWrap = 'wrap';
+        imgWrapper.style.gap = '5px';
+        imgWrapper.style.padding = '5px';
         imgWrapper.style.marginTop = '6px';
-
-        const img = document.createElement('img');
-        img.style.width = '100%';
-        img.style.height = '100%';
-        img.style.objectFit = 'cover';
-        img.alt = 'Foto do serviço';
 
         const imgFallback = document.createElement('div');
         imgFallback.style.width = '100%';
@@ -3569,15 +4043,42 @@ document.addEventListener('DOMContentLoaded', () => {
         imgFallback.style.fontSize = '13px';
         imgFallback.textContent = 'Foto do serviço não disponível';
 
-        if (fotoServicoAvaliacao) {
-            img.src = fotoServicoAvaliacao;
+        if (fotosPedido && fotosPedido.length > 0) {
             imgFallback.style.display = 'none';
+            fotosPedido.forEach((foto, idx) => {
+                const img = document.createElement('img');
+                if (fotosPedido.length > 1) {
+                    // Múltiplas fotos: mostra em miniatura
+                    img.style.width = 'calc(50% - 2.5px)';
+                    img.style.maxWidth = '150px';
+                    img.style.height = '100px';
+                } else {
+                    // Uma foto: mostra grande
+                    img.style.width = '100%';
+                    img.style.maxHeight = '260px';
+                }
+                img.style.objectFit = 'cover';
+                img.style.borderRadius = '8px';
+                img.style.cursor = 'pointer';
+                img.alt = `Foto do serviço ${idx + 1}`;
+                img.src = foto;
+                img.className = 'foto-pedido-clickable';
+                img.dataset.fotoUrl = foto;
             img.onerror = () => {
                 img.style.display = 'none';
-                imgFallback.style.display = 'flex';
             };
+                img.onclick = (e) => {
+                    e.stopPropagation();
+                    e.preventDefault();
+                    if (typeof window.abrirModalImagem === 'function') {
+                        window.abrirModalImagem(foto);
         } else {
-            img.style.display = 'none';
+                        console.error('❌ Função abrirModalImagem não encontrada');
+                    }
+                };
+                imgWrapper.appendChild(img);
+            });
+        } else {
             imgFallback.style.display = 'flex';
         }
 
@@ -3650,17 +4151,6 @@ document.addEventListener('DOMContentLoaded', () => {
         btnIr.style.borderRadius = '8px';
         btnIr.style.cursor = 'pointer';
         btnIr.style.fontWeight = '700';
-
-        // Função para fechar o modal flutuante
-        const fecharModalLembrete = () => {
-            const modalLembrete = document.getElementById('modal-lembrete-avaliacao');
-            if (modalLembrete) {
-                modalLembrete.classList.add('hidden');
-                document.body.style.overflow = '';
-            }
-        };
-
-        btnFechar.addEventListener('click', fecharModalLembrete);
         btnIr.addEventListener('click', () => {
             if (!selectedStar) {
                 alert('Selecione a nota (estrelas) antes de enviar.');
@@ -3687,14 +4177,25 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
+        // Função para fechar o modal (declarada antes de ser usada)
+        const fecharModalLembrete = () => {
+            modalLembrete.classList.add('hidden');
+            modalLembrete.style.display = 'none';
+            modalLembrete.style.opacity = '0';
+            modalLembrete.style.visibility = 'hidden';
+            document.body.style.overflow = '';
+            console.log('✅ Modal de lembrete fechado');
+        };
+        
+        // Adiciona listener ao botão Fechar do card
+        btnFechar.addEventListener('click', fecharModalLembrete);
+
         actions.appendChild(btnFechar);
         actions.appendChild(btnIr);
 
         card.appendChild(title);
         card.appendChild(desc);
-        imgWrapper.appendChild(img);
         imgWrapper.appendChild(imgFallback);
-
         card.appendChild(imgWrapper);
         card.appendChild(starsWrap);
         card.appendChild(textarea);
@@ -3704,11 +4205,21 @@ document.addEventListener('DOMContentLoaded', () => {
         // Insere o card dentro do modal flutuante
         conteudoLembrete.appendChild(card);
         
+        // Adiciona listener ao botão X do modal se existir
+        const btnFecharLembrete = document.getElementById('btn-fechar-lembrete-avaliacao');
+        if (btnFecharLembrete) {
+            btnFecharLembrete.onclick = (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                fecharModalLembrete();
+            };
+        }
+        
         // Fecha modal ao clicar no overlay (fora do conteúdo)
         const fecharModalOverlay = (e) => {
-            if (e.target === modalLembrete) {
-                modalLembrete.classList.add('hidden');
-                document.body.style.overflow = '';
+            if (e.target === modalLembrete || e.target.id === 'modal-lembrete-avaliacao') {
+                fecharModalLembrete();
             }
         };
         
@@ -3718,6 +4229,9 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Abre o modal flutuante
         modalLembrete.classList.remove('hidden');
+        modalLembrete.style.display = 'flex';
+        modalLembrete.style.opacity = '1';
+        modalLembrete.style.visibility = 'visible';
         document.body.style.overflow = 'hidden';
         console.log('✅ Modal flutuante de lembrete aberto');
     }
@@ -3856,40 +4370,51 @@ document.addEventListener('DOMContentLoaded', () => {
                     modalAvaliacaoAberto = false; // Permite criar novo lembrete se necessário
                 } else {
                     console.log('✅ NÃO avaliou este serviço ainda - DEVE mostrar lembrete');
-                    // Não avaliou: mostra lembrete (formulário já está escondido acima)
-                    // IMPORTANTE: Remove mensagem "perfil já avaliado" se existir
-                    const secaoAvaliacoesVerificadas = document.getElementById('secao-avaliacoes-verificadas');
-                    if (secaoAvaliacoesVerificadas) {
-                        const h3Titulo = secaoAvaliacoesVerificadas.querySelector('h3');
-                        if (h3Titulo) {
-                            const mensagemAntiga = h3Titulo.querySelector('.mensagem-avaliado-pequena');
-                            if (mensagemAntiga) {
-                                mensagemAntiga.remove();
-                                console.log('✅ Mensagem "perfil já avaliado" removida - não avaliou ainda');
+                    // IMPORTANTE: Só mostra lembrete se REALMENTE veio de notificação de serviço concluído
+                    // Não mostra se foi uma visita normal (clicou no perfil pelo feed)
+                    if (veioDeNotificacao && (hashSecaoAvaliacao || origemAvaliacao === 'servico_concluido')) {
+                        // Não avaliou: mostra lembrete (formulário já está escondido acima)
+                        // IMPORTANTE: Remove mensagem "perfil já avaliado" se existir
+                        const secaoAvaliacoesVerificadas = document.getElementById('secao-avaliacoes-verificadas');
+                        if (secaoAvaliacoesVerificadas) {
+                            const h3Titulo = secaoAvaliacoesVerificadas.querySelector('h3');
+                            if (h3Titulo) {
+                                const mensagemAntiga = h3Titulo.querySelector('.mensagem-avaliado-pequena');
+                                if (mensagemAntiga) {
+                                    mensagemAntiga.remove();
+                                    console.log('✅ Mensagem "perfil já avaliado" removida - não avaliou ainda');
+                                }
                             }
                         }
-                    }
-                    if (!modalAvaliacaoAberto) {
-                        console.log('🚀 Chamando abrirLembreteAvaliacao()...');
-                        modalAvaliacaoAberto = true;
-                        // Garante que a seção está oculta (lembrete será flutuante)
-                        if (secaoAvaliacao) {
-                            secaoAvaliacao.style.display = 'none';
-                            console.log('✅ Seção mantida oculta (lembrete será flutuante)');
+                        if (!modalAvaliacaoAberto) {
+                            console.log('🚀 Chamando abrirLembreteAvaliacao()...');
+                            modalAvaliacaoAberto = true;
+                            // Garante que a seção está oculta (lembrete será flutuante)
+                            if (secaoAvaliacao) {
+                                secaoAvaliacao.style.display = 'none';
+                                console.log('✅ Seção mantida oculta (lembrete será flutuante)');
+                            }
+                            await abrirLembreteAvaliacao();
+                            console.log('✅ abrirLembreteAvaliacao() concluído');
+                        } else {
+                            console.log('⚠️ modalAvaliacaoAberto já é true, não abrindo lembrete');
                         }
-                        await abrirLembreteAvaliacao();
-                        console.log('✅ abrirLembreteAvaliacao() concluído');
                     } else {
-                        console.log('⚠️ modalAvaliacaoAberto já é true, não abrindo lembrete');
+                        console.log('⚠️ Não veio de notificação - não abrindo lembrete flutuante');
+                        // Se não veio de notificação, apenas mostra a seção de avaliação normalmente
+                        if (secaoAvaliacao) {
+        secaoAvaliacao.style.display = 'block';
+                        }
                     }
                 }
             })();
-        } else if (temParametrosExplicitos) {
-            // Tem parâmetros explícitos mas não veio de notificação (caso raro)
+        } else if (temParametrosExplicitos && veioDeNotificacao) {
+            // Tem parâmetros explícitos E veio de notificação (caso raro mas válido)
             (async () => {
                 const jaAvaliou = await avaliacaoJaFeita();
                 if (!jaAvaliou && !modalAvaliacaoAberto) {
-        secaoAvaliacao.style.display = 'block';
+                    secaoAvaliacao.style.display = 'block';
+                    await renderizarFotosSecaoAvaliacao();
         if (formAvaliacao) formAvaliacao.style.display = 'none';
                     modalAvaliacaoAberto = true;
                     abrirLembreteAvaliacao();
@@ -3953,6 +4478,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!isOwnProfile && !veioDeNotificacao && !hashSecaoAvaliacao && origemAvaliacao !== 'servico_concluido') {
                     console.log('✅ Visita normal - PRIMEIRA VISITA confirmada, mostrando seção de avaliação');
         secaoAvaliacao.style.display = 'block';
+                    // Renderiza as fotos do pedido
+                    await renderizarFotosSecaoAvaliacao();
                     // Mostra o formulário também na primeira visita
                     if (formAvaliacao) formAvaliacao.style.display = 'block';
                 } else if (veioDeNotificacao || hashSecaoAvaliacao || origemAvaliacao === 'servico_concluido') {
@@ -3977,13 +4504,78 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (btnEnviarAvaliacao) {
         btnEnviarAvaliacao.addEventListener('click', async (e) => {
+            console.log('🔴🔴🔴 BOTÃO DE ENVIAR AVALIAÇÃO CLICADO!');
             e.preventDefault();
             const estrelas = formAvaliacao.dataset.value;
             const comentario = comentarioAvaliacaoInput.value;
 
+            console.log('🔴 Dados do formulário:', {
+                estrelas,
+                comentario: comentario?.substring(0, 50),
+                formAvaliacao: formAvaliacao ? 'existe' : 'NÃO EXISTE',
+                comentarioAvaliacaoInput: comentarioAvaliacaoInput ? 'existe' : 'NÃO EXISTE'
+            });
+
             if (!estrelas || estrelas == 0) {
+                console.warn('⚠️ Nenhuma estrela selecionada');
                 alert('Por favor, selecione pelo menos uma estrela.');
                 return;
+            }
+
+            // Verifica se já avaliou ANTES de enviar
+            // IMPORTANTE: Quando vem de notificação, SEMPRE prioriza valores da URL
+            const pedidoIdDaUrl = urlParams.get('pedidoId');
+            const agendamentoIdDaUrl = urlParams.get('agendamentoId');
+            const pedidoIdParaVerificar = pedidoIdDaUrl || pedidoIdAvaliacao || '';
+            const agendamentoIdParaVerificar = agendamentoIdDaUrl || agendamentoIdAvaliacao || '';
+            
+            console.log('🔍 Verificação antes de enviar:', {
+                isFluxoServico,
+                veioDeNotificacao,
+                origemAvaliacao,
+                hashSecaoAvaliacao,
+                pedidoIdDaUrl,
+                agendamentoIdDaUrl,
+                pedidoIdParaVerificar,
+                agendamentoIdParaVerificar,
+                pedidoIdAvaliacao,
+                agendamentoIdAvaliacao
+            });
+            
+            // Se é fluxo de serviço (vem de notificação ou tem hash)
+            if (isFluxoServico) {
+                // Se tem ID do serviço, verifica se já avaliou este serviço específico
+                if (pedidoIdParaVerificar || agendamentoIdParaVerificar) {
+                    console.log('🔍 Verificando avaliação específica do serviço antes de enviar...');
+                    const jaAvaliouServico = await verificarAvaliacaoServicoEspecifico(pedidoIdParaVerificar, agendamentoIdParaVerificar);
+                    console.log('🔍 Resultado da verificação:', jaAvaliouServico);
+                    if (jaAvaliouServico) {
+                        alert('Você já avaliou este serviço. Cada serviço só pode ser avaliado uma vez.');
+                        return;
+                    }
+                    console.log('✅ Serviço ainda não avaliado - permitindo avaliação');
+                } else {
+                    // Se é fluxo de serviço mas não tem ID, não permite avaliar
+                    console.error('❌ Erro: Fluxo de serviço sem ID do serviço');
+                    console.error('❌ Detalhes:', {
+                        isFluxoServico,
+                        veioDeNotificacao,
+                        origemAvaliacao,
+                        pedidoIdDaUrl,
+                        agendamentoIdDaUrl,
+                        pedidoIdAvaliacao,
+                        agendamentoIdAvaliacao
+                    });
+                    alert('Erro: Não foi possível identificar o serviço a ser avaliado. Por favor, use o link da notificação.');
+                    return;
+                }
+            } else {
+                // Se não é fluxo de serviço (visita normal), verifica avaliação geral
+                const jaAvaliouGeral = await avaliacaoJaFeita();
+                if (jaAvaliouGeral) {
+                    alert('Você já avaliou este perfil. Para avaliar novamente, use o link enviado após concluir um serviço.');
+                    return;
+                }
             }
 
             try {
@@ -4083,8 +4675,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
 
                 // Avaliação verificada (veio de serviço concluído)
-                // Cada notificação já tem seu próprio pedidoId/agendamentoId - não precisa buscar nada!
-                let agendamentoIdFinal = agendamentoIdAvaliacao;
+                // IMPORTANTE: Usa valores da URL primeiro, depois variáveis (que podem vir do localStorage)
+                let agendamentoIdFinal = agendamentoIdAvaliacao || '';
                 let pedidoUrgenteIdFinal = null;
                 
                 // Prioriza pedidoId da URL (vem diretamente da notificação)
@@ -4092,18 +4684,74 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (pedidoIdDaUrl) {
                     const pidClean = String(pedidoIdDaUrl).match(/[a-fA-F0-9]{24}/)?.[0];
                     if (pidClean) {
-                        // Para pedidos urgentes, usa diretamente como pedidoUrgenteId
-                        // Não precisa buscar agendamentoId - cada notificação já tem seu próprio pedidoId
                         pedidoUrgenteIdFinal = pidClean;
-                        console.log('📦 Usando pedidoUrgenteId da URL (notificação):', pedidoUrgenteIdFinal);
+                        console.log('📦 Usando pedidoUrgenteId da URL:', pedidoUrgenteIdFinal);
                     }
                 }
-                // Se não tem pedidoId na URL mas tem agendamentoId, usa ele (serviço agendado)
-                else if (agendamentoIdFinal) {
-                    console.log('📦 Usando agendamentoId da URL:', agendamentoIdFinal);
+                // Se não tem na URL mas tem na variável pedidoIdAvaliacao (vem de "Meus Pedidos Urgentes" ou localStorage)
+                else if (pedidoIdAvaliacao) {
+                    const pidClean = String(pedidoIdAvaliacao).match(/[a-fA-F0-9]{24}/)?.[0];
+                    if (pidClean) {
+                        pedidoUrgenteIdFinal = pidClean;
+                        console.log('📦 Usando pedidoUrgenteId da variável (localStorage):', pedidoUrgenteIdFinal);
+                    }
                 }
                 
+                // Se não tem pedidoId mas tem agendamentoId, usa ele (serviço agendado)
+                if (!pedidoUrgenteIdFinal && agendamentoIdFinal) {
+                    console.log('📦 Usando agendamentoId:', agendamentoIdFinal);
+                }
+                
+                console.log('📦 IDs finais para avaliação verificada:', {
+                    pedidoUrgenteIdFinal,
+                    agendamentoIdFinal,
+                    pedidoIdDaUrl,
+                    pedidoIdAvaliacao,
+                    agendamentoIdAvaliacao
+                });
+                
                 // Cria avaliação verificada se tem agendamentoId OU pedidoUrgenteId
+                console.log('🔍 Verificando se deve criar avaliação verificada:', {
+                    isFluxoServico,
+                    veioDeNotificacao,
+                    agendamentoIdFinal,
+                    pedidoUrgenteIdFinal,
+                    pedidoIdDaUrl,
+                    origemAvaliacao,
+                    hashSecaoAvaliacao,
+                    token: token ? token.substring(0, 20) + '...' : 'NENHUM TOKEN',
+                    profileId
+                });
+                
+                // Validação do token
+                if (!token) {
+                    console.error('❌ Token não encontrado no localStorage!');
+                    alert('Erro: Você precisa estar logado para avaliar. Por favor, faça login novamente.');
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                // Se é fluxo de serviço, DEVE ter pedidoId ou agendamentoId
+                // Verifica novamente após processar os IDs (pode ter vindo do localStorage)
+                if (isFluxoServico) {
+                    if (!agendamentoIdFinal && !pedidoUrgenteIdFinal) {
+                        console.error('❌ Erro: Fluxo de serviço sem ID do serviço');
+                        console.error('❌ Detalhes:', {
+                            isFluxoServico,
+                            veioDeNotificacao,
+                            origemAvaliacao,
+                            pedidoIdDaUrl: urlParams.get('pedidoId'),
+                            agendamentoIdDaUrl: urlParams.get('agendamentoId'),
+                            pedidoIdAvaliacao,
+                            agendamentoIdAvaliacao,
+                            agendamentoIdFinal,
+                            pedidoUrgenteIdFinal
+                        });
+                        alert('Erro: Não foi possível identificar o serviço a ser avaliado. Por favor, use o link da notificação.');
+                        return;
+                    }
+                }
+                
                 if (isFluxoServico && (agendamentoIdFinal || pedidoUrgenteIdFinal)) {
                     const payload = {
                         profissionalId: profileId,
@@ -4116,11 +4764,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Adiciona agendamentoId ou pedidoUrgenteId conforme disponível
                     if (agendamentoIdFinal) {
                         payload.agendamentoId = agendamentoIdFinal;
+                        console.log('✅ Adicionando agendamentoId ao payload:', agendamentoIdFinal);
                     }
                     if (pedidoUrgenteIdFinal) {
                         payload.pedidoUrgenteId = pedidoUrgenteIdFinal;
+                        console.log('✅ Adicionando pedidoUrgenteId ao payload:', pedidoUrgenteIdFinal);
                     }
                     console.log('📤 Enviando avaliação verificada com payload:', JSON.stringify(payload, null, 2));
+                    console.log('🔑 Token sendo usado:', token ? token.substring(0, 20) + '...' : 'NENHUM TOKEN');
                     
                     response = await fetch('/api/avaliacao-verificada', {
                         method: 'POST',
@@ -4130,11 +4781,53 @@ document.addEventListener('DOMContentLoaded', () => {
                         },
                         body: JSON.stringify(payload)
                     });
-                    data = await response.json();
-                    if (!response.ok) throw new Error(data.message || 'Erro ao enviar avaliação verificada.');
+                    
+                    console.log('📥 Resposta do servidor:', {
+                        status: response.status,
+                        statusText: response.statusText,
+                        ok: response.ok
+                    });
+                    
+                    const responseText = await response.text();
+                    console.log('📥 Resposta (texto):', responseText);
+                    
+                    try {
+                        data = JSON.parse(responseText);
+                    } catch (e) {
+                        console.error('❌ Erro ao parsear resposta JSON:', e);
+                        throw new Error('Resposta inválida do servidor');
+                    }
+                    
+                    console.log('📥 Resposta (JSON):', data);
+                    
+                    if (!response.ok) {
+                        console.error('❌ Erro na resposta:', {
+                            status: response.status,
+                            data: data
+                        });
+                        throw new Error(data.message || 'Erro ao enviar avaliação verificada.');
+                    }
+                    
+                    console.log('✅ Avaliação enviada com sucesso!', data);
                     localStorage.setItem('ultimaAvaliacaoClienteId', loggedInUserId || userId || '');
-                    if (nomeServicoPayload) localStorage.setItem('ultimaAvaliacaoServico', nomeServicoPayload);
-                    alert('Avaliação verificada enviada com sucesso! Obrigado por avaliar o serviço.');
+                    if (nomeServicoPayload) {
+                        localStorage.setItem('ultimaAvaliacaoServico', nomeServicoPayload);
+                        // Cacheia também com o ID do pedido/agendamento para uso futuro
+                        if (pedidoUrgenteIdFinal) {
+                            localStorage.setItem(`nomeServico:${pedidoUrgenteIdFinal}`, nomeServicoPayload);
+                        }
+                        if (agendamentoIdFinal) {
+                            localStorage.setItem(`nomeServico:${agendamentoIdFinal}`, nomeServicoPayload);
+                        }
+                    }
+                    
+                    // Mostra toast de sucesso
+                    const toast = document.createElement('div');
+                    toast.className = 'toast-sucesso';
+                    toast.innerHTML = '<span class="check-animado">✔</span> Perfil Avaliado';
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.classList.add('show'), 10);
+                    setTimeout(() => toast.remove(), 2500);
                     
                     // Marca como avaliado - passa os IDs do serviço que foi avaliado
                     marcarAvaliacaoFeita(estrelas, pedidoUrgenteIdFinal || null, agendamentoIdFinal || null);
@@ -4142,18 +4835,65 @@ document.addEventListener('DOMContentLoaded', () => {
                     // Esconde a seção de avaliação e mostra mensagem nas avaliações verificadas
                     await mostrarMensagemAvaliado();
                     
-                    // Recarrega as avaliações verificadas para mostrar a nova avaliação
+                    // Recarrega as avaliações verificadas após um pequeno delay para garantir que o servidor processou
                     if (profileId) {
-                        loadAvaliacoesVerificadas(profileId);
+                        setTimeout(async () => {
+                            await loadAvaliacoesVerificadas(profileId);
+                            // Garante que a seção de avaliações verificadas está visível
+                            const secaoAvaliacoesVerificadas = document.getElementById('secao-avaliacoes-verificadas');
+                            if (secaoAvaliacoesVerificadas) {
+                                secaoAvaliacoesVerificadas.style.display = 'block';
+                            }
+                        }, 500);
+                    }
+                    
+                    // Se veio de pedido urgente, recarrega a lista de pedidos e fecha o modal se estiver aberto
+                    if (pedidoUrgenteIdFinal) {
+                        console.log('✅ Avaliação concluída, atualizando lista de pedidos...');
+                        // Se estiver na página inicial, recarrega os pedidos
+                        if (typeof window.carregarMeusPedidosUrgentes === 'function') {
+                            setTimeout(async () => {
+                                await window.carregarMeusPedidosUrgentes('abertos');
+                                console.log('✅ Lista de pedidos atualizada');
+                            }, 1000);
+                        }
+                        // Se estiver na página de perfil, redireciona para inicial após um delay
+                        if (window.location.pathname.includes('perfil')) {
+                            console.log('🔄 Redirecionando para index.html em 2 segundos...');
+                            setTimeout(() => {
+                                console.log('🔄 Redirecionando agora...');
+                                window.location.href = '/index.html';
+                            }, 2000);
+                        }
                     }
                 } else {
-                    // Bloqueio: só 1 avaliação geral por visita/sessão
-                    if (!avaliacaoLiberadaGeral()) {
-                        alert('Você já avaliou este perfil nesta visita. Para avaliar de novo, use o link enviado após concluir um serviço.');
+                    console.warn('⚠️ NÃO está criando avaliação verificada porque:', {
+                        isFluxoServico,
+                        agendamentoIdFinal,
+                        pedidoUrgenteIdFinal,
+                        motivo: !isFluxoServico ? 'isFluxoServico é false' : (!agendamentoIdFinal && !pedidoUrgenteIdFinal ? 'Não tem agendamentoId nem pedidoUrgenteId' : 'Desconhecido')
+                    });
+                    
+                    // Se é fluxo de serviço mas não tem ID, não permite avaliar
+                    if (isFluxoServico && !agendamentoIdFinal && !pedidoUrgenteIdFinal) {
+                        alert('Erro: Não foi possível identificar o serviço a ser avaliado. Por favor, use o link da notificação.');
+                        return;
+                    }
+                    
+                    // Bloqueio: só 1 avaliação geral por visita/sessão (apenas para visitas normais, não fluxo de serviço)
+                    if (!isFluxoServico) {
+                        const jaAvaliouGeral = await avaliacaoJaFeita();
+                        if (jaAvaliouGeral) {
+                            alert('Você já avaliou este perfil. Para avaliar novamente, use o link enviado após concluir um serviço.');
+                            return;
+                        }
+                    } else {
+                        // Se é fluxo de serviço mas não tem ID, não permite
+                        alert('Erro: Não foi possível identificar o serviço a ser avaliado. Por favor, use o link da notificação.');
                         return;
                     }
 
-                    // Avaliação geral do trabalhador
+                    // Avaliação geral do trabalhador (só para visitas normais, não fluxo de serviço)
                     response = await fetch('/api/avaliar-trabalhador', {
                         method: 'POST',
                         headers: {
@@ -4169,7 +4909,15 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     data = await response.json();
                     if (!response.ok) throw new Error(data.message || 'Erro ao enviar avaliação.');
-                    alert('Avaliação enviada com sucesso!');
+                    
+                    // Mostra toast de sucesso
+                    const toast = document.createElement('div');
+                    toast.className = 'toast-sucesso';
+                    toast.innerHTML = '<span class="check-animado">✔</span> Perfil Avaliado';
+                    document.body.appendChild(toast);
+                    setTimeout(() => toast.classList.add('show'), 10);
+                    setTimeout(() => toast.remove(), 2500);
+                    
                     // Marca bloqueio na sessão/localStorage - usa IDs do localStorage se não estiverem na URL
                     const pedidoIdParaMarcar = pedidoIdAvaliacao || pedidoIdUltimoServicoConcluido;
                     const agendamentoIdParaMarcar = agendamentoIdAvaliacao || agendamentoIdUltimoServico;
