@@ -57,25 +57,8 @@
             <button id="mobile-sidebar-close" class="mobile-sidebar-close" aria-label="Fechar menu">
                 &times;
             </button>
-            <h2>Filtros</h2>
-            <p>Ver postagens de:</p>
-            <div class="filtro-botoes">
-                <button id="filter-todos" class="filtro-btn ativo">
-                    <i class="fas fa-globe-americas"></i> Todos
-                </button>
-                <button id="filter-trabalhadores" class="filtro-btn">
-                    <i class="fas fa-briefcase"></i> Profissionais
-                </button>
-                <button id="filter-clientes" class="filtro-btn">
-                    <i class="fas fa-users"></i> Clientes
-                </button>
-            </div>
-            
-            <div class="filtro-localizacao">
-                <h4>Localização</h4>
-                <input type="text" id="filtro-cidade" placeholder="Digite a cidade...">
-                <button id="filtro-cidade-btn">Buscar</button>
-            </div>
+            <h2>Menu</h2>
+            <p>Atalhos e configurações</p>
 
             <!-- 🆕 NOVO: Botão "Preciso agora!" na lateral -->
             <div class="filtro-acoes-rapidas">
@@ -149,6 +132,31 @@
                     </div>
                     <div id="post-form-message" class="form-message hidden"></div>
                 </form>
+            </section>
+
+            <!-- 🧩 NOVO: Filtros do feed (entre "Crie uma Publicação" e o feed) -->
+            <section class="feed-filtros" aria-label="Filtros do feed">
+                <div class="feed-filtros-row">
+                    <div class="feed-filtros-left">
+                        <div class="feed-filtro-tipo">
+                            <select id="feed-tipo-select" aria-label="Filtrar feed">
+                                <option value="todos" selected>Todos</option>
+                                <option value="cliente">Clientes</option>
+                                <option value="trabalhador">Profissionais</option>
+                            </select>
+                            <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                        </div>
+                    </div>
+
+                    <div class="feed-filtros-right">
+                        <div class="feed-filtro-cidade">
+                            <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+                            <input type="text" id="filtro-cidade" placeholder="Pesquisar cidade..." autocomplete="address-level2" list="cidade-sugestoes">
+                            <button id="filtro-cidade-btn" type="button">Buscar</button>
+                        </div>
+                        <datalist id="cidade-sugestoes"></datalist>
+                    </div>
+                </div>
             </section>
 
             <section id="posts-container">

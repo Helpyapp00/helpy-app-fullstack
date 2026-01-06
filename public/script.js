@@ -53,11 +53,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const postsContainer = document.getElementById('posts-container');
     
     // --- Filtros e Configurações ---
-    const filterTodosBtn = document.getElementById('filter-todos');
-    const filterTrabalhadoresBtn = document.getElementById('filter-trabalhadores');
-    const filterClientesBtn = document.getElementById('filter-clientes');
+    const feedTipoSelect = document.getElementById('feed-tipo-select');
     const filtroCidadeInput = document.getElementById('filtro-cidade');
     const filtroCidadeBtn = document.getElementById('filtro-cidade-btn');
+    const datalistCidades = document.getElementById('cidade-sugestoes');
+    // Mantém o estado do filtro (para reaplicar após recarregar posts por cidade, etc.)
+    let currentTipoFeed = 'todos';
     const destaquesScroll = document.getElementById('destaques-scroll');
     const modalDestaqueServico = document.getElementById('modal-destaque-servico');
     const destaqueModalImagens = document.getElementById('destaque-modal-imagens');
@@ -399,11 +400,42 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error('Não foi possível carregar as postagens.');
             }
             const posts = await response.json();
+            atualizarSugestoesCidades(posts);
             renderPosts(posts);
+            // Reaplica o filtro atual após renderizar/recarregar o feed
+            if (typeof filterFeed === 'function') {
+                filterFeed(currentTipoFeed);
+            }
         } catch (error) {
             console.error('Erro ao buscar postagens:', error);
             postsContainer.innerHTML = '<p class="mensagem-vazia">Erro ao carregar o feed.</p>';
         }
+    }
+
+    function atualizarSugestoesCidades(posts) {
+        if (!datalistCidades) return;
+        datalistCidades.innerHTML = '';
+        if (!Array.isArray(posts) || posts.length === 0) return;
+
+        const seen = new Map(); // key normalizada -> valor original
+
+        posts.forEach((post) => {
+            const cidade = post?.userId?.cidade;
+            if (!cidade || typeof cidade !== 'string') return;
+            const limpa = cidade.trim();
+            if (!limpa) return;
+            const key = limpa.toLowerCase();
+            if (!seen.has(key)) seen.set(key, limpa);
+        });
+
+        const cidades = Array.from(seen.values()).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+        const frag = document.createDocumentFragment();
+        cidades.forEach((c) => {
+            const opt = document.createElement('option');
+            opt.value = c;
+            frag.appendChild(opt);
+        });
+        datalistCidades.appendChild(frag);
     }
 
     function renderPosts(posts) {
@@ -996,26 +1028,66 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function filterFeed(tipo) {
+        currentTipoFeed = tipo || 'todos';
         document.querySelectorAll('.post').forEach(post => {
-            if (tipo === 'todos') {
+            if (currentTipoFeed === 'todos') {
                 post.style.display = 'block';
             } else {
-                if (post.dataset.userType === tipo) {
+                if (post.dataset.userType === currentTipoFeed) {
                     post.style.display = 'block';
                 } else {
                     post.style.display = 'none';
                 }
             }
         });
-        // Atualiza botões ativos
-        filterTodosBtn.classList.toggle('ativo', tipo === 'todos');
-        filterTrabalhadoresBtn.classList.toggle('ativo', tipo === 'trabalhador');
-        filterClientesBtn.classList.toggle('ativo', tipo === 'cliente');
+
+        // Mantém o select sincronizado (ex.: quando reaplica após fetchPosts)
+        if (feedTipoSelect && feedTipoSelect.value !== currentTipoFeed) {
+            feedTipoSelect.value = currentTipoFeed;
+        }
     }
 
-    if (filterTodosBtn) filterTodosBtn.addEventListener('click', () => filterFeed('todos'));
-    if (filterTrabalhadoresBtn) filterTrabalhadoresBtn.addEventListener('click', () => filterFeed('trabalhador'));
-    if (filterClientesBtn) filterClientesBtn.addEventListener('click', () => filterFeed('cliente'));
+    if (feedTipoSelect) {
+        // Inicializa (caso o HTML mude o selected)
+        currentTipoFeed = feedTipoSelect.value || 'todos';
+        
+        // Ajusta a largura do select conforme o texto selecionado (Todos/Clientes/Profissionais)
+        function ajustarLarguraSelectTipo() {
+            if (!feedTipoSelect) return;
+
+            // Em mobile o CSS já força 100%
+            if (window.innerWidth <= 767) {
+                feedTipoSelect.style.width = '';
+                return;
+            }
+
+            const selectedText = feedTipoSelect.options[feedTipoSelect.selectedIndex]?.text || '';
+            const span = document.createElement('span');
+            const cs = window.getComputedStyle(feedTipoSelect);
+
+            span.style.position = 'absolute';
+            span.style.visibility = 'hidden';
+            span.style.whiteSpace = 'nowrap';
+            span.style.font = cs.font;
+            span.textContent = selectedText;
+            document.body.appendChild(span);
+
+            const textWidth = span.getBoundingClientRect().width;
+            document.body.removeChild(span);
+
+            // Soma uma folga para paddings + seta do select
+            const extra = 34;
+            feedTipoSelect.style.width = `${Math.ceil(textWidth + extra)}px`;
+        }
+
+        ajustarLarguraSelectTipo();
+        window.addEventListener('resize', ajustarLarguraSelectTipo);
+
+        feedTipoSelect.addEventListener('change', () => {
+            filterFeed(feedTipoSelect.value || 'todos');
+            ajustarLarguraSelectTipo();
+        });
+    }
 
     // ----------------------------------------------------------------------
     // BOTÃO LATERAL (MOBILE) PARA ABRIR CATEGORIAS / AÇÕES RÁPIDAS / TIMES
@@ -1255,6 +1327,47 @@ document.addEventListener('DOMContentLoaded', () => {
         filtroCidadeBtn.addEventListener('click', () => {
             const cidade = filtroCidadeInput.value.trim();
             fetchPosts(cidade || null); // Busca todos se o campo estiver vazio
+        });
+
+        // Enter no campo também dispara a busca (mais rápido e natural)
+        filtroCidadeInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                filtroCidadeBtn.click();
+            }
+        });
+
+        // Autocomplete de cidades (servidor) conforme digita
+        let sugestaoCidadeTimer = null;
+        filtroCidadeInput.addEventListener('input', () => {
+            if (!datalistCidades) return;
+            const termo = filtroCidadeInput.value.trim();
+
+            if (sugestaoCidadeTimer) clearTimeout(sugestaoCidadeTimer);
+            sugestaoCidadeTimer = setTimeout(async () => {
+                if (!termo || termo.length < 1) return;
+                try {
+                    const resp = await fetch(`/api/cidades?q=${encodeURIComponent(termo)}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const data = await resp.json();
+                    if (!resp.ok || !data?.success) return;
+
+                    datalistCidades.innerHTML = '';
+                    const cidades = Array.isArray(data.cidades) ? data.cidades : [];
+                    const frag = document.createDocumentFragment();
+                    cidades.forEach((c) => {
+                        if (!c) return;
+                        const opt = document.createElement('option');
+                        opt.value = c;
+                        frag.appendChild(opt);
+                    });
+                    datalistCidades.appendChild(frag);
+                } catch (err) {
+                    // Se falhar, mantém as sugestões locais já existentes
+                    console.warn('Falha ao buscar sugestões de cidades:', err);
+                }
+            }, 180);
         });
     }
 

@@ -369,6 +369,238 @@ header {
 #filtro-cidade-btn:hover { background-color: var(--btn-primary-hover); } 
 .filtro-configuracoes { border-top: 1px solid var(--border-color); padding-top: 15px; margin-top: 20px; padding-bottom: 30px; width: 100%; box-sizing: border-box; overflow-x: hidden; } 
 .filtro-configuracoes h4 { font-size: 16px; color: var(--text-primary); margin-bottom: 10px; } 
+
+/* ---------------------------------------------------------------------- */
+/* Filtros no feed (compacto, entre "Crie uma Publicação" e o feed)         */
+/* ---------------------------------------------------------------------- */
+.feed-filtros {
+    margin: 0 0 6px;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    box-sizing: border-box;
+}
+
+.feed-filtros-row {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    flex-wrap: nowrap;
+    padding-left: 2px; /* evita cortar a borda do select quando fica muito colado na esquerda */
+}
+
+.feed-filtros-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 1 auto;
+    min-width: 0;
+}
+
+/* Select único: "Filtrar: Todos" */
+.feed-filtro-tipo {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: var(--bg-primary);
+    box-sizing: border-box;
+    box-shadow: none;
+    transition: border-color 0.12s ease;
+}
+
+.feed-filtro-tipo:hover {
+    border-color: color-mix(in srgb, var(--border-color) 65%, var(--btn-primary-bg) 35%);
+}
+
+.feed-filtro-tipo:focus-within {
+    border-color: color-mix(in srgb, var(--btn-primary-bg) 70%, var(--border-color) 30%);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--btn-primary-bg) 22%, transparent);
+}
+
+.feed-filtro-tipo select {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 12.5px;
+    font-weight: 700;
+    padding-right: 18px; /* espaço para o ícone */
+    cursor: pointer;
+    width: auto; /* JS vai ajustar com base no texto selecionado */
+}
+
+.feed-filtro-tipo select:focus {
+    outline: none;
+}
+
+/* Ajuste visual dos itens do dropdown (limitado pelo navegador, mas ajuda) */
+.feed-filtro-tipo select option {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+.feed-filtro-tipo i {
+    position: absolute;
+    right: 8px;
+    color: var(--text-secondary);
+    font-size: 12px;
+    pointer-events: none;
+}
+
+.feed-filtros-right {
+    flex: 0 0 auto;
+    min-width: 0;
+    max-width: 240px;
+    width: 240px;
+}
+
+.feed-filtro-cidade {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: var(--bg-primary);
+    box-sizing: border-box;
+    transition: box-shadow 0.12s ease, border-color 0.12s ease;
+    width: 100%;
+}
+
+.feed-filtro-cidade:focus-within {
+    border-color: color-mix(in srgb, var(--btn-primary-bg) 70%, var(--border-color) 30%);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--btn-primary-bg) 18%, transparent);
+}
+
+.feed-filtro-cidade i {
+    color: var(--text-secondary);
+    width: 18px;
+    text-align: center;
+    flex: 0 0 auto;
+}
+
+.feed-filtros #filtro-cidade {
+    width: auto;
+    margin: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+    background: transparent;
+    flex: 1 1 auto;
+    min-width: 80px;
+    font-size: 13px;
+}
+
+.feed-filtros #filtro-cidade-btn {
+    width: auto;
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    flex: 0 0 auto;
+    white-space: nowrap;
+    min-width: fit-content;
+}
+
+@media (max-width: 767px) {
+    .feed-filtros {
+        padding: 4px 4px;
+        border-radius: 10px;
+    }
+
+    .feed-filtros-row {
+        flex-wrap: nowrap; /* mantém filtro + cidade lado a lado */
+        gap: 4px;
+        padding-left: 2px;
+    }
+
+    .feed-filtros-left {
+        flex: 0 0 auto;
+        min-width: 0;
+    }
+
+    .feed-filtros-right {
+        flex: 0 1 auto;
+        min-width: 0;
+        max-width: 160px; /* mantém limite em telas médias/estreitas */
+        width: auto;
+    }
+
+    .feed-filtro-cidade {
+        width: 100%;
+        gap: 5px;
+        padding: 6px 10px;
+    }
+
+    .feed-filtros #filtro-cidade {
+        font-size: 11px;
+        min-width: 50px;
+        padding: 0;
+    }
+
+    .feed-filtros #filtro-cidade-btn {
+        padding: 6px 12px;
+        font-size: 10px;
+        white-space: nowrap;
+    }
+
+    .feed-filtro-tipo {
+        padding: 6px 10px;
+    }
+    .feed-filtro-tipo select {
+        width: auto; /* não força 100% no mobile, pra caber ao lado da cidade */
+        font-size: 11px;
+        padding: 4px 18px 4px 6px;
+    }
+    .feed-filtro-tipo i {
+        right: 6px;
+        font-size: 10px;
+    }
+    
+    .feed-filtro-cidade i {
+        width: 14px;
+        font-size: 11px;
+    }
+}
+
+/* Em telas menores (≤480px), a caixa de cidade vai até a borda direita */
+@media (max-width: 480px) {
+    .feed-filtros {
+        padding: 4px 0;
+    }
+
+    .feed-filtros-row {
+        padding-right: 0;
+        justify-content: space-between; /* empurra a caixa de cidade para a direita */
+    }
+
+    .feed-filtros-right {
+        flex: 1 1 auto;
+        max-width: none; /* remove limite para chegar até a borda direita */
+        display: flex;
+        justify-content: flex-end; /* alinha o conteúdo interno à direita */
+    }
+}
+
+/* Em telas EXTREMAMENTE estreitas (só abaixo de 280px), volta a empilhar */
+@media (max-width: 280px) {
+    .feed-filtros-row {
+        flex-wrap: wrap;
+    }
+    .feed-filtros-right {
+        flex: 1 1 100%;
+        width: auto;
+        max-width: none;
+    }
+}
 .filtro-config-btn { display: block; padding: 8px 10px; font-size: 14px; color: var(--text-secondary); text-decoration: none; border-radius: 5px; transition: background-color 0.2s; }
 .filtro-config-btn i { margin-right: 10px; width: 20px; text-align: center; color: var(--text-secondary); } 
 .filtro-config-btn:hover { background-color: var(--bg-hover); } 
@@ -441,7 +673,7 @@ main { flex-grow: 1; max-width: 850px; min-width: 550px; box-sizing: border-box;
 }
 
 /* Área de Publicação */
-.publicar { background: var(--bg-secondary); border-radius: 8px; padding: 20px; margin-bottom: 25px; box-shadow: 0 2px 5px var(--shadow-color); max-width: 100%; box-sizing: border-box; overflow-x: hidden; } 
+.publicar { background: var(--bg-secondary); border-radius: 8px; padding: 20px; margin-bottom: 8px; box-shadow: 0 2px 5px var(--shadow-color); max-width: 100%; box-sizing: border-box; overflow-x: hidden; } 
 .publicar h2 { font-size: 1.3em; color: var(--text-primary); margin-bottom: 15px; } 
 
 textarea#post-content-input {
@@ -3844,9 +4076,15 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
         padding: 8px !important;
     }
     
-    #filtro-cidade-btn {
+    /* Ajuste: só força 100% no botão dentro do sidebar antigo (.filtro-localizacao), não no .feed-filtros */
+    .filtro-localizacao #filtro-cidade-btn {
         width: 100% !important;
         padding: 8px !important;
+    }
+    
+    /* Garante que o botão dentro de .feed-filtros mantenha largura automática */
+    .feed-filtros #filtro-cidade-btn {
+        width: auto !important;
     }
     
     .filtro-acoes-rapidas {
@@ -4065,12 +4303,12 @@ textarea#post-content-input::placeholder { color: var(--text-placeholder); }
     .categorias {
         display: none;
         position: fixed;
-        inset: 75px 0 0 0; /* abaixo do header + 3px para não cortar as letras */
+        inset: 85px 0 0 0; /* abaixo do header com mais espaço para não cortar */
         z-index: 900; /* abaixo dos modais (1000) para que eles apareçam por cima */
         max-width: none;
         border-radius: 0;
         overflow-y: auto;
-        height: calc(100vh - 73px);
+        height: calc(100vh - 85px);
         padding-top: 40px; /* espaço para o botão X */
     }
 

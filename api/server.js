@@ -2083,6 +2083,66 @@ app.get('/api/posts', authMiddleware, async (req, res) => {
     }
 });
 
+// Sugestões de cidades (autocomplete) - retorna cidades do banco conforme o usuário digita
+app.get('/api/cidades', authMiddleware, async (req, res) => {
+    try {
+        const q = String(req.query.q || '').trim();
+        if (!q || q.length < 1) {
+            return res.json({ success: true, cidades: [] });
+        }
+
+        const normalizeString = (str) => {
+            return String(str || '')
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .trim();
+        };
+
+        const qNorm = normalizeString(q);
+
+        const escapeRegex = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+        // Busca cidades dos usuários e filtra no Node para ficar tolerante a acentos.
+        // Para 1 letra, reduz o universo com regex de prefixo.
+        const baseQuery = { cidade: { $exists: true, $ne: '' } };
+        const mongoQuery = (q.length === 1)
+            ? { ...baseQuery, cidade: { $regex: new RegExp(`^${escapeRegex(q)}`, 'i') } }
+            : baseQuery;
+
+        const usuarios = await User.find(mongoQuery)
+            .select('cidade')
+            .lean();
+
+        const seen = new Map(); // key normalizada -> valor original
+        for (const u of usuarios) {
+            const cidade = (u && u.cidade) ? String(u.cidade).trim() : '';
+            if (!cidade) continue;
+            const key = normalizeString(cidade);
+            if (!key) continue;
+
+            // Para 1 letra: só "começa com" (evita muitas sugestões irrelevantes)
+            // Para 2+ letras: "começa com" OU "contém" (mais flexível)
+            const match = (qNorm.length === 1)
+                ? key.startsWith(qNorm)
+                : (key.startsWith(qNorm) || key.includes(qNorm));
+
+            if (match) {
+                if (!seen.has(key)) seen.set(key, cidade);
+            }
+        }
+
+        const cidades = Array.from(seen.values())
+            .sort((a, b) => a.localeCompare(b, 'pt-BR'))
+            .slice(0, 20);
+
+        res.json({ success: true, cidades });
+    } catch (error) {
+        console.error('Erro ao buscar sugestões de cidades:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
 // Buscar Postagens de um Usuário
 app.get('/api/user-posts/:userId', authMiddleware, async (req, res) => {
     try {
