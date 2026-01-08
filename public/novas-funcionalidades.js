@@ -489,11 +489,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function atualizarVisibilidadeBotoesFoto() {
         const temFotos = fotosSelecionadas.length > 0;
+        const maxFotos = 4;
+        const atingiuLimite = fotosSelecionadas.length >= maxFotos;
+        
         if (btnSelecionarFotoPedido) {
             btnSelecionarFotoPedido.style.display = temFotos ? 'none' : 'inline-flex';
         }
+        // Esconde o botão de adicionar quando atingir 4 imagens
         if (btnAdicionarFotoPedido) {
-            btnAdicionarFotoPedido.style.display = temFotos ? 'inline-flex' : 'none';
+            btnAdicionarFotoPedido.style.display = (temFotos && !atingiuLimite) ? 'inline-flex' : 'none';
         }
     }
 
@@ -557,7 +561,15 @@ document.addEventListener('DOMContentLoaded', () => {
             const files = Array.from(e.target.files || []);
             if (!files.length) return;
 
+            const maxFotos = 4;
+            const fotosRestantes = maxFotos - fotosSelecionadas.length;
+
             files.forEach((file) => {
+                // Limita a 4 imagens no total
+                if (fotosSelecionadas.length >= maxFotos) {
+                    return;
+                }
+                
                 // Evita duplicar a mesma referência de arquivo
                 if (!fotosSelecionadas.includes(file)) {
                     fotosSelecionadas.push(file);
@@ -566,6 +578,10 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             atualizarVisibilidadeBotoesFoto();
+            // Limpa o input para permitir selecionar o mesmo arquivo novamente se necessário
+            if (inputFotoPedido) {
+                inputFotoPedido.value = '';
+            }
         });
     }
 
@@ -1792,11 +1808,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                                     </div>
                                                     <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                                                         ${profissionalAceito.foto || profissionalAceito.avatarUrl ? `
-                                                            <img src="${profissionalAceito.foto || profissionalAceito.avatarUrl}" 
-                                                                 alt="${profissionalAceito.nome}" 
-                                                                 style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(40, 167, 69, 0.3); pointer-events: none;">
+                                                            <a href="/perfil?id=${profissionalAceito._id || profissionalAceito.id || ''}" style="text-decoration: none; display: inline-flex; pointer-events: auto;">
+                                                                <img src="${profissionalAceito.foto || profissionalAceito.avatarUrl}" 
+                                                                     alt="${profissionalAceito.nome}" 
+                                                                     style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(40, 167, 69, 0.3);">
+                                                            </a>
                                                         ` : ''}
-                                                        <div style="flex: 1; min-width: 150px; pointer-events: none;">
+                                                        <a href="/perfil?id=${profissionalAceito._id || profissionalAceito.id || ''}" style="flex: 1; min-width: 150px; text-decoration: none; color: inherit; pointer-events: auto;">
                                                             <div style="font-weight: 600; color: var(--text-primary); font-size: 15px;">
                                                                 ${profissionalAceito.nome || 'Profissional'}
                                                             </div>
@@ -1805,7 +1823,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                                                     <i class="fas fa-map-marker-alt"></i> ${profissionalAceito.cidade} - ${profissionalAceito.estado}
                                                                 </div>
                                                             ` : ''}
-                                                        </div>
+                                                        </a>
                                                         ${valorAceito ? `
                                                             <div style="text-align: right; pointer-events: none;">
                                                                 <div style="font-size: 18px; font-weight: 700; color: #28a745;">
@@ -2247,11 +2265,13 @@ document.addEventListener('DOMContentLoaded', () => {
                                             </div>
                                             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                                                 ${profissionalAceito.foto || profissionalAceito.avatarUrl ? `
-                                                    <img src="${profissionalAceito.foto || profissionalAceito.avatarUrl}" 
-                                                         alt="${profissionalAceito.nome}" 
-                                                         style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(40, 167, 69, 0.3); pointer-events: none;">
+                                                    <a href="/perfil?id=${profissionalAceito._id || profissionalAceito.id || ''}" style="text-decoration: none; display: inline-flex; pointer-events: auto;">
+                                                        <img src="${profissionalAceito.foto || profissionalAceito.avatarUrl}" 
+                                                             alt="${profissionalAceito.nome}" 
+                                                             style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(40, 167, 69, 0.3);">
+                                                    </a>
                                                 ` : ''}
-                                                <div style="flex: 1; min-width: 150px; pointer-events: none;">
+                                                <a href="/perfil?id=${profissionalAceito._id || profissionalAceito.id || ''}" style="flex: 1; min-width: 150px; text-decoration: none; color: inherit; pointer-events: auto;">
                                                     <div style="font-weight: 600; color: var(--text-primary); font-size: 15px;">
                                                         ${profissionalAceito.nome || 'Profissional'}
                                                     </div>
@@ -2260,7 +2280,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                                             <i class="fas fa-map-marker-alt"></i> ${profissionalAceito.cidade} - ${profissionalAceito.estado}
                                                         </div>
                                                     ` : ''}
-                                                </div>
+                                                </a>
                                                 ${valorAceito ? `
                                                     <div style="text-align: right; pointer-events: none;">
                                                         <div style="font-size: 18px; font-weight: 700; color: #28a745;">

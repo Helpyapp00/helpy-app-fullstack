@@ -596,7 +596,46 @@
         // Elementos do DOM
         const btnNotificacoes = document.getElementById('btn-notificacoes');
         const badgeNotificacoes = document.getElementById('badge-notificacoes');
-        const modalNotificacoes = document.getElementById('modal-notificacoes');
+        let modalNotificacoes = document.getElementById('modal-notificacoes');
+        
+        // Proteção: garante que o modal sempre exista no DOM
+        if (!modalNotificacoes) {
+            console.warn('⚠️ Modal de notificações não encontrado no DOM inicialmente. Verificando novamente...');
+            // Aguarda um pouco e tenta novamente
+            setTimeout(() => {
+                modalNotificacoes = document.getElementById('modal-notificacoes');
+                if (!modalNotificacoes) {
+                    console.error('❌ Modal de notificações ainda não encontrado após aguardar. Verifique se o elemento existe no HTML.');
+                }
+            }, 100);
+        }
+        
+        // Proteção adicional: MutationObserver para detectar se o modal é removido do DOM
+        if (modalNotificacoes && !window.modalNotificacoesObserver) {
+            window.modalNotificacoesObserver = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    mutation.removedNodes.forEach((node) => {
+                        if (node.nodeType === 1 && (node.id === 'modal-notificacoes' || node.querySelector && node.querySelector('#modal-notificacoes'))) {
+                            console.error('❌ Modal de notificações foi removido do DOM!');
+                            console.error('❌ Tentando recriar o modal...');
+                            // Tenta encontrar o modal novamente
+                            const modalRecriado = document.getElementById('modal-notificacoes');
+                            if (!modalRecriado) {
+                                console.error('❌ Não foi possível encontrar o modal após remoção. Recarregue a página.');
+                            }
+                        }
+                    });
+                });
+            });
+            
+            // Observa mudanças no body para detectar remoção do modal
+            window.modalNotificacoesObserver.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+            console.log('✅ MutationObserver configurado para proteger o modal de notificações');
+        }
+        
         const listaNotificacoes = document.getElementById('lista-notificacoes');
         const btnMarcarTodasLidas = document.getElementById('btn-marcar-todas-lidas');
         const btnLimparNotificacoes = document.getElementById('btn-limpar-notificacoes');
@@ -662,7 +701,7 @@
             }
         };
         
-        // Função para carregar notificações (atribuída à variável global)
+        // Função para carregar notificações (atribuída à variável global e window)
         carregarNotificacoes = async function() {
             if ((!badgeNotificacoes && !listaNotificacoes) || !token || !loggedInUserId) return;
             try {
@@ -684,7 +723,40 @@
                 }
 
                 // Lista, se modal aberto
-                if (listaNotificacoes && modalNotificacoes && !modalNotificacoes.classList.contains('hidden')) {
+                // Busca o modal dinamicamente para garantir que a referência está atualizada
+                const modalNotificacoesAtual = document.getElementById('modal-notificacoes');
+                // Preserva a mensagem de erro se estiver sendo exibida
+                const mensagemProposta = document.getElementById('mensagem-proposta-respondida');
+                const mensagemTexto = document.getElementById('mensagem-proposta-texto');
+                let mensagemPreservada = null;
+                const temMensagemFlag = window.temMensagemErroNotificacao;
+                
+                // Verifica se há mensagem de erro sendo exibida
+                const temMensagemVisivel = mensagemProposta && mensagemTexto && mensagemProposta.style.display !== 'none';
+                if (temMensagemVisivel || temMensagemFlag) {
+                    if (mensagemProposta && mensagemTexto) {
+                        mensagemPreservada = {
+                            texto: mensagemTexto.textContent || 'Esta proposta/candidatura já foi recusada.',
+                            display: mensagemProposta.style.display || 'block'
+                        };
+                    }
+                    
+                    // NUNCA recarrega a lista se há mensagem de erro sendo exibida (evita piscar)
+                    if ((temMensagemFlag || temMensagemVisivel) && listaNotificacoes && modalNotificacoesAtual && !modalNotificacoesAtual.classList.contains('hidden')) {
+                        // Apenas atualiza o badge, não recarrega a lista para evitar piscar
+                        if (badgeNotificacoes) {
+                            if (data.totalNaoLidas > 0) {
+                                badgeNotificacoes.textContent = data.totalNaoLidas > 99 ? '99+' : data.totalNaoLidas;
+                                badgeNotificacoes.style.display = 'flex';
+                            } else {
+                                badgeNotificacoes.style.display = 'none';
+                            }
+                        }
+                        return; // Sai da função sem recarregar a lista
+                    }
+                }
+                
+                if (listaNotificacoes && modalNotificacoesAtual && !modalNotificacoesAtual.classList.contains('hidden')) {
                     const notificacoes = data.notificacoes || [];
                     if (notificacoes.length === 0) {
                         listaNotificacoes.innerHTML = '<p style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhuma notificação.</p>';
@@ -699,7 +771,15 @@
                             proposta_pedido_urgente: '💼',
                             pedido_urgente: '⚡',
                             servico_concluido: '✨',
-                            avaliacao_recebida: '⭐'
+                            avaliacao_recebida: '⭐',
+                            candidatura_time: '👥',
+                            contraproposta_time: '💰',
+                            proposta_time_aceita: '🎉',
+                            confirmar_perfil_time: '👤',
+                            candidatura_recusada_time: '❌',
+                            post_curtido: '❤️',
+                            post_comentado: '💬',
+                            comentario_respondido: '↩️'
                         };
                         listaNotificacoes.innerHTML = notificacoes.map(notif => {
                             const dataFmt = new Date(notif.createdAt).toLocaleString('pt-BR');
@@ -707,13 +787,17 @@
                             const modoSelecaoClass = modoSelecao ? 'modo-selecao' : '';
                             const selecionadaClass = isSelecionada ? 'selecionada' : '';
                             const paddingLeft = modoSelecao ? '35px' : '15px';
+                            // Verifica se é notificação de recusa para aplicar estilo vermelho
+                            const isRecusada = notif.tipo === 'candidatura_recusada_time';
+                            const estiloRecusada = isRecusada ? 'style="color: #dc3545; border-left: 3px solid #dc3545; padding-left: 12px;"' : '';
+                            
                             return `
-                                <div class="notificacao-card ${notif.lida ? '' : 'nao-lida'} ${modoSelecaoClass} ${selecionadaClass}" data-notif-id="${notif._id}">
+                                <div class="notificacao-card ${notif.lida ? '' : 'nao-lida'} ${modoSelecaoClass} ${selecionadaClass} ${isRecusada ? 'notificacao-recusada' : ''}" data-notif-id="${notif._id}" ${estiloRecusada}>
                                     <div style="display: flex; gap: 15px; align-items: flex-start; padding-left: ${paddingLeft};">
                                         <div style="font-size: 24px;">${iconMap[notif.tipo] || '🔔'}</div>
                                         <div style="flex: 1;">
-                                            <strong>${notif.titulo || 'Notificação'}</strong>
-                                            <p style="margin: 5px 0; color: var(--text-secondary);">${notif.mensagem || ''}</p>
+                                            <strong ${isRecusada ? 'style="color: #dc3545;"' : ''}>${notif.titulo || 'Notificação'}</strong>
+                                            <p style="margin: 5px 0; color: ${isRecusada ? '#dc3545' : 'var(--text-secondary)'};">${notif.mensagem || ''}</p>
                                             <small style="color: var(--text-secondary);">${dataFmt}</small>
                                         </div>
                                         ${!notif.lida ? '<span style="background: #007bff; width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-top: 5px;"></span>' : ''}
@@ -721,6 +805,12 @@
                                 </div>
                             `;
                         }).join('');
+                        
+                        // Restaura a mensagem preservada se houver
+                        if (mensagemPreservada && mensagemProposta && mensagemTexto) {
+                            mensagemTexto.textContent = mensagemPreservada.texto;
+                            mensagemProposta.style.display = mensagemPreservada.display;
+                        }
 
                         // Clique em cada notificação (usando capture phase para garantir que execute antes)
                         document.querySelectorAll('.notificacao-card').forEach(card => {
@@ -749,20 +839,114 @@
                                     return;
                                 }
                                 
+                                // Busca o modal atualizado
+                                const modalNotificacoesAtual = document.getElementById('modal-notificacoes');
+                                
+                                // Função auxiliar para fechar o modal de notificações
+                                const fecharModalNotificacoes = () => {
+                                    // Busca o modal novamente para garantir que tem a referência atualizada
+                                    const modal = document.getElementById('modal-notificacoes');
+                                    if (modal) {
+                                        // Remove todos os estilos inline primeiro
+                                        modal.style.cssText = '';
+                                        modal.style.removeProperty('display');
+                                        modal.style.removeProperty('visibility');
+                                        modal.style.removeProperty('opacity');
+                                        modal.style.removeProperty('position');
+                                        modal.style.removeProperty('z-index');
+                                        modal.style.removeProperty('top');
+                                        modal.style.removeProperty('left');
+                                        modal.style.removeProperty('width');
+                                        modal.style.removeProperty('height');
+                                        
+                                        // Adiciona a classe hidden
+                                        modal.classList.add('hidden');
+                                        
+                                        // Reseta a flag
+                                        modalAbertoAgora = false;
+                                        
+                                        console.log('✅ Modal de notificações fechado');
+                                    }
+                                };
+                                
+                                // Verifica ANTES de marcar como lida se haverá mensagem de erro
+                                // Define flag preventivo para notificações que podem gerar erro
+                                const notif = (data.notificacoes || []).find(n => n._id === notifId);
+                                const podeGerarErro = notif && (
+                                    notif.tipo === 'candidatura_time' || 
+                                    notif.tipo === 'contraproposta_time' || 
+                                    notif.tipo === 'confirmar_perfil_time'
+                                );
+                                
+                                // Define flag preventivo ANTES de processar para evitar recarregamento
+                                // Isso garante que não haverá recarregamento mesmo se a função demorar
+                                // Mas NÃO impede o processamento da notificação - apenas evita recarregamento da lista
+                                if (podeGerarErro) {
+                                    window.temMensagemErroNotificacao = true;
+                                    console.log('🚫 Flag de mensagem de erro definido preventivamente para evitar piscar (notificação será processada normalmente)');
+                                }
+                                
                                 // Comportamento normal quando não está em modo de seleção
                                 try {
-                                    await fetch(`/api/notificacoes/${notifId}/lida`, {
+                                    const lidaResponse = await fetch(`/api/notificacoes/${notifId}/lida`, {
                                         method: 'PUT',
                                         headers: { 'Authorization': `Bearer ${token}` }
                                     });
+                                    
+                                    if (lidaResponse.ok) {
+                                        // Atualiza o badge imediatamente
+                                        if (badgeNotificacoes && typeof carregarNotificacoes === 'function') {
+                                            // Verifica se há uma mensagem de erro sendo exibida (usando flag global também)
+                                            const mensagemProposta = document.getElementById('mensagem-proposta-respondida');
+                                            const temMensagem = (mensagemProposta && mensagemProposta.style.display !== 'none') || window.temMensagemErroNotificacao;
+                                            
+                                            // NUNCA recarrega se houver mensagem de erro sendo exibida ou flag ativo
+                                            if (!temMensagem) {
+                                                // Recarrega as notificações para atualizar o badge
+                                                await carregarNotificacoes();
+                                            } else {
+                                                // Apenas atualiza o badge sem recarregar a lista (evita piscar)
+                                                try {
+                                                    const resp = await fetch('/api/notificacoes?limit=1', {
+                                                        headers: { 'Authorization': `Bearer ${token}` }
+                                                    });
+                                                    if (resp.ok) {
+                                                        const data = await resp.json();
+                                                        if (data.success && badgeNotificacoes) {
+                                                            if (data.totalNaoLidas > 0) {
+                                                                badgeNotificacoes.textContent = data.totalNaoLidas > 99 ? '99+' : data.totalNaoLidas;
+                                                                badgeNotificacoes.style.display = 'flex';
+                                                            } else {
+                                                                badgeNotificacoes.style.display = 'none';
+                                                            }
+                                                        }
+                                                    }
+                                                } catch (err) {
+                                                    console.warn('Erro ao atualizar badge:', err);
+                                                }
+                                            }
+                                        }
+                                    }
                                 } catch (err) {
                                     console.error('Erro ao marcar notificação como lida', err);
                                 }
                                 
+                                // Se a notificação não for do tipo que pode gerar erro, não precisa processar mais
+                                // As notificações que podem gerar erro são processadas abaixo
+                                if (!podeGerarErro) {
+                                    return;
+                                }
+                                
                                 // Redireciona se for serviço concluído
-                                const notif = (data.notificacoes || []).find(n => n._id === notifId);
+                                // Reutiliza a variável notif já declarada acima
                                 console.log('📋 Notificação encontrada:', notif?.tipo, notif?.dadosAdicionais);
+                                
+                                // Flag para indicar se algo foi aberto (redirecionamento, modal, etc.)
+                                let algoFoiAberto = false;
+                                
                                 if (notif?.tipo === 'servico_concluido' && notif.dadosAdicionais?.profissionalId) {
+                                    algoFoiAberto = true;
+                                    fecharModalNotificacoes();
                                     const params = new URLSearchParams({
                                         id: notif.dadosAdicionais.profissionalId,
                                         origem: 'servico_concluido'
@@ -850,7 +1034,8 @@
                                 }
                                 // Se for notificação de proposta de pedido urgente, abre o modal de propostas
                                 if (notif?.tipo === 'proposta_pedido_urgente' && notif.dadosAdicionais?.pedidoId) {
-                                    modalNotificacoes?.classList.add('hidden');
+                                    algoFoiAberto = true;
+                                    fecharModalNotificacoes();
                                     const pedidoId = notif.dadosAdicionais.pedidoId;
                                     
                                     // Tenta usar a função global do feed primeiro, depois a auxiliar
@@ -865,8 +1050,9 @@
                                 
                                 // Se for notificação de proposta aceita, abre o modal de serviços ativos
                                 if (notif?.tipo === 'proposta_aceita') {
+                                    algoFoiAberto = true;
+                                    fecharModalNotificacoes();
                                     console.log('🎉 Notificação de proposta aceita detectada!', notif.dadosAdicionais);
-                                    modalNotificacoes?.classList.add('hidden');
                                     // Pode ter pedidoId ou agendamentoId
                                     const pedidoId = notif.dadosAdicionais?.pedidoId || notif.dadosAdicionais?.agendamentoId;
                                     
@@ -888,6 +1074,137 @@
                                     }
                                     return;
                                 }
+                                
+                                // Trata notificação de proposta aceita em time
+                                if (notif?.tipo === 'proposta_time_aceita' && notif.dadosAdicionais?.timeId) {
+                                    algoFoiAberto = true;
+                                    fecharModalNotificacoes();
+                                    console.log('🎉 Notificação de proposta aceita detectada!', notif.dadosAdicionais);
+                                    
+                                    // Abre o modal de proposta aceita
+                                    if (typeof window.abrirModalPropostaAceita === 'function') {
+                                        await window.abrirModalPropostaAceita(notif.dadosAdicionais);
+                                    } else {
+                                        console.error('❌ Função abrirModalPropostaAceita não encontrada');
+                                    }
+                                    return;
+                                }
+                                
+                                // Trata notificação de confirmação de perfil em time
+                                if (notif?.tipo === 'confirmar_perfil_time' && notif.dadosAdicionais?.timeId) {
+                                    console.log('👤 Notificação de confirmação de perfil detectada!', notif.dadosAdicionais);
+                                    
+                                    const timeId = notif.dadosAdicionais.timeId;
+                                    const candidatoId = notif.dadosAdicionais.candidatoId;
+                                    const profissionalId = notif.dadosAdicionais.profissionalId;
+                                    
+                                    // Define flag ANTES de chamar a função para evitar recarregamento
+                                    window.temMensagemErroNotificacao = true;
+                                    
+                                    // Se estiver no feed (index.html), chama a função diretamente
+                                    if (typeof window.abrirCandidatosPorNotificacao === 'function') {
+                                        console.log('✅ Chamando abrirCandidatosPorNotificacao para confirmar perfil');
+                                        const sucesso = await window.abrirCandidatosPorNotificacao(timeId, profissionalId, 'confirmar_perfil_time', candidatoId);
+                                        // Só fecha o modal se tudo deu certo
+                                        if (sucesso) {
+                                            // Remove o flag IMEDIATAMENTE se deu certo (notificação válida)
+                                            window.temMensagemErroNotificacao = false;
+                                            console.log('✅ Flag removido - notificação válida processada com sucesso');
+                                            algoFoiAberto = true;
+                                            fecharModalNotificacoes();
+                                        }
+                                        // Se não deu certo, o flag permanece e a mensagem já foi exibida
+                                    } else {
+                                        console.log('🔄 Função não disponível, redirecionando para feed...');
+                                        // Remove o flag antes de redirecionar
+                                        window.temMensagemErroNotificacao = false;
+                                        algoFoiAberto = true;
+                                        fecharModalNotificacoes();
+                                        const params = new URLSearchParams({ abrirCandidatos: timeId });
+                                        if (profissionalId) {
+                                            params.append('profissionalId', profissionalId);
+                                        }
+                                        if (candidatoId) {
+                                            params.append('candidatoId', candidatoId);
+                                        }
+                                        params.append('tipoNotificacao', 'confirmar_perfil_time');
+                                        window.location.href = `/index.html?${params.toString()}`;
+                                    }
+                                    return;
+                                }
+                                
+                                // Trata notificações de posts (curtidas, comentários, respostas)
+                                if (notif?.tipo === 'post_curtido' && notif.dadosAdicionais?.postId) {
+                                    algoFoiAberto = true;
+                                    fecharModalNotificacoes();
+                                    // Recarrega a página para mostrar o post atualizado
+                                    window.location.reload();
+                                    return;
+                                }
+                                
+                                if (notif?.tipo === 'post_comentado' && notif.dadosAdicionais?.postId) {
+                                    algoFoiAberto = true;
+                                    fecharModalNotificacoes();
+                                    // Recarrega a página para mostrar o comentário
+                                    window.location.reload();
+                                    return;
+                                }
+                                
+                                if (notif?.tipo === 'comentario_respondido' && notif.dadosAdicionais?.postId) {
+                                    algoFoiAberto = true;
+                                    fecharModalNotificacoes();
+                                    // Recarrega a página para mostrar a resposta
+                                    window.location.reload();
+                                    return;
+                                }
+                                
+                                // Trata notificação de candidatura em time
+                                if ((notif?.tipo === 'candidatura_time' || notif?.tipo === 'contraproposta_time') && notif.dadosAdicionais?.timeId) {
+                                    console.log('🔔 Notificação de candidatura/contraproposta detectada!', notif.dadosAdicionais);
+                                    
+                                    const timeId = notif.dadosAdicionais.timeId;
+                                    const profissionalId = notif.dadosAdicionais.profissionalId;
+                                    const candidatoId = notif.dadosAdicionais.candidatoId; // ID específico do candidato
+                                    const tipoNotificacao = notif.tipo;
+                                    
+                                    // Define flag ANTES de chamar a função para evitar recarregamento
+                                    // A função pode retornar false se houver erro, então preparamos para isso
+                                    window.temMensagemErroNotificacao = true;
+                                    
+                                    // Se estiver no feed (index.html), chama a função diretamente
+                                    if (typeof window.abrirCandidatosPorNotificacao === 'function') {
+                                        console.log('✅ Chamando abrirCandidatosPorNotificacao com timeId:', timeId, 'profissionalId:', profissionalId, 'candidatoId:', candidatoId, 'tipoNotificacao:', tipoNotificacao);
+                                        const sucesso = await window.abrirCandidatosPorNotificacao(timeId, profissionalId, tipoNotificacao, candidatoId);
+                                        // Só fecha o modal se tudo deu certo
+                                        if (sucesso) {
+                                            // Remove o flag IMEDIATAMENTE se deu certo (notificação válida)
+                                            window.temMensagemErroNotificacao = false;
+                                            console.log('✅ Flag removido - notificação válida processada com sucesso');
+                                            algoFoiAberto = true;
+                                            fecharModalNotificacoes();
+                                        }
+                                        // Se não deu certo, o flag permanece e a mensagem já foi exibida
+                                    } else {
+                                        console.log('🔄 Função não disponível, redirecionando para feed...');
+                                        // Remove o flag antes de redirecionar
+                                        window.temMensagemErroNotificacao = false;
+                                        algoFoiAberto = true;
+                                        fecharModalNotificacoes();
+                                        // Se não estiver no feed, redireciona para o feed com parâmetro
+                                        const params = new URLSearchParams({ abrirCandidatos: timeId });
+                                        if (profissionalId) {
+                                            params.append('profissionalId', profissionalId);
+                                        }
+                                        if (candidatoId) {
+                                            params.append('candidatoId', candidatoId);
+                                        }
+                                        if (tipoNotificacao) {
+                                            params.append('tipoNotificacao', tipoNotificacao);
+                                        }
+                                        window.location.href = `/index.html?${params.toString()}`;
+                                    }
+                                    return;
+                                }
                             });
                         });
                     }
@@ -895,7 +1212,9 @@
             } catch (error) {
                 console.error('Erro ao carregar notificações:', error);
                 if (badgeNotificacoes) badgeNotificacoes.style.display = 'none';
-                if (listaNotificacoes && modalNotificacoes && !modalNotificacoes.classList.contains('hidden')) {
+                // Busca o modal dinamicamente para garantir que a referência está atualizada
+                const modalNotificacoesAtual = document.getElementById('modal-notificacoes');
+                if (listaNotificacoes && modalNotificacoesAtual && !modalNotificacoesAtual.classList.contains('hidden')) {
                     listaNotificacoes.innerHTML = '<p style="color: var(--error-color);">Erro ao carregar notificações.</p>';
                 }
             }
@@ -952,6 +1271,9 @@
             return true;
         }
         
+        // Flag para evitar fechar modal imediatamente após abrir (compartilhada)
+        let modalAbertoAgora = false;
+        
         // Configuração do botão de notificações
         if (btnNotificacoes) {
             console.log('🔔 Configurando botão de notificações...', btnNotificacoes);
@@ -959,25 +1281,102 @@
             const novoBtnNotificacoes = btnNotificacoes.cloneNode(true);
             btnNotificacoes.parentNode.replaceChild(novoBtnNotificacoes, btnNotificacoes);
             
-            // Flag para evitar fechar modal imediatamente após abrir
-            let modalAbertoAgora = false;
-            
             novoBtnNotificacoes.addEventListener('click', async (e) => {
                 console.log('🔔🔔🔔 CLIQUE NO BOTÃO DE NOTIFICAÇÕES!', e);
                 e.stopPropagation();
                 e.preventDefault();
                 e.stopImmediatePropagation(); // Impede que outros listeners executem
                 
-                if (!modalNotificacoes) {
-                    console.error('❌ modalNotificacoes não encontrado!');
-                    return;
+                // Busca o modal novamente no DOM para garantir que a referência está atualizada
+                // Tenta múltiplas vezes com pequenos delays para garantir que encontre o modal
+                let modalNotificacoesAtual = null;
+                for (let tentativa = 0; tentativa < 5; tentativa++) {
+                    modalNotificacoesAtual = document.getElementById('modal-notificacoes');
+                    if (modalNotificacoesAtual) {
+                        break;
+                    }
+                    // Aguarda um pouco antes de tentar novamente
+                    await new Promise(resolve => setTimeout(resolve, 50));
                 }
-                console.log('✅ modalNotificacoes encontrado:', modalNotificacoes);
-                const estavaOculto = modalNotificacoes.classList.contains('hidden');
-                console.log('🔍 Modal estava oculto?', estavaOculto);
-                if (!estavaOculto) {
-                    console.log('🔒 Fechando modal...');
-                    modalNotificacoes.classList.add('hidden');
+                
+                if (!modalNotificacoesAtual) {
+                    console.error('❌ modalNotificacoes não encontrado no DOM após múltiplas tentativas!');
+                    console.error('❌ Verificando se o elemento existe no HTML...');
+                    // Tenta encontrar qualquer elemento com id modal-notificacoes
+                    const todosModais = document.querySelectorAll('[id*="modal-notificacoes"]');
+                    console.error('❌ Elementos encontrados com id contendo "modal-notificacoes":', todosModais.length);
+                    
+                    // Se ainda não encontrou, tenta buscar pelo seletor de classe
+                    const modalPorClasse = document.querySelector('.modal-overlay[id="modal-notificacoes"]');
+                    if (modalPorClasse) {
+                        console.log('✅ Modal encontrado por classe!');
+                        modalNotificacoesAtual = modalPorClasse;
+                    } else {
+                        console.error('❌ Modal não encontrado de forma alguma. Verifique se o elemento existe no HTML.');
+                        return;
+                    }
+                }
+                console.log('✅ modalNotificacoes encontrado:', modalNotificacoesAtual);
+                
+                // Verifica o estado atual do modal de forma mais robusta
+                const temClasseHidden = modalNotificacoesAtual.classList.contains('hidden');
+                const displayAtual = window.getComputedStyle(modalNotificacoesAtual).display;
+                const visibilityAtual = window.getComputedStyle(modalNotificacoesAtual).visibility;
+                const opacityAtual = window.getComputedStyle(modalNotificacoesAtual).opacity;
+                const estaVisivel = !temClasseHidden && displayAtual !== 'none' && displayAtual !== '' && visibilityAtual !== 'hidden' && opacityAtual !== '0';
+                
+                console.log('🔍 Estado do modal:', {
+                    temClasseHidden,
+                    displayAtual,
+                    visibilityAtual,
+                    opacityAtual,
+                    estaVisivel,
+                    offsetParent: modalNotificacoesAtual.offsetParent !== null,
+                    styleDisplay: modalNotificacoesAtual.style.display,
+                    styleVisibility: modalNotificacoesAtual.style.visibility
+                });
+                
+                // Se o modal está visível (não tem hidden E display não é none), então fecha
+                if (estaVisivel) {
+                    console.log('🔒 Fechando modal (estava aberto)...');
+                    
+                    // IMPORTANTE: NUNCA remove o modal do DOM, apenas adiciona a classe hidden
+                    // Verifica se o modal ainda está no DOM antes de fechar
+                    if (!document.body.contains(modalNotificacoesAtual)) {
+                        console.error('❌ Modal não está no DOM! Não é possível fechar.');
+                        return;
+                    }
+                    
+                    // Remove TODOS os estilos inline PRIMEIRO para que a classe hidden funcione
+                    modalNotificacoesAtual.style.cssText = '';
+                    // Remove também via removeProperty para garantir
+                    modalNotificacoesAtual.style.removeProperty('display');
+                    modalNotificacoesAtual.style.removeProperty('visibility');
+                    modalNotificacoesAtual.style.removeProperty('opacity');
+                    modalNotificacoesAtual.style.removeProperty('position');
+                    modalNotificacoesAtual.style.removeProperty('z-index');
+                    modalNotificacoesAtual.style.removeProperty('top');
+                    modalNotificacoesAtual.style.removeProperty('left');
+                    modalNotificacoesAtual.style.removeProperty('width');
+                    modalNotificacoesAtual.style.removeProperty('height');
+                    
+                    // Agora adiciona a classe hidden
+                    modalNotificacoesAtual.classList.add('hidden');
+                    
+                    // Limpa a mensagem de erro/aviso quando fecha o modal
+                    const mensagemProposta = document.getElementById('mensagem-proposta-respondida');
+                    if (mensagemProposta) {
+                        mensagemProposta.style.display = 'none';
+                        const mensagemTexto = document.getElementById('mensagem-proposta-texto');
+                        if (mensagemTexto) {
+                            mensagemTexto.textContent = '';
+                        }
+                        // Remove o flag quando limpa a mensagem
+                        window.temMensagemErroNotificacao = false;
+                    }
+                    
+                    // Reseta a flag imediatamente ao fechar
+                    modalAbertoAgora = false;
                     // Sempre reseta o modo de seleção ao fechar o modal
                     if (modoSelecao) {
                         console.log('🔄 Resetando modo de seleção ao fechar modal');
@@ -991,9 +1390,53 @@
                             selecionarTudoContainer.style.display = 'none';
                         }
                     }
+                    
+                    // Verifica se o modal foi fechado corretamente (múltiplas verificações)
+                    setTimeout(() => {
+                        const modalVerificacao = document.getElementById('modal-notificacoes');
+                        if (modalVerificacao) {
+                            const aindaTemHidden = modalVerificacao.classList.contains('hidden');
+                            const displayVerificacao = window.getComputedStyle(modalVerificacao).display;
+                            console.log('🔍 Verificação pós-fechar:', {
+                                aindaTemHidden,
+                                displayVerificacao,
+                                aindaNoDOM: true
+                            });
+                        } else {
+                            console.error('❌ Modal não encontrado no DOM após fechar!');
+                            console.error('❌ Isso não deveria acontecer. Algo está removendo o modal.');
+                        }
+                    }, 50);
+                    
+                    setTimeout(() => {
+                        const modalVerificacao2 = document.getElementById('modal-notificacoes');
+                        if (!modalVerificacao2) {
+                            console.error('❌ Modal ainda não encontrado após 100ms!');
+                        }
+                    }, 100);
+                    
                     return;
                 }
-                console.log('🔓 Abrindo modal...');
+                
+                // Se chegou aqui, o modal está fechado - vamos abrir
+                console.log('🔓 Abrindo modal (estava fechado)...');
+                console.log('🔍 Estado antes de abrir:', {
+                    temClasseHidden: modalNotificacoesAtual.classList.contains('hidden'),
+                    display: window.getComputedStyle(modalNotificacoesAtual).display,
+                    modalAbertoAgora: modalAbertoAgora
+                });
+                
+                // Limpa a mensagem de erro/aviso quando abre o modal
+                const mensagemProposta = document.getElementById('mensagem-proposta-respondida');
+                if (mensagemProposta) {
+                    mensagemProposta.style.display = 'none';
+                    const mensagemTexto = document.getElementById('mensagem-proposta-texto');
+                    if (mensagemTexto) {
+                        mensagemTexto.textContent = '';
+                    }
+                    // Remove o flag quando limpa a mensagem
+                    window.temMensagemErroNotificacao = false;
+                }
                 
                 // Garante que o modo de seleção está desativado ao abrir o modal
                 if (modoSelecao) {
@@ -1009,20 +1452,81 @@
                     }
                 }
                 
-                // Marca que o modal acabou de ser aberto para evitar fechar imediatamente
-                modalAbertoAgora = true;
+                // Reseta a flag ANTES de abrir para garantir que não interfira
+                modalAbertoAgora = false;
                 
                 if (listaNotificacoes) listaNotificacoes.innerHTML = '<p style="text-align: center; padding: 20px;">Carregando notificações...</p>';
-                modalNotificacoes.classList.remove('hidden');
-                console.log('✅ Modal aberto, carregando notificações...');
-                console.log('🔍 Modal classes após remover hidden:', modalNotificacoes.className);
-                console.log('🔍 Modal está visível?', modalNotificacoes.offsetParent !== null);
-                console.log('🔍 Modal display:', window.getComputedStyle(modalNotificacoes).display);
                 
-                // Aguarda um frame para garantir que o DOM foi atualizado
+                // Remove a classe hidden PRIMEIRO
+                modalNotificacoesAtual.classList.remove('hidden');
+                
+                // Força os estilos necessários de forma simples e direta
+                modalNotificacoesAtual.style.setProperty('display', 'flex', 'important');
+                modalNotificacoesAtual.style.setProperty('visibility', 'visible', 'important');
+                modalNotificacoesAtual.style.setProperty('opacity', '1', 'important');
+                modalNotificacoesAtual.style.setProperty('position', 'fixed', 'important');
+                modalNotificacoesAtual.style.setProperty('z-index', '1000', 'important');
+                modalNotificacoesAtual.style.setProperty('top', '0', 'important');
+                modalNotificacoesAtual.style.setProperty('left', '0', 'important');
+                modalNotificacoesAtual.style.setProperty('width', '100%', 'important');
+                modalNotificacoesAtual.style.setProperty('height', '100%', 'important');
+                
+                // Marca que o modal acabou de ser aberto DEPOIS de aplicar os estilos
+                modalAbertoAgora = true;
+                
+                console.log('✅ Modal aberto, carregando notificações...');
+                
+                // Aguarda um frame para garantir que os estilos foram aplicados
                 await new Promise(resolve => requestAnimationFrame(resolve));
                 
+                // Verifica se o modal realmente abriu
+                const modalAposAbrir = document.getElementById('modal-notificacoes');
+                if (modalAposAbrir) {
+                    const aindaTemHidden = modalAposAbrir.classList.contains('hidden');
+                    const displayAposAbrir = window.getComputedStyle(modalAposAbrir).display;
+                    const visibilityAposAbrir = window.getComputedStyle(modalAposAbrir).visibility;
+                    
+                    console.log('🔍 Estado após abrir:', {
+                        temClasseHidden: aindaTemHidden,
+                        display: displayAposAbrir,
+                        visibility: visibilityAposAbrir,
+                        modalAbertoAgora: modalAbertoAgora,
+                        offsetParent: modalAposAbrir.offsetParent !== null
+                    });
+                    
+                    // Se ainda tem hidden ou display é none, força novamente
+                    if (aindaTemHidden || displayAposAbrir === 'none') {
+                        console.warn('⚠️ Modal não abriu corretamente, forçando novamente...');
+                        modalAposAbrir.classList.remove('hidden');
+                        modalAposAbrir.style.setProperty('display', 'flex', 'important');
+                        modalAposAbrir.style.setProperty('visibility', 'visible', 'important');
+                        modalAposAbrir.style.setProperty('opacity', '1', 'important');
+                    }
+                } else {
+                    console.error('❌ Modal não encontrado após tentar abrir!');
+                }
+                
+                // Carrega as notificações
                 await carregarNotificacoes();
+                
+                // Verifica se o modal ainda está visível após carregar
+                await new Promise(resolve => requestAnimationFrame(resolve));
+                
+                // Busca o modal novamente para garantir que ainda está no DOM
+                const modalVerificacao = document.getElementById('modal-notificacoes');
+                if (modalVerificacao) {
+                    const aindaTemHidden = modalVerificacao.classList.contains('hidden');
+                    const displayVerificacao = window.getComputedStyle(modalVerificacao).display;
+                    
+                    if (aindaTemHidden || displayVerificacao === 'none') {
+                        console.warn('⚠️ Modal foi fechado durante o carregamento, reabrindo...');
+                        modalVerificacao.classList.remove('hidden');
+                        modalVerificacao.style.setProperty('display', 'flex', 'important');
+                        modalVerificacao.style.setProperty('visibility', 'visible', 'important');
+                        modalVerificacao.style.setProperty('opacity', '1', 'important');
+                    }
+                }
+                
                 setTimeout(() => {
                     configurarBotaoLixeira();
                     // Remove a flag após um tempo maior para garantir que o modal não fecha imediatamente
@@ -1056,13 +1560,67 @@
                         return;
                     }
                     
-                    if (!modalNotificacoes || modalNotificacoes.classList.contains('hidden')) return;
-                    const cliqueDentro = modalNotificacoes.contains(ev.target);
+                    // Busca o modal dinamicamente para garantir que a referência está atualizada
+                    const modalNotificacoesAtual = document.getElementById('modal-notificacoes');
+                    if (!modalNotificacoesAtual) {
+                        console.log('⚠️ Modal não encontrado no listener de clique fora');
+                        return;
+                    }
+                    
+                    // Verifica se o modal está realmente aberto
+                    // Considera tanto a classe hidden quanto os estilos inline
+                    const temClasseHidden = modalNotificacoesAtual.classList.contains('hidden');
+                    const displayAtual = window.getComputedStyle(modalNotificacoesAtual).display;
+                    const styleDisplay = modalNotificacoesAtual.style.display;
+                    const styleVisibility = modalNotificacoesAtual.style.visibility;
+                    
+                    // Modal está aberto se: não tem hidden E (display é flex OU tem estilos inline forçando visibilidade)
+                    const estaAberto = !temClasseHidden && (displayAtual === 'flex' || styleDisplay === 'flex' || (styleDisplay && styleDisplay.includes('flex')));
+                    
+                    if (!estaAberto) {
+                        // Modal já está fechado, não precisa fazer nada
+                        return;
+                    }
+                    
+                    const cliqueDentro = modalNotificacoesAtual.contains(ev.target);
                     const cliqueNoBotao = novoBtnNotificacoes.contains(ev.target);
-                    console.log('🔍 Verificando clique fora:', { cliqueDentro, cliqueNoBotao, target: ev.target });
+                    console.log('🔍 Verificando clique fora:', { 
+                        cliqueDentro, 
+                        cliqueNoBotao, 
+                        target: ev.target,
+                        estaAberto,
+                        temClasseHidden,
+                        displayAtual
+                    });
+                    
                     if (!cliqueDentro && !cliqueNoBotao) {
                         console.log('🔒 Fechando modal por clique fora');
-                        modalNotificacoes.classList.add('hidden');
+                        
+                        // IMPORTANTE: NUNCA remove o modal do DOM, apenas adiciona a classe hidden
+                        // Verifica se o modal ainda está no DOM antes de fechar
+                        if (!document.body.contains(modalNotificacoesAtual)) {
+                            console.error('❌ Modal não está no DOM! Não é possível fechar.');
+                            return;
+                        }
+                        
+                        // Remove TODOS os estilos inline PRIMEIRO para que a classe hidden funcione
+                        modalNotificacoesAtual.style.cssText = '';
+                        // Remove também via removeProperty para garantir
+                        modalNotificacoesAtual.style.removeProperty('display');
+                        modalNotificacoesAtual.style.removeProperty('visibility');
+                        modalNotificacoesAtual.style.removeProperty('opacity');
+                        modalNotificacoesAtual.style.removeProperty('position');
+                        modalNotificacoesAtual.style.removeProperty('z-index');
+                        modalNotificacoesAtual.style.removeProperty('top');
+                        modalNotificacoesAtual.style.removeProperty('left');
+                        modalNotificacoesAtual.style.removeProperty('width');
+                        modalNotificacoesAtual.style.removeProperty('height');
+                        
+                        // Agora adiciona a classe hidden
+                        modalNotificacoesAtual.classList.add('hidden');
+                        
+                        // Reseta a flag imediatamente ao fechar
+                        modalAbertoAgora = false;
                         // Sempre reseta o modo de seleção ao fechar o modal
                         if (modoSelecao) {
                             console.log('🔄 Resetando modo de seleção ao fechar modal');
@@ -1076,6 +1634,29 @@
                                 selecionarTudoContainer.style.display = 'none';
                             }
                         }
+                        
+                        // Verifica se o modal ainda está no DOM após fechar (múltiplas verificações)
+                        setTimeout(() => {
+                            const modalVerificacao = document.getElementById('modal-notificacoes');
+                            if (!modalVerificacao) {
+                                console.error('❌ Modal foi removido do DOM após fechar!');
+                                console.error('❌ Isso não deveria acontecer. Algo está removendo o modal.');
+                            } else {
+                                console.log('✅ Modal ainda está no DOM após fechar');
+                                // Verifica se ainda tem a classe hidden
+                                if (!modalVerificacao.classList.contains('hidden')) {
+                                    console.warn('⚠️ Modal não tem classe hidden após fechar, adicionando...');
+                                    modalVerificacao.classList.add('hidden');
+                                }
+                            }
+                        }, 50);
+                        
+                        setTimeout(() => {
+                            const modalVerificacao2 = document.getElementById('modal-notificacoes');
+                            if (!modalVerificacao2) {
+                                console.error('❌ Modal ainda não encontrado após 100ms!');
+                            }
+                        }, 100);
                     }
                 });
             }
@@ -1130,6 +1711,25 @@
                     return;
                 }
                 
+                // Se clicou diretamente no overlay (não no conteúdo), fecha o modal
+                const modalContent = modalNotificacoes.querySelector('.modal-content');
+                if (e.target === modalNotificacoes || (modalContent && !modalContent.contains(e.target))) {
+                    // Não fecha se clicou em um botão
+                    if (!e.target.closest('button') || e.target.classList.contains('btn-close-modal')) {
+                        console.log('🔒 Fechando modal por clique no overlay (delegação)');
+                        // Remove estilos inline primeiro
+                        modalNotificacoes.style.cssText = '';
+                        modalNotificacoes.style.removeProperty('display');
+                        modalNotificacoes.style.removeProperty('visibility');
+                        modalNotificacoes.style.removeProperty('opacity');
+                        // Adiciona classe hidden
+                        modalNotificacoes.classList.add('hidden');
+                        modalAbertoAgora = false;
+                        e.stopPropagation();
+                        return;
+                    }
+                }
+                
                 console.log('🔵 Clique detectado no modal, target:', e.target, 'currentTarget:', e.currentTarget);
                 const btnLixeira = e.target.closest('#btn-limpar-notificacoes');
                 const iconLixeira = e.target.closest('.fa-trash');
@@ -1163,9 +1763,30 @@
             }, false);
         }
         
-        // Carrega notificações periodicamente
-        setInterval(carregarNotificacoes, 30000);
+        // Torna a função global para acesso externo
+        window.carregarNotificacoes = carregarNotificacoes;
+        
+        // Carrega notificações periodicamente (mas não se houver mensagem de erro)
+        setInterval(() => {
+            if (!window.temMensagemErroNotificacao) {
+                carregarNotificacoes();
+            }
+        }, 30000);
         carregarNotificacoes();
+        
+        // Proteção: verifica periodicamente se o modal ainda está no DOM
+        setInterval(() => {
+            const modalVerificacao = document.getElementById('modal-notificacoes');
+            if (!modalVerificacao) {
+                console.error('❌ Modal de notificações não encontrado no DOM durante verificação periódica!');
+                console.error('❌ Isso não deveria acontecer. O modal pode ter sido removido por algum código.');
+                // Tenta encontrar o modal no HTML original
+                const modalNoHTML = document.querySelector('[id="modal-notificacoes"]');
+                if (!modalNoHTML) {
+                    console.error('❌ Modal não encontrado em lugar nenhum. Verifique se o elemento existe no HTML.');
+                }
+            }
+        }, 5000); // Verifica a cada 5 segundos
     }
 })();
 

@@ -124,6 +124,8 @@ const timeProjetoSchema = new mongoose.Schema({
     titulo: { type: String, required: true },
     descricao: { type: String, required: true },
     localizacao: {
+        rua: { type: String },
+        numero: { type: String },
         bairro: { type: String, required: true },
         cidade: { type: String, required: true },
         estado: { type: String, required: true },
@@ -132,12 +134,17 @@ const timeProjetoSchema = new mongoose.Schema({
     },
     profissionaisNecessarios: [{
         tipo: { type: String, required: true }, // ex: "pedreiro", "eletricista", "pintor"
-        quantidade: { type: Number, default: 1 }
+        quantidade: { type: Number, default: 1 },
+        valorBase: { type: Number }, // Valor base por dia para este tipo de profissional (null se "A Combinar")
+        aCombinar: { type: Boolean, default: false } // Se o valor será combinado depois
     }],
     candidatos: [{
         profissionalId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         tipo: { type: String }, // tipo de profissional que está se candidatando
         status: { type: String, enum: ['pendente', 'aceito', 'rejeitado'], default: 'pendente' },
+        valor: { type: Number }, // Valor aceito ou proposto pelo profissional
+        justificativa: { type: String }, // Justificativa da contraproposta
+        tipoCandidatura: { type: String, enum: ['aceite', 'contraproposta'], default: 'aceite' }, // Se aceitou o valor base ou enviou contraproposta
         dataCandidatura: { type: Date, default: Date.now }
     }],
     status: { type: String, enum: ['aberto', 'em_andamento', 'concluido', 'cancelado'], default: 'aberto' },
@@ -275,7 +282,15 @@ const notificacaoSchema = new mongoose.Schema({
             'disputa_resolvida',
             'avaliacao_recebida',
             'pedido_urgente',
-            'proposta_pedido_urgente'
+            'proposta_pedido_urgente',
+            'candidatura_time',
+            'contraproposta_time',
+            'proposta_time_aceita',
+            'confirmar_perfil_time',
+            'candidatura_recusada_time',
+            'post_curtido',
+            'post_comentado',
+            'comentario_respondido'
         ], 
         required: true 
     },
@@ -330,6 +345,12 @@ const HistoricoTransacao = mongoose.models.HistoricoTransacao || mongoose.model(
 // 🔔 Função auxiliar para criar notificações
 async function criarNotificacao(userId, tipo, titulo, mensagem, dadosAdicionais = {}, link = null) {
     try {
+        // Validação básica
+        if (!userId || !tipo || !titulo || !mensagem) {
+            console.error('❌ Dados inválidos para criar notificação:', { userId, tipo, titulo, mensagem: mensagem ? 'presente' : 'ausente' });
+            return null;
+        }
+        
         const notificacao = new Notificacao({
             userId,
             tipo,
@@ -338,15 +359,31 @@ async function criarNotificacao(userId, tipo, titulo, mensagem, dadosAdicionais 
             dadosAdicionais,
             link
         });
+        
         await notificacao.save();
         
+        console.log('✅ Notificação criada com sucesso:', {
+            id: notificacao._id,
+            userId,
+            tipo,
+            titulo
+        });
+
         // TODO: Aqui você pode integrar com serviços de push notification
         // Exemplo: Firebase Cloud Messaging, OneSignal, etc.
         // await enviarPushNotification(userId, titulo, mensagem);
-        
+
         return notificacao;
     } catch (error) {
-        console.error('Erro ao criar notificação:', error);
+        console.error('❌ Erro ao criar notificação:', error);
+        console.error('Detalhes:', {
+            userId,
+            tipo,
+            titulo,
+            mensagem: mensagem ? 'presente' : 'ausente',
+            errorMessage: error.message,
+            errorStack: error.stack
+        });
         // Não falha a operação principal se a notificação falhar
         return null;
     }
@@ -585,7 +622,9 @@ const userSchema = new mongoose.Schema({
     // 🆕 NOVO: Status de disponibilidade (para "Preciso agora!")
     disponivelAgora: { type: Boolean, default: false },
     // 👑 NOVO: Flag de administrador
-    isAdmin: { type: Boolean, default: false }
+    isAdmin: { type: Boolean, default: false },
+    // 🆕 NOVO: Equipes concluídas ocultas (para limpar a lista sem deletar do banco)
+    equipesConcluidasOcultas: [{ type: mongoose.Schema.Types.ObjectId, ref: 'TimeProjeto' }]
 }, { timestamps: true });
 
 const User = mongoose.models.User || mongoose.model('User', userSchema);
@@ -1742,6 +1781,23 @@ app.post('/api/esqueci-senha/redefinir', async (req, res) => {
     }
 });
 
+// Rota para obter dados do usuário atual
+app.get('/api/user/me', authMiddleware, async (req, res) => {
+    try {
+        const userId = req.user.id;
+        const user = await User.findById(userId).select('-senha');
+        
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
+        }
+        
+        res.json(user);
+    } catch (error) {
+        console.error('Erro ao buscar usuário:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
 // Rota para salvar o Tema
 app.put('/api/user/theme', authMiddleware, async (req, res) => {
     try {
@@ -2177,10 +2233,35 @@ app.post('/api/posts/:postId/like', authMiddleware, async (req, res) => {
             return res.status(404).json({ success: false, message: 'Postagem não encontrada.' });
         }
         const likeIndex = post.likes.indexOf(userId);
+        const isLiking = likeIndex === -1; // Se não está na lista, está curtindo
+        
         if (likeIndex > -1) {
             post.likes.splice(likeIndex, 1); // Descurtir
         } else {
             post.likes.push(userId); // Curtir
+            
+            // Cria notificação para o dono do post (se não for ele mesmo)
+            if (post.userId.toString() !== userId.toString()) {
+                try {
+                    const usuarioQueCurtiu = await User.findById(userId).select('nome');
+                    const nomeUsuario = usuarioQueCurtiu?.nome || 'Alguém';
+                    
+                    await criarNotificacao(
+                        post.userId,
+                        'post_curtido',
+                        'Nova curtida no seu post',
+                        `${nomeUsuario} curtiu seu post`,
+                        {
+                            postId: post._id.toString(),
+                            usuarioId: userId.toString(),
+                            usuarioNome: nomeUsuario
+                        },
+                        null
+                    );
+                } catch (notifError) {
+                    console.error('Erro ao criar notificação de curtida:', notifError);
+                }
+            }
         }
         await post.save();
         res.json({ success: true, likes: post.likes });
@@ -2210,18 +2291,48 @@ app.post('/api/posts/:postId/comment', authMiddleware, async (req, res) => {
             createdAt: new Date()
         };
 
-        const post = await Postagem.findByIdAndUpdate(
-            postId,
-            { $push: { comments: newComment } },
-            { new: true }
-        );
-        
+        const post = await Postagem.findById(postId);
         if (!post) {
             return res.status(404).json({ success: false, message: 'Postagem não encontrada.' });
         }
         
+        // Adiciona o comentário
+        post.comments.push(newComment);
+        await post.save();
+        
         const addedComment = post.comments[post.comments.length - 1];
         await User.populate(addedComment, { path: 'userId', select: 'nome foto avatarUrl' });
+        
+        // Cria notificação para o dono do post (se não for ele mesmo)
+        // Popula o userId do post se necessário
+        if (!post.userId || typeof post.userId === 'string') {
+            await post.populate('userId', 'nome');
+        }
+        
+        const postOwnerId = post.userId?._id?.toString() || post.userId?.toString() || post.userId;
+        if (postOwnerId && postOwnerId.toString() !== userId.toString()) {
+            try {
+                const usuarioQueComentou = await User.findById(userId).select('nome');
+                const nomeUsuario = usuarioQueComentou?.nome || 'Alguém';
+                const previewComentario = content.length > 50 ? content.substring(0, 50) + '...' : content;
+                
+                await criarNotificacao(
+                    postOwnerId,
+                    'post_comentado',
+                    'Novo comentário no seu post',
+                    `${nomeUsuario} comentou: "${previewComentario}"`,
+                    {
+                        postId: post._id.toString(),
+                        comentarioId: addedComment._id.toString(),
+                        usuarioId: userId.toString(),
+                        usuarioNome: nomeUsuario
+                    },
+                    null
+                );
+            } catch (notifError) {
+                console.error('Erro ao criar notificação de comentário:', notifError);
+            }
+        }
         
         res.status(201).json({ success: true, comment: addedComment });
     } catch (error) {
@@ -2290,6 +2401,33 @@ app.post('/api/posts/:postId/comments/:commentId/reply', authMiddleware, async (
 
         const addedReply = comment.replies[comment.replies.length - 1];
         await User.populate(addedReply, { path: 'userId', select: 'nome foto avatarUrl' });
+        
+        // Cria notificação para quem fez o comentário original (se não for ele mesmo)
+        const comentarioUserId = comment.userId.toString();
+        if (comentarioUserId !== userId.toString()) {
+            try {
+                const usuarioQueRespondeu = await User.findById(userId).select('nome');
+                const nomeUsuario = usuarioQueRespondeu?.nome || 'Alguém';
+                const previewResposta = content.length > 50 ? content.substring(0, 50) + '...' : content;
+                
+                await criarNotificacao(
+                    comentarioUserId,
+                    'comentario_respondido',
+                    'Nova resposta ao seu comentário',
+                    `${nomeUsuario} respondeu seu comentário: "${previewResposta}"`,
+                    {
+                        postId: post._id.toString(),
+                        comentarioId: comment._id.toString(),
+                        respostaId: addedReply._id.toString(),
+                        usuarioId: userId.toString(),
+                        usuarioNome: nomeUsuario
+                    },
+                    null
+                );
+            } catch (notifError) {
+                console.error('Erro ao criar notificação de resposta:', notifError);
+            }
+        }
         
         res.status(201).json({ success: true, reply: addedReply });
     } catch (error) {
@@ -2767,10 +2905,10 @@ app.get('/api/trabalhadores', authMiddleware, async (req, res) => {
     }
 });
 
-// 🆕 NOVO: Rota "Preciso agora!" - Busca profissionais próximos (ATUALIZADO com filtro de selo)
+// 🆕 NOVO: Rota "Preciso agora!" - Busca profissionais próximos
 app.post('/api/preciso-agora', authMiddleware, async (req, res) => {
     try {
-        const { latitude, longitude, tipoServico, raioKm = 10, apenasSeloQualidade = false } = req.body;
+        const { latitude, longitude, tipoServico, raioKm = 10 } = req.body;
         const userId = req.user.id;
         
         if (!latitude || !longitude) {
@@ -2800,11 +2938,6 @@ app.post('/api/preciso-agora', authMiddleware, async (req, res) => {
         
         if (tipoServico) {
             query.atuacao = { $regex: tipoServico, $options: 'i' };
-        }
-        
-        // 🆕 Filtro por Selo de Qualidade
-        if (apenasSeloQualidade) {
-            query['gamificacao.temSeloQualidade'] = true;
         }
         
         const profissionais = await User.find(query)
@@ -4866,17 +4999,37 @@ app.post('/api/times-projeto', authMiddleware, async (req, res) => {
         const { titulo, descricao, localizacao, profissionaisNecessarios } = req.body;
         const criadorId = req.user.id;
         
+        // Valida se todos os profissionais têm valor base ou "A Combinar"
+        if (!profissionaisNecessarios || profissionaisNecessarios.length === 0) {
+            return res.status(400).json({ success: false, message: 'É necessário adicionar pelo menos um profissional.' });
+        }
+        
+        for (const prof of profissionaisNecessarios) {
+            const aCombinar = prof.aCombinar || false;
+            if (!aCombinar && (!prof.valorBase || prof.valorBase <= 0)) {
+                return res.status(400).json({ success: false, message: `Valor base é obrigatório e deve ser maior que zero para o profissional "${prof.tipo}" ou marque "A Combinar".` });
+            }
+        }
+        
         const criador = await User.findById(criadorId);
         if (!criador) {
             return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
         }
+        
+        // Garante que cada profissional tenha valorBase como número ou null
+        const profissionaisComValor = profissionaisNecessarios.map(prof => ({
+            tipo: prof.tipo,
+            quantidade: parseInt(prof.quantidade) || 1,
+            valorBase: prof.aCombinar ? null : parseFloat(prof.valorBase),
+            aCombinar: prof.aCombinar || false
+        }));
         
         const novoTime = new TimeProjeto({
             clienteId: criadorId, // Mantém compatibilidade, mas agora pode ser profissional também
             titulo,
             descricao,
             localizacao,
-            profissionaisNecessarios
+            profissionaisNecessarios: profissionaisComValor
         });
         
         await novoTime.save();
@@ -4892,40 +5045,127 @@ app.post('/api/times-projeto', authMiddleware, async (req, res) => {
 app.get('/api/times-projeto', authMiddleware, async (req, res) => {
     try {
         const { cidade, status = 'aberto' } = req.query;
+        const userId = req.user.id;
+
+        // Busca equipes ocultas do usuário
+        const user = await User.findById(userId).select('equipesConcluidasOcultas');
+        const equipesOcultas = user?.equipesConcluidasOcultas || [];
+        const equipesOcultasIds = equipesOcultas.map(id => id.toString());
+
+        // Por padrão, só mostra times abertos (não concluídos)
+        let query = { status: status === 'concluido' ? 'concluido' : 'aberto' };
         
-        let query = { status };
+        // Se for buscar concluídas, filtra as ocultas
+        if (status === 'concluido' && equipesOcultasIds.length > 0) {
+            query._id = { $nin: equipesOcultas };
+        }
+        
         if (cidade) {
             // 🆕 Busca flexível (sem acento, case-insensitive)
             const normalizeString = (str) => {
                 return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
             };
             const cidadeNormalizada = normalizeString(cidade);
-            
+
             // Busca todos os times e filtra
-            const todosTimes = await TimeProjeto.find({ status }).exec();
+            let todosTimes = await TimeProjeto.find({ status }).exec();
+            
+            // Filtra equipes ocultas se for concluído
+            if (status === 'concluido' && equipesOcultasIds.length > 0) {
+                todosTimes = todosTimes.filter(time => {
+                    const timeId = time._id.toString();
+                    return !equipesOcultasIds.includes(timeId);
+                });
+            }
+            
             const timesFiltrados = todosTimes.filter(time => {
                 if (!time.localizacao || !time.localizacao.cidade) return false;
                 return normalizeString(time.localizacao.cidade).includes(cidadeNormalizada) ||
                        cidadeNormalizada.includes(normalizeString(time.localizacao.cidade));
             });
-            
+
             await TimeProjeto.populate(timesFiltrados, [
                 { path: 'clienteId', select: 'nome foto avatarUrl cidade estado' },
                 { path: 'candidatos.profissionalId', select: 'nome foto avatarUrl atuacao' }
             ]);
-            
+
             return res.json({ success: true, times: timesFiltrados });
         }
-        
+
         const times = await TimeProjeto.find(query)
             .populate('clienteId', 'nome foto avatarUrl cidade estado')
             .populate('candidatos.profissionalId', 'nome foto avatarUrl atuacao cidade estado')
             .sort({ createdAt: -1 })
             .exec();
-        
+
         res.json({ success: true, times });
     } catch (error) {
         console.error('Erro ao buscar times de projeto:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Ocultar equipe concluída (apenas para o usuário, não deleta do banco)
+// IMPORTANTE: Esta rota deve vir ANTES da rota /:timeId para funcionar corretamente
+app.post('/api/times-projeto/:timeId/ocultar', authMiddleware, async (req, res) => {
+    try {
+        const { timeId } = req.params;
+        const userId = req.user.id;
+
+        console.log(`[OCULTAR] Ocultando equipe - TimeId: ${timeId}, UserId: ${userId}`);
+
+        const time = await TimeProjeto.findById(timeId);
+        if (!time) {
+            return res.status(404).json({ success: false, message: 'Equipe não encontrada.' });
+        }
+
+        // Verifica se a equipe está concluída
+        if (time.status !== 'concluido') {
+            return res.status(400).json({ success: false, message: 'Apenas equipes concluídas podem ser ocultadas.' });
+        }
+
+        // Adiciona a equipe à lista de ocultas do usuário
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'Usuário não encontrado.' });
+        }
+
+        // Verifica se já está oculta
+        const timeIdObj = new mongoose.Types.ObjectId(timeId);
+        if (!user.equipesConcluidasOcultas) {
+            user.equipesConcluidasOcultas = [];
+        }
+
+        const jaOculta = user.equipesConcluidasOcultas.some(id => id.toString() === timeId);
+        if (!jaOculta) {
+            user.equipesConcluidasOcultas.push(timeIdObj);
+            await user.save();
+            console.log(`[OCULTAR] Equipe ocultada com sucesso - TimeId: ${timeId}`);
+        }
+
+        res.json({ success: true, message: 'Equipe ocultada com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao ocultar equipe:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Buscar um Time de Projeto específico por ID
+app.get('/api/times-projeto/:timeId', authMiddleware, async (req, res) => {
+    try {
+        const { timeId } = req.params;
+        
+        const time = await TimeProjeto.findById(timeId)
+            .populate('clienteId', 'nome foto avatarUrl telefone')
+            .populate('candidatos.profissionalId', 'nome foto avatarUrl atuacao');
+        
+        if (!time) {
+            return res.status(404).json({ success: false, message: 'Time de projeto não encontrado.' });
+        }
+        
+        res.json({ success: true, time });
+    } catch (error) {
+        console.error('Erro ao buscar time:', error);
         res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
     }
 });
@@ -4942,7 +5182,7 @@ app.post('/api/times-projeto/:timeId/candidatar', authMiddleware, async (req, re
             return res.status(403).json({ success: false, message: 'Apenas profissionais podem se candidatar.' });
         }
         
-        const time = await TimeProjeto.findById(timeId);
+        const time = await TimeProjeto.findById(timeId).populate('clienteId', 'nome');
         if (!time) {
             return res.status(404).json({ success: false, message: 'Time de projeto não encontrado.' });
         }
@@ -4951,26 +5191,551 @@ app.post('/api/times-projeto/:timeId/candidatar', authMiddleware, async (req, re
             return res.status(400).json({ success: false, message: 'Este projeto não está mais aceitando candidatos.' });
         }
         
-        // Verifica se já se candidatou
+        // Verifica se já se candidatou para este tipo de profissional específico
         const jaCandidatou = time.candidatos.some(
-            c => c.profissionalId.toString() === profissionalId && c.status === 'pendente'
+            c => c.profissionalId.toString() === profissionalId && c.status === 'pendente' && c.tipo === tipo
         );
         
         if (jaCandidatou) {
-            return res.status(400).json({ success: false, message: 'Você já se candidatou a este projeto.' });
+            return res.status(400).json({ success: false, message: `Você já se candidatou como "${tipo}" a este projeto.` });
         }
         
-        time.candidatos.push({
+        // Encontra o valor base do tipo de profissional específico
+        const profissionalNecessario = time.profissionaisNecessarios.find(p => p.tipo === tipo);
+        
+        if (!profissionalNecessario) {
+            return res.status(400).json({ success: false, message: `Tipo de profissional "${tipo}" não encontrado neste projeto.` });
+        }
+        
+        const aCombinar = profissionalNecessario.aCombinar || !profissionalNecessario.valorBase;
+        const valorBase = profissionalNecessario.valorBase || 0;
+        
+        if (aCombinar) {
+            return res.status(400).json({ success: false, message: `Este profissional está marcado como "A Combinar". Por favor, envie uma proposta com seu valor.` });
+        }
+        
+        // Aceita o valor base - Cria candidatura pendente de confirmação do perfil
+        const novoCandidato = {
             profissionalId,
             tipo: tipo || profissional.atuacao,
-            status: 'pendente'
-        });
+            status: 'pendente', // Fica pendente até o cliente confirmar o perfil
+            valor: valorBase,
+            tipoCandidatura: 'aceite'
+        };
         
+        time.candidatos.push(novoCandidato);
         await time.save();
         
-        res.json({ success: true, message: 'Candidatura enviada com sucesso!' });
+        // Pega o ID do candidato recém-criado
+        const candidatoId = time.candidatos[time.candidatos.length - 1]._id.toString();
+        
+        // Cria notificação para o cliente CONFIRMAR O PERFIL (não aceita direto)
+        try {
+            let clienteId;
+            if (time.clienteId && typeof time.clienteId === 'object' && time.clienteId._id) {
+                clienteId = time.clienteId._id.toString();
+            } else if (time.clienteId) {
+                clienteId = time.clienteId.toString();
+            } else {
+                throw new Error('clienteId não encontrado no time');
+            }
+            
+            if (clienteId !== profissionalId.toString()) {
+                const nomeProfissional = profissional.nome || 'Um profissional';
+                const tituloNotificacao = 'Confirme o perfil do candidato';
+                const mensagemNotificacao = `${nomeProfissional} aceitou o valor de R$ ${valorBase.toFixed(2)}/dia para ${tipo || 'profissional'} na equipe "${time.titulo}". Confirme o perfil para aceitar.`;
+                
+                console.log('📢 Criando notificação de confirmação de perfil:', {
+                    clienteId,
+                    tipo: 'confirmar_perfil_time',
+                    timeId: time._id.toString(),
+                    candidatoId,
+                    profissionalId: profissionalId.toString()
+                });
+                
+                const notificacaoCriada = await criarNotificacao(
+                    clienteId,
+                    'confirmar_perfil_time', // Nova notificação para confirmar perfil
+                    tituloNotificacao,
+                    mensagemNotificacao,
+                    {
+                        timeId: time._id.toString(),
+                        candidatoId: candidatoId, // ID específico do candidato
+                        profissionalId: profissionalId.toString(),
+                        profissionalNome: nomeProfissional,
+                        tipoProfissional: tipo,
+                        valorAceito: valorBase
+                    },
+                    null
+                );
+                
+                if (notificacaoCriada) {
+                    console.log('✅ Notificação de confirmação de perfil criada com sucesso:', notificacaoCriada._id);
+                } else {
+                    console.error('❌ Falha ao criar notificação de confirmação de perfil - criarNotificacao retornou null');
+                }
+            } else {
+                console.log('⚠️ Profissional é o próprio cliente, não criando notificação');
+            }
+        } catch (notifError) {
+            console.error('❌ Erro ao criar notificação de confirmação de perfil:', notifError);
+            console.error('Stack trace:', notifError.stack);
+        }
+        
+        res.json({ success: true, message: 'Candidatura realizada com sucesso!' });
     } catch (error) {
         console.error('Erro ao candidatar-se:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Enviar contraproposta para um Time de Projeto
+app.post('/api/times-projeto/:timeId/contraproposta', authMiddleware, async (req, res) => {
+    try {
+        const { timeId } = req.params;
+        const { tipo, valor, justificativa } = req.body;
+        const profissionalId = req.user.id;
+        
+        if (!valor || valor <= 0) {
+            return res.status(400).json({ success: false, message: 'Valor da contraproposta é obrigatório e deve ser maior que zero.' });
+        }
+        
+        if (!justificativa || justificativa.trim().length === 0) {
+            return res.status(400).json({ success: false, message: 'Justificativa é obrigatória.' });
+        }
+        
+        const profissional = await User.findById(profissionalId);
+        if (!profissional || profissional.tipo !== 'trabalhador') {
+            return res.status(403).json({ success: false, message: 'Apenas profissionais podem enviar contrapropostas.' });
+        }
+        
+        const time = await TimeProjeto.findById(timeId).populate('clienteId', 'nome');
+        if (!time) {
+            return res.status(404).json({ success: false, message: 'Time de projeto não encontrado.' });
+        }
+        
+        if (time.status !== 'aberto') {
+            return res.status(400).json({ success: false, message: 'Este projeto não está mais aceitando candidatos.' });
+        }
+        
+        // Verifica se já se candidatou para este tipo de profissional específico
+        const jaCandidatou = time.candidatos.some(
+            c => c.profissionalId.toString() === profissionalId && c.status === 'pendente' && c.tipo === tipo
+        );
+        
+        if (jaCandidatou) {
+            return res.status(400).json({ success: false, message: `Você já se candidatou como "${tipo}" a este projeto.` });
+        }
+        
+        // Verifica se o tipo de profissional existe no projeto
+        const profissionalNecessario = time.profissionaisNecessarios.find(p => p.tipo === tipo);
+        if (!profissionalNecessario) {
+            return res.status(400).json({ success: false, message: `Tipo de profissional "${tipo}" não encontrado neste projeto.` });
+        }
+        
+        // Adiciona contraproposta - APENAS cria notificação de contraproposta (não candidatura)
+        const novaContraproposta = {
+            profissionalId,
+            tipo: tipo || profissional.atuacao,
+            status: 'pendente',
+            valor: parseFloat(valor),
+            justificativa: justificativa.trim(),
+            tipoCandidatura: 'contraproposta'
+        };
+        
+        time.candidatos.push(novaContraproposta);
+        await time.save();
+        
+        // Pega o ID do candidato recém-criado
+        const candidatoId = time.candidatos[time.candidatos.length - 1]._id.toString();
+        
+        // Cria APENAS notificação de contraproposta (não candidatura)
+        try {
+            let clienteId;
+            if (time.clienteId && typeof time.clienteId === 'object' && time.clienteId._id) {
+                clienteId = time.clienteId._id.toString();
+            } else if (time.clienteId) {
+                clienteId = time.clienteId.toString();
+            } else {
+                throw new Error('clienteId não encontrado no time');
+            }
+            
+            if (clienteId !== profissionalId.toString()) {
+                const nomeProfissional = profissional.nome || 'Um profissional';
+                const tituloNotificacao = 'Nova contraproposta na sua equipe';
+                const mensagemNotificacao = `${nomeProfissional} enviou uma contraproposta de R$ ${parseFloat(valor).toFixed(2)}/dia para o tipo "${tipo}" na equipe "${time.titulo}"`;
+                
+                await criarNotificacao(
+                    clienteId,
+                    'contraproposta_time', // APENAS contraproposta_time, não candidatura_time
+                    tituloNotificacao,
+                    mensagemNotificacao,
+                    {
+                        timeId: time._id.toString(),
+                        candidatoId: candidatoId, // ID específico do candidato
+                        profissionalId: profissionalId.toString(),
+                        profissionalNome: nomeProfissional,
+                        tipoProfissional: tipo,
+                        valorProposto: parseFloat(valor),
+                        justificativa: justificativa.trim()
+                    },
+                    null
+                );
+            }
+        } catch (notifError) {
+            console.error('Erro ao criar notificação de contraproposta:', notifError);
+        }
+        
+        res.json({ success: true, message: 'Contraproposta enviada com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao enviar contraproposta:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Cancelar candidatura em Time de Projeto
+app.delete('/api/times-projeto/:timeId/candidatar', authMiddleware, async (req, res) => {
+    try {
+        const { timeId } = req.params;
+        const profissionalId = req.user.id;
+
+        console.log(`[DELETE] Cancelando candidatura - TimeId: ${timeId}, ProfissionalId: ${profissionalId}`);
+
+        const time = await TimeProjeto.findById(timeId);
+        if (!time) {
+            console.log(`[DELETE] Time não encontrado: ${timeId}`);
+            return res.status(404).json({ success: false, message: 'Time de projeto não encontrado.' });
+        }
+
+        // Remove a candidatura do profissional (remove qualquer candidatura, não apenas pendente)
+        const candidatoIndex = time.candidatos.findIndex(
+            c => c.profissionalId.toString() === profissionalId
+        );
+
+        if (candidatoIndex === -1) {
+            console.log(`[DELETE] Candidatura não encontrada para profissional ${profissionalId}`);
+            return res.status(400).json({ success: false, message: 'Você não possui candidatura neste projeto.' });
+        }
+
+        // Remove a candidatura
+        const candidatoRemovido = time.candidatos.splice(candidatoIndex, 1)[0];
+        await time.save();
+
+        console.log(`[DELETE] Candidatura removida com sucesso - Tipo: ${candidatoRemovido.tipo}, Status: ${candidatoRemovido.status}`);
+
+        res.json({ success: true, message: 'Candidatura cancelada com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao cancelar candidatura:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Deletar time de projeto (apenas o criador pode deletar)
+app.delete('/api/times-projeto/:timeId', authMiddleware, async (req, res) => {
+    try {
+        const { timeId } = req.params;
+        const userId = req.user.id;
+
+        console.log(`[DELETE] Deletando time - TimeId: ${timeId}, UserId: ${userId}`);
+
+        const time = await TimeProjeto.findById(timeId).populate('clienteId');
+        if (!time) {
+            console.log(`[DELETE] Time não encontrado: ${timeId}`);
+            return res.status(404).json({ success: false, message: 'Time de projeto não encontrado.' });
+        }
+
+        // Verifica se o usuário é o criador do time
+        const criadorId = time.clienteId?._id?.toString() || time.clienteId?.toString() || time.clienteId;
+        if (criadorId !== userId) {
+            console.log(`[DELETE] Acesso negado - UserId: ${userId}, CriadorId: ${criadorId}`);
+            return res.status(403).json({ success: false, message: 'Apenas o criador do time pode deletá-lo.' });
+        }
+
+        // Deleta o time
+        await TimeProjeto.findByIdAndDelete(timeId);
+
+        console.log(`[DELETE] Time deletado com sucesso - TimeId: ${timeId}`);
+
+        res.json({ success: true, message: 'Time deletado com sucesso!' });
+    } catch (error) {
+        console.error('Erro ao deletar time:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Aceitar/Recusar candidato em Time de Projeto
+app.put('/api/times-projeto/:timeId/candidatos/:candidatoId', authMiddleware, async (req, res) => {
+    try {
+        const { timeId, candidatoId } = req.params;
+        const { acao } = req.body; // 'aceitar' ou 'recusar'
+        const userId = req.user.id;
+
+        const time = await TimeProjeto.findById(timeId);
+        if (!time) {
+            return res.status(404).json({ success: false, message: 'Time de projeto não encontrado.' });
+        }
+
+        // Verifica se o usuário é o dono do time
+        if (time.clienteId.toString() !== userId) {
+            return res.status(403).json({ success: false, message: 'Apenas o dono do projeto pode aceitar/recusar candidatos.' });
+        }
+
+        const candidatoIndex = time.candidatos.findIndex(c => c._id.toString() === candidatoId);
+        if (candidatoIndex === -1) {
+            return res.status(404).json({ success: false, message: 'Candidato não encontrado.' });
+        }
+
+        if (acao === 'aceitar') {
+            const candidato = time.candidatos[candidatoIndex];
+            const tipoProfissional = candidato.tipo;
+            
+            // Marca candidato como aceito
+            time.candidatos[candidatoIndex].status = 'aceito';
+            
+            // Remove a vaga do tipo de profissional aceito de profissionaisNecessarios
+            const profissionalIndex = time.profissionaisNecessarios.findIndex(p => p.tipo === tipoProfissional);
+            if (profissionalIndex !== -1) {
+                const profissionalNecessario = time.profissionaisNecessarios[profissionalIndex];
+                // Reduz a quantidade ou remove se for 1
+                if (profissionalNecessario.quantidade > 1) {
+                    profissionalNecessario.quantidade -= 1;
+                } else {
+                    // Remove completamente a vaga
+                    time.profissionaisNecessarios.splice(profissionalIndex, 1);
+                }
+            }
+            
+            // Cria notificação para o profissional que foi aceito
+            try {
+                const profissionalId = candidato.profissionalId;
+                
+                // Busca dados do profissional e do cliente
+                const profissional = await User.findById(profissionalId).select('nome');
+                const cliente = await User.findById(time.clienteId).select('nome telefone');
+                
+                if (profissional && profissionalId.toString() !== userId.toString()) {
+                    const tituloNotificacao = 'Você agora faz parte da Equipe!';
+                    const mensagemNotificacao = `Você agora faz parte da Equipe de "${time.titulo}"!`;
+                    
+                    await criarNotificacao(
+                        profissionalId,
+                        'proposta_time_aceita',
+                        tituloNotificacao,
+                        mensagemNotificacao,
+                        {
+                            timeId: time._id.toString(),
+                            candidatoId: candidato._id.toString(),
+                            valorAceito: candidato.valor || 0,
+                            tipoProfissional: candidato.tipo || '',
+                            clienteNome: cliente?.nome || 'Cliente',
+                            clienteTelefone: cliente?.telefone || '',
+                            enderecoCompleto: (() => {
+                                const enderecoParts = [];
+                                if (time.localizacao.rua) enderecoParts.push(time.localizacao.rua);
+                                if (time.localizacao.numero) enderecoParts.push(`Nº ${time.localizacao.numero}`);
+                                if (time.localizacao.bairro) enderecoParts.push(time.localizacao.bairro);
+                                if (time.localizacao.cidade) enderecoParts.push(time.localizacao.cidade);
+                                if (time.localizacao.estado) enderecoParts.push(time.localizacao.estado);
+                                return enderecoParts.length > 0 ? enderecoParts.join(', ') : `${time.localizacao.bairro}, ${time.localizacao.cidade} - ${time.localizacao.estado}`;
+                            })()
+                        },
+                        null
+                    );
+                }
+            } catch (notifError) {
+                console.error('Erro ao criar notificação de proposta aceita:', notifError);
+            }
+        } else if (acao === 'recusar') {
+            // Salva informações do candidato antes de remover
+            const candidatoRecusado = time.candidatos[candidatoIndex];
+            const profissionalIdRecusado = candidatoRecusado.profissionalId;
+            
+            // Cria notificação para o profissional que foi recusado
+            try {
+                if (profissionalIdRecusado) {
+                    const profissionalRecusado = await User.findById(profissionalIdRecusado).select('nome');
+                    const nomeProfissional = profissionalRecusado?.nome || 'Você';
+                    const cliente = await User.findById(time.clienteId).select('nome');
+                    const nomeCliente = cliente?.nome || 'O cliente';
+                    
+                    const tituloNotificacao = 'Candidatura recusada';
+                    const mensagemNotificacao = `${nomeCliente} recusou sua candidatura para a equipe "${time.titulo}".`;
+                    
+                    await criarNotificacao(
+                        profissionalIdRecusado.toString(),
+                        'candidatura_recusada_time',
+                        tituloNotificacao,
+                        mensagemNotificacao,
+                        {
+                            timeId: time._id.toString(),
+                            candidatoId: candidatoId,
+                            clienteId: time.clienteId.toString(),
+                            clienteNome: nomeCliente,
+                            tituloEquipe: time.titulo
+                        },
+                        null
+                    );
+                    
+                    console.log('✅ Notificação de recusa criada para profissional:', profissionalIdRecusado.toString());
+                }
+            } catch (notifError) {
+                console.error('Erro ao criar notificação de recusa:', notifError);
+            }
+            
+            // Remove completamente o candidato do array quando recusado
+            time.candidatos.splice(candidatoIndex, 1);
+        } else {
+            return res.status(400).json({ success: false, message: 'Ação inválida. Use "aceitar" ou "recusar".' });
+        }
+
+        await time.save();
+        res.json({ success: true, message: `Candidato ${acao === 'aceitar' ? 'aceito' : 'recusado'} com sucesso!` });
+    } catch (error) {
+        console.error('Erro ao processar candidato:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// Confirmar perfil de candidato (quando profissional aceita o valor)
+app.post('/api/times-projeto/:timeId/candidatos/:candidatoId/confirmar-perfil', authMiddleware, async (req, res) => {
+    try {
+        const { timeId, candidatoId } = req.params;
+        const { acao } = req.body; // 'aceitar' ou 'recusar'
+        const userId = req.user.id;
+
+        const time = await TimeProjeto.findById(timeId);
+        if (!time) {
+            return res.status(404).json({ success: false, message: 'Time de projeto não encontrado.' });
+        }
+
+        // Verifica se o usuário é o dono do time
+        if (time.clienteId.toString() !== userId) {
+            return res.status(403).json({ success: false, message: 'Apenas o dono do projeto pode confirmar perfis.' });
+        }
+
+        const candidatoIndex = time.candidatos.findIndex(c => c._id.toString() === candidatoId);
+        if (candidatoIndex === -1) {
+            return res.status(404).json({ success: false, message: 'Candidato não encontrado.' });
+        }
+
+        const candidato = time.candidatos[candidatoIndex];
+        
+        // Só pode confirmar se o candidato aceitou o valor (não contraproposta)
+        if (candidato.tipoCandidatura !== 'aceite') {
+            return res.status(400).json({ success: false, message: 'Esta ação só é válida para candidatos que aceitaram o valor proposto.' });
+        }
+
+        if (acao === 'aceitar') {
+            const tipoProfissional = candidato.tipo;
+            
+            // Marca candidato como aceito
+            time.candidatos[candidatoIndex].status = 'aceito';
+            
+            // Remove a vaga do tipo de profissional aceito de profissionaisNecessarios
+            const profissionalIndex = time.profissionaisNecessarios.findIndex(p => p.tipo === tipoProfissional);
+            if (profissionalIndex !== -1) {
+                const profissionalNecessario = time.profissionaisNecessarios[profissionalIndex];
+                // Reduz a quantidade ou remove se for 1
+                if (profissionalNecessario.quantidade > 1) {
+                    profissionalNecessario.quantidade -= 1;
+                } else {
+                    // Remove completamente a vaga
+                    time.profissionaisNecessarios.splice(profissionalIndex, 1);
+                }
+            }
+            
+            // Se não há mais profissionais necessários, marca o time como concluído
+            if (time.profissionaisNecessarios.length === 0) {
+                time.status = 'concluido';
+            }
+            
+            // Cria notificação para o profissional que foi aceito
+            try {
+                const profissionalId = candidato.profissionalId;
+                
+                // Busca dados do profissional e do cliente
+                const profissional = await User.findById(profissionalId).select('nome');
+                const cliente = await User.findById(time.clienteId).select('nome telefone');
+                
+                if (profissional && profissionalId.toString() !== userId.toString()) {
+                    const tituloNotificacao = 'Você agora faz parte da Equipe!';
+                    const mensagemNotificacao = `Você agora faz parte da Equipe de "${time.titulo}"!`;
+                    
+                    await criarNotificacao(
+                        profissionalId,
+                        'proposta_time_aceita',
+                        tituloNotificacao,
+                        mensagemNotificacao,
+                        {
+                            timeId: time._id.toString(),
+                            candidatoId: candidato._id.toString(),
+                            valorAceito: candidato.valor || 0,
+                            tipoProfissional: candidato.tipo || '',
+                            clienteNome: cliente?.nome || 'Cliente',
+                            clienteTelefone: cliente?.telefone || '',
+                            enderecoCompleto: (() => {
+                                const enderecoParts = [];
+                                if (time.localizacao.rua) enderecoParts.push(time.localizacao.rua);
+                                if (time.localizacao.numero) enderecoParts.push(`Nº ${time.localizacao.numero}`);
+                                if (time.localizacao.bairro) enderecoParts.push(time.localizacao.bairro);
+                                if (time.localizacao.cidade) enderecoParts.push(time.localizacao.cidade);
+                                if (time.localizacao.estado) enderecoParts.push(time.localizacao.estado);
+                                return enderecoParts.length > 0 ? enderecoParts.join(', ') : `${time.localizacao.bairro}, ${time.localizacao.cidade} - ${time.localizacao.estado}`;
+                            })()
+                        },
+                        null
+                    );
+                }
+            } catch (notifError) {
+                console.error('Erro ao criar notificação de proposta aceita:', notifError);
+            }
+        } else if (acao === 'recusar') {
+            // Salva informações do candidato antes de remover
+            const candidatoRecusado = time.candidatos[candidatoIndex];
+            const profissionalIdRecusado = candidatoRecusado.profissionalId;
+            
+            // Cria notificação para o profissional que foi recusado
+            try {
+                if (profissionalIdRecusado) {
+                    const profissionalRecusado = await User.findById(profissionalIdRecusado).select('nome');
+                    const nomeProfissional = profissionalRecusado?.nome || 'Você';
+                    const cliente = await User.findById(time.clienteId).select('nome');
+                    const nomeCliente = cliente?.nome || 'O cliente';
+                    
+                    const tituloNotificacao = 'Candidatura recusada';
+                    const mensagemNotificacao = `${nomeCliente} recusou sua candidatura para a equipe "${time.titulo}".`;
+                    
+                    await criarNotificacao(
+                        profissionalIdRecusado.toString(),
+                        'candidatura_recusada_time',
+                        tituloNotificacao,
+                        mensagemNotificacao,
+                        {
+                            timeId: time._id.toString(),
+                            candidatoId: candidatoId,
+                            clienteId: time.clienteId.toString(),
+                            clienteNome: nomeCliente,
+                            tituloEquipe: time.titulo
+                        },
+                        null
+                    );
+                    
+                    console.log('✅ Notificação de recusa criada para profissional:', profissionalIdRecusado.toString());
+                }
+            } catch (notifError) {
+                console.error('Erro ao criar notificação de recusa:', notifError);
+            }
+            
+            // Remove completamente o candidato do array quando recusado
+            time.candidatos.splice(candidatoIndex, 1);
+        } else {
+            return res.status(400).json({ success: false, message: 'Ação inválida. Use "aceitar" ou "recusar".' });
+        }
+
+        await time.save();
+        res.json({ success: true, message: `Perfil ${acao === 'aceitar' ? 'confirmado' : 'recusado'} com sucesso!` });
+    } catch (error) {
+        console.error('Erro ao confirmar perfil:', error);
         res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
     }
 });

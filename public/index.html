@@ -68,16 +68,21 @@
                 </button>
             </div>
 
-            <!-- 🆕 NOVO: Seção de Times Locais na lateral -->
+            <!-- 🆕 NOVO: Seção de Equipe na lateral -->
             <div class="filtro-times-locais">
                 <div class="section-header-lateral">
-                    <h4><i class="fas fa-users"></i> Times Locais</h4>
-                    <button id="btn-criar-time" class="btn-criar-time-lateral" title="Montar Time">
-                        <i class="fas fa-plus"></i>
-                    </button>
+                    <h4><i class="fas fa-users"></i> Equipe</h4>
+                    <div style="display: flex; gap: 8px;">
+                        <button id="btn-ver-concluidas" class="btn-criar-time-lateral" title="Equipes Concluídas">
+                            <i class="fas fa-check-circle"></i>
+                        </button>
+                        <button id="btn-criar-time" class="btn-criar-time-lateral" title="Montar Equipe">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
                 </div>
                 <div id="times-container" class="times-container-lateral">
-                    <!-- Times serão carregados aqui -->
+                    <!-- Equipes serão carregadas aqui -->
                 </div>
             </div>
 
@@ -245,13 +250,6 @@
                     </div>
                 </div>
                 
-                <div class="filtro-selo-qualidade" style="margin-bottom: 15px;">
-                    <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
-                        <input type="checkbox" id="filtro-selo-qualidade"> 
-                        <span>Apenas com Selo de Qualidade Helpy 🛡️</span>
-                    </label>
-                </div>
-                
                 <div id="profissionais-proximos" class="profissionais-lista">
                     <!-- Profissionais serão carregados aqui -->
                 </div>
@@ -259,11 +257,11 @@
         </div>
     </div>
 
-    <!-- 🆕 NOVO: Modal Criar Time de Projeto -->
+    <!-- 🆕 NOVO: Modal Criar Equipe -->
     <div id="modal-criar-time" class="modal-overlay hidden">
         <div class="modal-content modal-large">
             <div class="modal-header">
-                <h3><i class="fas fa-users"></i> Montar Time de Projeto</h3>
+                <h3><i class="fas fa-users"></i> Montar Equipe</h3>
                 <button class="btn-close-modal" data-modal="modal-criar-time">&times;</button>
             </div>
             <div class="modal-body">
@@ -277,16 +275,26 @@
                         <textarea id="time-descricao" required placeholder="Descreva o projeto..."></textarea>
                     </div>
                     <div class="form-group">
+                        <label>Endereço (Rua)</label>
+                        <input type="text" id="time-rua" required placeholder="Ex: Rua das Flores">
+                    </div>
+                    <div class="form-group">
                         <label>Bairro</label>
                         <input type="text" id="time-bairro" required>
                     </div>
-                    <div class="form-group">
-                        <label>Cidade</label>
-                        <input type="text" id="time-cidade" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Estado</label>
-                        <input type="text" id="time-estado" required maxlength="2" placeholder="SP">
+                    <div class="form-group form-group-cidade-numero-estado">
+                        <div class="form-group-inline form-group-cidade">
+                            <label>Cidade</label>
+                            <input type="text" id="time-cidade" required>
+                        </div>
+                        <div class="form-group-inline form-group-numero">
+                            <label>Número</label>
+                            <input type="text" id="time-numero" required placeholder="Ex: 123">
+                        </div>
+                        <div class="form-group-inline form-group-estado">
+                            <label>Estado</label>
+                            <input type="text" id="time-estado" required maxlength="2" placeholder="SP">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label>Profissionais Necessários</label>
@@ -294,13 +302,20 @@
                             <div class="profissional-item">
                                 <input type="text" placeholder="Tipo (ex: pedreiro)" class="tipo-profissional" required>
                                 <input type="number" placeholder="Qtd" class="qtd-profissional" min="1" value="1" required>
-                                <button type="button" class="btn-remover-profissional">&times;</button>
+                                <input type="number" placeholder="Valor/dia (R$)" class="valor-profissional" min="0" step="0.01">
+                                <label class="checkbox-a-combinar">
+                                    <span>A Combinar</span>
+                                    <input type="checkbox" class="a-combinar-checkbox">
+                                </label>
+                                <button type="button" class="btn-remover-profissional"><i class="fas fa-trash"></i></button>
                             </div>
                         </div>
                         <button type="button" id="btn-adicionar-profissional" class="btn-secondary">+ Adicionar Profissional</button>
+                        <small style="color: var(--text-secondary); font-size: 12px; display: block; margin-top: 8px;">Defina o valor base por dia para cada tipo de profissional ou marque "A Combinar" para negociar depois. Eles podem aceitar ou enviar uma contraproposta.</small>
                     </div>
+                    <div id="mensagem-erro-criar-time" class="mensagem-erro-form" style="display: none; color: #dc3545; background: #f8d7da; border: 1px solid #f5c6cb; border-radius: 4px; padding: 12px; margin-bottom: 15px; font-size: 14px;"></div>
                     <div class="form-actions">
-                        <button type="submit" class="btn-primary">Criar Time</button>
+                        <button type="submit" class="btn-primary">Criar Equipe</button>
                         <button type="button" class="btn-secondary btn-cancelar btn-close-modal" data-modal="modal-criar-time">Cancelar</button>
                     </div>
                 </form>
@@ -914,6 +929,10 @@
                 </button>
                 <span id="mensagem-selecionar-primeiro" style="display: none; position: absolute; left: 0; top: 100%; margin-top: 5px; color: #ff6b6b; font-size: 12px; white-space: nowrap;">Primeiro selecione!</span>
             </div>
+            <div id="mensagem-proposta-respondida" style="display: none; padding: 12px 15px; margin-bottom: 15px; background: #f8d7da; border-left: 4px solid #dc3545; border-radius: 4px; color: #721c24; font-size: 14px; font-weight: 500;">
+                <i class="fas fa-exclamation-circle" style="margin-right: 8px;"></i>
+                <span id="mensagem-proposta-texto"></span>
+            </div>
             <div id="lista-notificacoes" class="lista-propostas">
                 <p>Carregando notificações...</p>
             </div>
@@ -1207,6 +1226,58 @@
             <span id="close-image-modal-pedido" class="close-btn-modal">&times;</span>
         </div>
     </div>
+
+    <!-- 🆕 NOVO: Modal Proposta Aceita (Bottom Sheet Mobile / Side Panel Desktop) -->
+    <div id="modal-proposta-aceita" class="modal-proposta-aceita hidden">
+        <div class="modal-proposta-aceita-backdrop"></div>
+        <div class="modal-proposta-aceita-content">
+            <div class="modal-proposta-aceita-header">
+                <a id="proposta-aceita-perfil-link" class="proposta-aceita-perfil" href="#" style="display: none;">
+                    <img id="proposta-aceita-perfil-avatar" src="/imagens/default-user.png" alt="Perfil" class="proposta-aceita-avatar">
+                    <span id="proposta-aceita-perfil-nome" class="proposta-aceita-nome">-</span>
+                </a>
+                <button class="modal-proposta-aceita-close">&times;</button>
+            </div>
+            <div class="modal-proposta-aceita-body">
+                <div class="proposta-aceita-status">
+                    <div class="status-icon">✅</div>
+                    <h2 class="proposta-aceita-titulo">Proposta Aceita!</h2>
+                </div>
+                
+                <div class="proposta-aceita-info">
+                    <div class="info-item">
+                        <i class="fas fa-building"></i>
+                        <div>
+                            <span class="info-label">Projeto</span>
+                            <span class="info-value" id="proposta-aceita-titulo-projeto">-</span>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <i class="fas fa-dollar-sign"></i>
+                        <div>
+                            <span class="info-label">Valor Fechado</span>
+                            <span class="info-value" id="proposta-aceita-valor">R$ 0,00</span>
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div>
+                            <span class="info-label">Endereço Liberado</span>
+                            <a id="proposta-aceita-endereco-link" class="info-value info-value-link" href="#" target="_blank" rel="noopener noreferrer">-</a>
+                        </div>
+                    </div>
+                </div>
+                
+                <a id="btn-whatsapp-proposta" class="btn-whatsapp-proposta" target="_blank" rel="noopener noreferrer">
+                    <i class="fab fa-whatsapp"></i>
+                    Chamar no WhatsApp
+                </a>
+            </div>
+        </div>
+    </div>
+
 
     <script src="/header-notificacoes.js"></script>
     <script src="/script.js"></script>

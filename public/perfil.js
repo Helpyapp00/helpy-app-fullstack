@@ -552,6 +552,20 @@ document.addEventListener('DOMContentLoaded', () => {
                                 window.location.reload();
                                 return;
                             }
+                            
+                            // Trata notificação de candidatura em time
+                            if (notif?.tipo === 'candidatura_time' && notif.dadosAdicionais?.timeId) {
+                                modalNotificacoes?.classList.add('hidden');
+                                
+                                // Se estiver no feed (index.html), chama a função diretamente
+                                if (window.abrirCandidatosPorNotificacao) {
+                                    await window.abrirCandidatosPorNotificacao(notif.dadosAdicionais.timeId);
+                                } else {
+                                    // Se não estiver no feed, redireciona para o feed com parâmetro
+                                    window.location.href = `/index.html?abrirCandidatos=${notif.dadosAdicionais.timeId}`;
+                                }
+                                return;
+                            }
                         });
                     });
                 }
@@ -3439,6 +3453,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 toggleEditMode(false);
                 fetchUserProfile(); // Recarrega o perfil com os novos dados
+                
+                // Dispara evento para recarregar times locais se a cidade foi alterada
+                if (data.user.cidade) {
+                    localStorage.setItem('cidadeAtualizada', Date.now().toString());
+                    // Dispara evento customizado para outras abas/janelas
+                    window.dispatchEvent(new Event('cidadeAtualizada'));
+                }
                 
             } catch (error) {
                 console.error('Erro ao salvar perfil:', error);
