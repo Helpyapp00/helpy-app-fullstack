@@ -565,15 +565,17 @@ document.addEventListener('DOMContentLoaded', () => {
             let commentsHTML = initialComments.map(comment => {
                 if (!comment.userId) return '';
                 
-                // Verifica se o usuário pode deletar este comentário
+                // Verifica permissões: editar só dono, apagar dono OU dono da foto
                 const isCommentOwner = comment.userId._id === userId;
-                const canDeleteComment = isPostOwner || isCommentOwner;
+                const canEditComment = isCommentOwner; // Só dono pode editar
+                const canDeleteComment = isPostOwner || isCommentOwner; // Dono OU dono da foto pode apagar
                 
                 // Renderiza Respostas primeiro
                 let repliesHTML = (comment.replies || []).map(reply => {
                     const isReplyOwner = reply.userId && reply.userId._id === userId;
-                    const canDeleteReply = isPostOwner || isReplyOwner;
-                    return renderReply(reply, comment._id, canDeleteReply);
+                    const canEditReply = isReplyOwner; // Só dono pode editar
+                    const canDeleteReply = isPostOwner || isReplyOwner; // Dono OU dono da foto pode apagar
+                    return renderReply(reply, comment._id, canEditReply, canDeleteReply);
                 }).join('');
 
                 const commentPhoto = comment.userId.foto || comment.userId.avatarUrl || 'imagens/default-user.png';
@@ -582,15 +584,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 return `
                 <div class="comment" data-comment-id="${comment._id}">
-                    <img src="${commentPhoto.includes('pixabay') ? 'imagens/default-user.png' : commentPhoto}" alt="Avatar" class="comment-avatar">
+                    <a href="/perfil.html?id=${comment.userId._id}" style="text-decoration: none; color: inherit;">
+                        <img src="${commentPhoto.includes('pixabay') ? 'imagens/default-user.png' : commentPhoto}" alt="Avatar" class="comment-avatar" style="cursor: pointer;">
+                    </a>
                     <div class="comment-body-container">
                         <div class="comment-body">
-                            <strong>${comment.userId.nome}</strong>
-                            <p>${comment.content}</p>
-                            <!-- Botão de deletar (visível para dono do post OU dono do comentário) -->
-                            ${canDeleteComment ? `<button class="btn-delete-comment" data-comment-id="${comment._id}" title="Apagar comentário">
-                                <i class="fas fa-trash"></i>
-                            </button>` : ''}
+                            <a href="/perfil.html?id=${comment.userId._id}" style="text-decoration: none; color: inherit; font-weight: bold; cursor: pointer;">${comment.userId.nome}</a>
+                            <p class="comment-content">${comment.content}</p>
+                            ${(canEditComment || canDeleteComment) ? `
+                                <button class="btn-comment-options" data-comment-id="${comment._id}" title="Opções">⋯</button>
+                                <div class="comment-options-menu oculto" data-comment-id="${comment._id}">
+                                    ${canEditComment ? `<button class="btn-edit-comment" data-comment-id="${comment._id}" title="Editar">✏️</button>` : ''}
+                                    ${canDeleteComment ? `<button class="btn-delete-comment" data-comment-id="${comment._id}" title="Apagar">🗑️</button>` : ''}
+                                </div>
+                            ` : ''}
                         </div>
                         <div class="comment-actions">
                             <button class="comment-action-btn btn-like-comment ${isCommentLiked ? 'liked' : ''}" data-comment-id="${comment._id}">
@@ -616,12 +623,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!comment.userId) return '';
                 
                 const isCommentOwner = comment.userId._id === userId;
-                const canDeleteComment = isPostOwner || isCommentOwner;
-                
+                const canEditComment = isCommentOwner; // Só dono pode editar
+                const canDeleteComment = isPostOwner || isCommentOwner; // Dono OU dono da foto pode apagar
+
                 let repliesHTML = (comment.replies || []).map(reply => {
                     const isReplyOwner = reply.userId && reply.userId._id === userId;
-                    const canDeleteReply = isPostOwner || isReplyOwner;
-                    return renderReply(reply, comment._id, canDeleteReply);
+                    const canEditReply = isReplyOwner; // Só dono pode editar
+                    const canDeleteReply = isPostOwner || isReplyOwner; // Dono OU dono da foto pode apagar
+                    return renderReply(reply, comment._id, canEditReply, canDeleteReply);
                 }).join('');
 
                 const commentPhoto = comment.userId.foto || comment.userId.avatarUrl || 'imagens/default-user.png';
@@ -630,14 +639,20 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 return `
                 <div class="comment comment-hidden" data-comment-id="${comment._id}" data-comment-index="${index + 2}">
-                    <img src="${commentPhoto.includes('pixabay') ? 'imagens/default-user.png' : commentPhoto}" alt="Avatar" class="comment-avatar">
+                    <a href="/perfil.html?id=${comment.userId._id}" style="text-decoration: none; color: inherit;">
+                        <img src="${commentPhoto.includes('pixabay') ? 'imagens/default-user.png' : commentPhoto}" alt="Avatar" class="comment-avatar" style="cursor: pointer;">
+                    </a>
                     <div class="comment-body-container">
                         <div class="comment-body">
-                            <strong>${comment.userId.nome}</strong>
-                            <p>${comment.content}</p>
-                            ${canDeleteComment ? `<button class="btn-delete-comment" data-comment-id="${comment._id}" title="Apagar comentário">
-                                <i class="fas fa-trash"></i>
-                            </button>` : ''}
+                            <a href="/perfil.html?id=${comment.userId._id}" style="text-decoration: none; color: inherit; font-weight: bold; cursor: pointer;">${comment.userId.nome}</a>
+                            <p class="comment-content">${comment.content}</p>
+                            ${(canEditComment || canDeleteComment) ? `
+                                <button class="btn-comment-options" data-comment-id="${comment._id}" title="Opções">⋯</button>
+                                <div class="comment-options-menu oculto" data-comment-id="${comment._id}">
+                                    ${canEditComment ? `<button class="btn-edit-comment" data-comment-id="${comment._id}" title="Editar">✏️</button>` : ''}
+                                    ${canDeleteComment ? `<button class="btn-delete-comment" data-comment-id="${comment._id}" title="Apagar">🗑️</button>` : ''}
+                                </div>
+                            ` : ''}
                         </div>
                         <div class="comment-actions">
                             <button class="comment-action-btn btn-like-comment ${isCommentLiked ? 'liked' : ''}" data-comment-id="${comment._id}">
@@ -710,6 +725,110 @@ document.addEventListener('DOMContentLoaded', () => {
 
         setupPostListeners();
         
+        // Remove botões duplicados de todos os comentários e verifica múltiplas linhas
+        setTimeout(() => {
+            document.querySelectorAll('.comment').forEach(comment => {
+                const buttons = comment.querySelectorAll('.btn-comment-options');
+                if (buttons.length > 1) {
+                    // Mantém apenas o primeiro botão
+                    for (let i = 1; i < buttons.length; i++) {
+                        buttons[i].remove();
+                    }
+                }
+                // Verifica se tem múltiplas linhas e aplica classe no menu
+                const menu = comment.querySelector('.comment-options-menu');
+                if (menu && checkCommentHasMultipleLines(comment)) {
+                    menu.classList.add('comentario-multiplas-linhas');
+                }
+            });
+            document.querySelectorAll('.reply').forEach(reply => {
+                const buttons = reply.querySelectorAll('.btn-reply-options');
+                if (buttons.length > 1) {
+                    // Mantém apenas o primeiro botão
+                    for (let i = 1; i < buttons.length; i++) {
+                        buttons[i].remove();
+                    }
+                }
+                // Verifica se tem múltiplas linhas e aplica classe no menu
+                const menu = reply.querySelector('.reply-options-menu');
+                if (menu && checkCommentHasMultipleLines(reply)) {
+                    menu.classList.add('comentario-multiplas-linhas');
+                }
+            });
+        }, 100);
+
+        // Fecha menus de opções ao clicar fora
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.btn-comment-options') && !e.target.closest('.comment-options-menu')) {
+                document.querySelectorAll('.comment-options-menu').forEach(m => {
+                    m.classList.add('oculto');
+                    // Retorna menu para o lugar original se estiver no body
+                    if (m.parentElement === document.body) {
+                        const commentId = m.dataset.commentId;
+                        const commentElement = document.querySelector(`.comment[data-comment-id="${commentId}"]`);
+                        if (commentElement) {
+                            const commentBody = commentElement.querySelector('.comment-body-container');
+                            if (commentBody) {
+                                commentBody.appendChild(m);
+                            }
+                        }
+                    }
+                });
+            }
+            if (!e.target.closest('.btn-reply-options') && !e.target.closest('.reply-options-menu')) {
+                document.querySelectorAll('.reply-options-menu').forEach(m => {
+                    m.classList.add('oculto');
+                    // Retorna menu para o lugar original se estiver no body
+                    if (m.parentElement === document.body) {
+                        const replyId = m.dataset.replyId;
+                        const replyElement = document.querySelector(`.reply[data-reply-id="${replyId}"]`);
+                        if (replyElement) {
+                            const replyBody = replyElement.querySelector('.reply-body-container');
+                            if (replyBody) {
+                                replyBody.appendChild(m);
+                            }
+                        }
+                    }
+                });
+            }
+        });
+        
+        // Fecha menus de opções ao rolar a página
+        let scrollTimeout;
+        window.addEventListener('scroll', () => {
+            clearTimeout(scrollTimeout);
+            scrollTimeout = setTimeout(() => {
+                document.querySelectorAll('.comment-options-menu:not(.oculto)').forEach(m => {
+                    m.classList.add('oculto');
+                    // Retorna menu para o lugar original se estiver no body
+                    if (m.parentElement === document.body) {
+                        const commentId = m.dataset.commentId;
+                        const commentElement = document.querySelector(`.comment[data-comment-id="${commentId}"]`);
+                        if (commentElement) {
+                            const commentBody = commentElement.querySelector('.comment-body-container');
+                            if (commentBody) {
+                                commentBody.appendChild(m);
+                            }
+                        }
+                    }
+                });
+                document.querySelectorAll('.reply-options-menu:not(.oculto)').forEach(m => {
+                    m.classList.add('oculto');
+                    // Retorna menu para o lugar original se estiver no body
+                    if (m.parentElement === document.body) {
+                        const replyId = m.dataset.replyId;
+                        const replyElement = document.querySelector(`.reply[data-reply-id="${replyId}"]`);
+                        if (replyElement) {
+                            const replyBody = replyElement.querySelector('.reply-body-container');
+                            if (replyBody) {
+                                replyBody.appendChild(m);
+                            }
+                        }
+                    }
+                });
+            }, 50);
+        }, { passive: true });
+
         // Verifica comentários longos após carregar posts
         setTimeout(() => {
             document.querySelectorAll('.comment').forEach(comment => {
@@ -721,22 +840,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 🛑 NOVO: Função para renderizar uma Resposta (Reply)
-    function renderReply(reply, commentId, canDeleteReply) {
+    function renderReply(reply, commentId, canEditReply, canDeleteReply) {
         if (!reply.userId) return '';
         const replyPhoto = reply.userId.foto || reply.userId.avatarUrl || 'imagens/default-user.png';
         const isReplyLiked = reply.likes && reply.likes.includes(userId);
-
+        
         return `
         <div class="reply" data-reply-id="${reply._id}">
-            <img src="${replyPhoto.includes('pixabay') ? 'imagens/default-user.png' : replyPhoto}" alt="Avatar" class="reply-avatar">
+            <a href="/perfil.html?id=${reply.userId._id}" style="text-decoration: none; color: inherit;">
+                <img src="${replyPhoto.includes('pixabay') ? 'imagens/default-user.png' : replyPhoto}" alt="Avatar" class="reply-avatar" style="cursor: pointer;">
+            </a>
             <div class="reply-body-container">
                 <div class="reply-body">
-                    <strong>${reply.userId.nome}</strong>
-                    <p>${reply.content}</p>
-                    <!-- Botão de deletar (visível para dono do post OU dono da resposta) -->
-                    ${canDeleteReply ? `<button class="btn-delete-reply" data-comment-id="${commentId}" data-reply-id="${reply._id}" title="Apagar resposta">
-                        <i class="fas fa-trash"></i>
-                    </button>` : ''}
+                    <a href="/perfil.html?id=${reply.userId._id}" style="text-decoration: none; color: inherit; font-weight: bold; cursor: pointer;">${reply.userId.nome}</a>
+                    <p class="reply-content">${reply.content}</p>
+                    ${(canEditReply || canDeleteReply) ? `
+                        <button class="btn-reply-options" data-comment-id="${commentId}" data-reply-id="${reply._id}" title="Opções">⋯</button>
+                        <div class="reply-options-menu oculto" data-comment-id="${commentId}" data-reply-id="${reply._id}">
+                            ${canEditReply ? `<button class="btn-edit-reply" data-comment-id="${commentId}" data-reply-id="${reply._id}" title="Editar">✏️</button>` : ''}
+                            ${canDeleteReply ? `<button class="btn-delete-reply" data-comment-id="${commentId}" data-reply-id="${reply._id}" title="Apagar">🗑️</button>` : ''}
+                        </div>
+                    ` : ''}
                 </div>
                 <div class="reply-actions">
                     <button class="reply-action-btn btn-like-reply ${isReplyLiked ? 'liked' : ''}" data-comment-id="${commentId}" data-reply-id="${reply._id}">
@@ -750,6 +874,20 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- HANDLERS DE EVENTO ---
+
+    // Função para verificar se o comentário tem mais de 1 linha
+    function checkCommentHasMultipleLines(commentElement) {
+        if (window.innerWidth > 767) return false; // Só aplica em telas menores
+        
+        const commentContent = commentElement.querySelector('.comment-content') || commentElement.querySelector('.reply-content');
+        if (!commentContent) return false;
+        
+        // Verifica se a altura do conteúdo é maior que uma linha
+        const lineHeight = parseFloat(getComputedStyle(commentContent).lineHeight) || 20;
+        const contentHeight = commentContent.scrollHeight;
+        
+        return contentHeight > lineHeight * 1.5; // Mais de 1.5 linhas
+    }
 
     function setupPostListeners() {
         document.querySelectorAll('.delete-post-btn').forEach(btn => btn.addEventListener('click', handleDeletePost));
@@ -807,10 +945,14 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.btn-show-reply-form').forEach(btn => btn.addEventListener('click', toggleReplyForm));
         document.querySelectorAll('.btn-toggle-replies').forEach(btn => btn.addEventListener('click', toggleReplyList));
         document.querySelectorAll('.btn-send-reply').forEach(btn => btn.addEventListener('click', handleSendReply));
+        document.querySelectorAll('.btn-comment-options').forEach(btn => btn.addEventListener('click', handleCommentOptions));
+        document.querySelectorAll('.btn-edit-comment').forEach(btn => btn.addEventListener('click', handleEditComment));
 
         // 🛑 NOVO: Ações de Resposta
         document.querySelectorAll('.btn-like-reply').forEach(btn => btn.addEventListener('click', handleLikeReply));
         document.querySelectorAll('.btn-delete-reply').forEach(btn => btn.addEventListener('click', handleDeleteReply));
+        document.querySelectorAll('.btn-reply-options').forEach(btn => btn.addEventListener('click', handleReplyOptions));
+        document.querySelectorAll('.btn-edit-reply').forEach(btn => btn.addEventListener('click', handleEditReply));
         
         // Botão "Carregar mais" comentários (carrega 5 por vez)
         document.querySelectorAll('.load-more-comments').forEach(btn => {
@@ -863,6 +1005,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (replyFormBtn) replyFormBtn.addEventListener('click', toggleReplyForm);
                     if (toggleRepliesBtn) toggleRepliesBtn.addEventListener('click', toggleReplyList);
                     if (sendReplyBtn) sendReplyBtn.addEventListener('click', handleSendReply);
+                    const optionsBtn = commentElement.querySelector('.btn-comment-options');
+                    const editBtn = commentElement.querySelector('.btn-edit-comment');
+                    if (optionsBtn) optionsBtn.addEventListener('click', handleCommentOptions);
+                    if (editBtn) editBtn.addEventListener('click', handleEditComment);
                 });
                 
                 // Verifica comentários longos após um delay maior para garantir renderização completa
@@ -1768,18 +1914,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isPostOwner = postElement.classList.contains('is-owner');
                 // O usuário que acabou de criar o comentário sempre é o dono dele
                 const isCommentOwner = comment.userId._id === userId;
-                const canDeleteComment = isPostOwner || isCommentOwner;
+                const canEditComment = isCommentOwner; // Só dono pode editar
+                const canDeleteComment = isPostOwner || isCommentOwner; // Dono OU dono da foto pode apagar
 
                 const newCommentHTML = `
                 <div class="comment" data-comment-id="${comment._id}">
-                    <img src="${commentPhoto.includes('pixabay') ? 'imagens/default-user.png' : commentPhoto}" alt="Avatar" class="comment-avatar">
+                    <a href="/perfil.html?id=${comment.userId._id}" style="text-decoration: none; color: inherit;">
+                        <img src="${commentPhoto.includes('pixabay') ? 'imagens/default-user.png' : commentPhoto}" alt="Avatar" class="comment-avatar" style="cursor: pointer;">
+                    </a>
                     <div class="comment-body-container">
                         <div class="comment-body">
-                            <strong>${comment.userId.nome}</strong>
-                            <p>${comment.content}</p>
-                            ${canDeleteComment ? `<button class="btn-delete-comment" data-comment-id="${comment._id}" title="Apagar comentário">
-                                <i class="fas fa-trash"></i>
-                            </button>` : ''}
+                            <a href="/perfil.html?id=${comment.userId._id}" style="text-decoration: none; color: inherit; font-weight: bold; cursor: pointer;">${comment.userId.nome}</a>
+                            <p class="comment-content">${comment.content}</p>
+                            ${(canEditComment || canDeleteComment) ? `
+                                <button class="btn-comment-options" data-comment-id="${comment._id}" title="Opções" style="display: block;">⋮</button>
+                                <div class="comment-options-menu oculto" data-comment-id="${comment._id}">
+                                    ${canEditComment ? `<button class="btn-edit-comment" data-comment-id="${comment._id}" title="Editar">✏️</button>` : ''}
+                                    ${canDeleteComment ? `<button class="btn-delete-comment" data-comment-id="${comment._id}" title="Apagar">🗑️</button>` : ''}
+                                </div>
+                            ` : ''}
                         </div>
                         <div class="comment-actions">
                             <button class="comment-action-btn btn-like-comment" data-comment-id="${comment._id}">
@@ -1796,14 +1949,32 @@ document.addEventListener('DOMContentLoaded', () => {
                     </div>
                 </div>
                 `;
-                commentList.innerHTML += newCommentHTML;
+                // Cria um elemento temporário para inserir o HTML
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = newCommentHTML;
+                const newCommentElement = tempDiv.firstElementChild;
+                
+                // Remove botões duplicados antes de adicionar
+                const existingButtons = newCommentElement.querySelectorAll('.btn-comment-options');
+                if (existingButtons.length > 1) {
+                    // Mantém apenas o primeiro botão
+                    for (let i = 1; i < existingButtons.length; i++) {
+                        existingButtons[i].remove();
+                    }
+                }
+                
+                commentList.appendChild(newCommentElement);
                 
                 // Re-anexa listeners para os novos botões
-                const newCommentElement = commentList.lastElementChild;
                 newCommentElement.querySelector('.btn-like-comment').addEventListener('click', handleLikeComment);
-                newCommentElement.querySelector('.btn-delete-comment').addEventListener('click', handleDeleteComment);
+                const deleteBtn = newCommentElement.querySelector('.btn-delete-comment');
+                if (deleteBtn) deleteBtn.addEventListener('click', handleDeleteComment);
                 newCommentElement.querySelector('.btn-show-reply-form').addEventListener('click', toggleReplyForm);
                 newCommentElement.querySelector('.btn-send-reply').addEventListener('click', handleSendReply);
+                const optionsBtn = newCommentElement.querySelector('.btn-comment-options');
+                const editBtn = newCommentElement.querySelector('.btn-edit-comment');
+                if (optionsBtn) optionsBtn.addEventListener('click', handleCommentOptions);
+                if (editBtn) editBtn.addEventListener('click', handleEditComment);
                 
                 // Verifica se o novo comentário é longo após renderização
                 setTimeout(() => {
@@ -1879,7 +2050,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Re-anexa listeners para os novos botões da resposta
                 const newReplyElement = replyList.lastElementChild;
                 newReplyElement.querySelector('.btn-like-reply').addEventListener('click', handleLikeReply);
-                newReplyElement.querySelector('.btn-delete-reply').addEventListener('click', handleDeleteReply);
+                const deleteReplyBtn = newReplyElement.querySelector('.btn-delete-reply');
+                if (deleteReplyBtn) deleteReplyBtn.addEventListener('click', handleDeleteReply);
+                const replyOptionsBtn = newReplyElement.querySelector('.btn-reply-options');
+                const editReplyBtn = newReplyElement.querySelector('.btn-edit-reply');
+                if (replyOptionsBtn) replyOptionsBtn.addEventListener('click', handleReplyOptions);
+                if (editReplyBtn) editReplyBtn.addEventListener('click', handleEditReply);
 
                 replyList.classList.remove('oculto'); // Mostra a lista
                 input.value = '';
@@ -1934,88 +2110,935 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-
-    async function handleDeleteComment(e) {
+    // Handler para abrir/fechar menu de opções do comentário
+    function handleCommentOptions(e) {
+        e.stopPropagation();
         const btn = e.currentTarget;
         const commentId = btn.dataset.commentId;
-        const postElement = btn.closest('.post');
-        const postId = postElement.dataset.postId;
-        const userId = localStorage.getItem('userId');
-
-        // Log no frontend para debug
-        console.log('🗑️ Tentando deletar comentário:', {
-            postId,
-            commentId,
-            userId,
-            url: `/api/posts/${postId}/comments/${commentId}`
-        });
-
-        if (!confirm('Tem certeza que deseja apagar este comentário?')) return;
-
-        try {
-            const response = await fetch(`/api/posts/${postId}/comments/${commentId}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
-            
-            console.log('📥 Resposta do servidor:', {
-                status: response.status,
-                success: data.success,
-                message: data.message
-            });
-            
-            if (data.success) {
-                btn.closest('.comment').remove(); // Remove o comentário do DOM
+        const menu = document.querySelector(`.comment-options-menu[data-comment-id="${commentId}"]`);
+        const commentElement = btn.closest('.comment') || btn.closest('.reply');
+        
+        // Verifica se deve aparecer acima ou ao lado
+        if (commentElement && menu) {
+            const isMobile = window.innerWidth <= 767;
+            if (isMobile) {
+                // Em telas menores, verifica se há espaço ao lado primeiro
+                // A classe será aplicada/removida pela função adjustMenuPosition
+                menu.classList.remove('comentario-multiplas-linhas'); // Remove primeiro, adjustMenuPosition decide
             } else {
-                throw new Error(data.message);
+                // Em telas maiores, só aplica se tiver múltiplas linhas
+                if (checkCommentHasMultipleLines(commentElement)) {
+                    menu.classList.add('comentario-multiplas-linhas');
+                } else {
+                    menu.classList.remove('comentario-multiplas-linhas');
+                }
             }
-        } catch (error) {
-            console.error('❌ Erro ao deletar comentário:', error);
-            alert('Erro: ' + error.message);
+        }
+        
+        // Fecha todos os outros menus
+        document.querySelectorAll('.comment-options-menu').forEach(m => {
+            if (m !== menu) {
+                m.classList.add('oculto');
+                // Retorna menu para o lugar original se estiver no body
+                if (m.parentElement === document.body) {
+                    const originalComment = document.querySelector(`.comment[data-comment-id="${m.dataset.commentId}"], .reply[data-reply-id="${m.dataset.replyId}"]`);
+                    if (originalComment) {
+                        const commentBody = originalComment.querySelector('.comment-body-container, .reply-body-container');
+                        if (commentBody) {
+                            commentBody.appendChild(m);
+                        }
+                    }
+                }
+            }
+        });
+        document.querySelectorAll('.reply-options-menu').forEach(m => {
+            m.classList.add('oculto');
+            // Retorna menu para o lugar original se estiver no body
+            if (m.parentElement === document.body) {
+                const originalReply = document.querySelector(`.reply[data-reply-id="${m.dataset.replyId}"]`);
+                if (originalReply) {
+                    const replyBody = originalReply.querySelector('.reply-body-container');
+                    if (replyBody) {
+                        replyBody.appendChild(m);
+                    }
+                }
+            }
+        });
+        
+        if (menu) {
+            const wasHidden = menu.classList.contains('oculto');
+            menu.classList.toggle('oculto');
+            
+            // Ajusta posicionamento após abrir
+            if (!menu.classList.contains('oculto')) {
+                // Não move para o body aqui - deixa adjustMenuPosition decidir
+                requestAnimationFrame(() => {
+                    adjustMenuPosition(menu, commentElement, btn);
+                });
+            } else {
+                // Se está fechando, retorna para o lugar original
+                if (menu.parentElement === document.body) {
+                    const originalComment = document.querySelector(`.comment[data-comment-id="${commentId}"], .reply[data-reply-id="${commentId}"]`);
+                    if (originalComment) {
+                        const commentBody = originalComment.querySelector('.comment-body-container, .reply-body-container');
+                        if (commentBody) {
+                            commentBody.appendChild(menu);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // Função para ajustar posicionamento do menu para não sair da tela
+    function adjustMenuPosition(menu, commentElement, btn) {
+        if (!menu || !commentElement || !btn) return;
+        
+        const isMobile = window.innerWidth <= 767;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const padding = 8;
+        const headerHeight = 70;
+        
+        // Remove estilos inline anteriores
+        menu.style.top = '';
+        menu.style.left = '';
+        menu.style.right = '';
+        menu.style.bottom = '';
+        menu.style.position = '';
+        
+        // Garante que o menu esteja visível e exibido
+        menu.classList.remove('oculto');
+        menu.style.visibility = 'visible';
+        menu.style.display = 'flex';
+        menu.style.zIndex = '10000'; // Garante que sobreponha post-comments
+        
+        // Força um reflow para garantir que o menu seja renderizado
+        void menu.offsetHeight;
+        
+        requestAnimationFrame(() => {
+            const menuRect = menu.getBoundingClientRect();
+            const commentRect = commentElement.getBoundingClientRect();
+            const btnRect = btn.getBoundingClientRect();
+            
+            // Se o menu não tem dimensões, tenta novamente
+            if (menuRect.width === 0 || menuRect.height === 0) {
+                requestAnimationFrame(() => {
+                    adjustMenuPosition(menu, commentElement, btn);
+                });
+                return;
+            }
+            
+            if (isMobile) {
+                // Em telas menores: primeiro tenta ao lado do botão, se não couber, coloca acima próximo ao botão
+                const spaceRight = viewportWidth - btnRect.right;
+                const spaceLeft = btnRect.left;
+                // Espaço mínimo necessário: largura do menu + padding
+                const minSpace = menuRect.width + padding;
+                
+                // Verifica se há espaço suficiente ao lado do botão (direita ou esquerda)
+                const canFitBeside = spaceRight >= minSpace || spaceLeft >= minSpace;
+                
+                if (canFitBeside) {
+                    // Tem espaço ao lado: usa comportamento padrão (ao lado do comentário)
+                    menu.classList.remove('comentario-multiplas-linhas');
+                    
+                    // Se o menu está no body, retorna para o lugar original ANTES de calcular posições
+                    if (menu.parentElement === document.body) {
+                        const commentBody = commentElement.querySelector('.comment-body-container, .reply-body-container');
+                        if (commentBody) {
+                            commentBody.appendChild(menu);
+                            // Força reflow
+                            void menu.offsetHeight;
+                        }
+                    }
+                    
+                    // Remove todos os estilos inline de posicionamento
+                    menu.style.removeProperty('top');
+                    menu.style.removeProperty('left');
+                    menu.style.removeProperty('right');
+                    menu.style.removeProperty('bottom');
+                    menu.style.removeProperty('position');
+                    
+                    // Garante que está visível
+                    menu.classList.remove('oculto');
+                    menu.style.visibility = 'visible';
+                    menu.style.display = 'flex';
+                    
+                    // Garante z-index alto mesmo quando ao lado
+                    menu.style.zIndex = '10000';
+                    
+                    // Verifica se realmente cabe após aplicar CSS
+                    requestAnimationFrame(() => {
+                        const currentMenuRect = menu.getBoundingClientRect();
+                        if (currentMenuRect.width === 0 || currentMenuRect.height === 0) {
+                            // Menu ainda não renderizado, tenta novamente
+                            setTimeout(() => adjustMenuPosition(menu, commentElement, btn), 50);
+                            return;
+                        }
+                        
+                        if (currentMenuRect.right > viewportWidth - padding) {
+                            // Se não couber à direita, move para o body e usa fixed
+                            if (menu.parentElement !== document.body) {
+                                document.body.appendChild(menu);
+                            }
+                            menu.classList.add('comentario-multiplas-linhas');
+                            menu.style.position = 'fixed';
+                            
+                            // Recalcula dimensões após mover para body
+                            const newMenuRect = menu.getBoundingClientRect();
+                            
+                            // Calcula posição fixa
+                            let fixedTop = btnRect.top - newMenuRect.height - 5;
+                            let fixedRight = viewportWidth - btnRect.right;
+                            
+                            if (fixedTop < headerHeight + padding) {
+                                fixedTop = btnRect.bottom + 5;
+                            }
+                            
+                            menu.style.top = `${fixedTop}px`;
+                            menu.style.right = `${fixedRight}px`;
+                            menu.style.left = 'auto';
+                            menu.style.zIndex = '10000';
+                        }
+                    });
+                } else {
+                    // Não tem espaço ao lado: coloca acima ou abaixo do botão, próximo a ele
+                    menu.classList.add('comentario-multiplas-linhas');
+                    
+                    // Move o menu para o body para escapar completamente do contexto de clipping
+                    // das divs post-comments e comment-list
+                    if (menu.parentElement !== document.body) {
+                        document.body.appendChild(menu);
+                    }
+                    
+                    // SEMPRE usa posicionamento fixed para escapar do contexto de clipping
+                    menu.style.position = 'fixed';
+                    
+                    // Calcula posição fixa baseada no botão (coordenadas da viewport)
+                    let fixedTop = btnRect.top - menuRect.height - 5;
+                    let fixedRight = viewportWidth - btnRect.right;
+                    
+                    // Verifica se cabe acima
+                    if (fixedTop < headerHeight + padding) {
+                        // Se não couber acima, coloca abaixo do botão
+                        fixedTop = btnRect.bottom + 5;
+                    }
+                    
+                    // Verifica espaço à direita
+                    const spaceRight = viewportWidth - btnRect.right;
+                    if (spaceRight < menuRect.width + padding) {
+                        // Ajusta mas mantém próximo ao botão
+                        fixedRight = Math.max(padding, spaceRight - menuRect.width);
+                    }
+                    
+                    // Ajusta se sair da tela embaixo
+                    if (fixedTop + menuRect.height > viewportHeight - padding) {
+                        fixedTop = viewportHeight - menuRect.height - padding;
+                    }
+                    
+                    // Ajusta se sair da tela em cima (permite sobrepor header se necessário)
+                    if (fixedTop < padding) {
+                        fixedTop = Math.max(padding, btnRect.top - menuRect.height - 5);
+                    }
+                    
+                    menu.style.top = `${fixedTop}px`;
+                    menu.style.right = `${fixedRight}px`;
+                    menu.style.left = 'auto';
+                    menu.style.zIndex = '10000';
+                }
+            } else {
+                // Em telas maiores: ao lado (comportamento padrão)
+                requestAnimationFrame(() => {
+                    const currentMenuRect = menu.getBoundingClientRect();
+                    
+                    // Se sair da tela à direita, move para a esquerda
+                    if (currentMenuRect.right > viewportWidth - padding) {
+                        menu.style.left = 'auto';
+                        menu.style.right = `${viewportWidth - commentRect.left + padding}px`;
+                    }
+                    
+                    // Se sair da tela em cima, ajusta para baixo
+                    if (currentMenuRect.top < padding) {
+                        menu.style.top = `${padding - commentRect.top}px`;
+                    }
+                    
+                    // Se sair da tela embaixo, ajusta para cima
+                    if (currentMenuRect.bottom > viewportHeight - padding) {
+                        menu.style.top = `${viewportHeight - commentRect.bottom - menuRect.height - padding}px`;
+                    }
+                });
+            }
+        });
+    }
+
+    // Handler para editar comentário
+    function handleEditComment(e) {
+        e.stopPropagation();
+        const btn = e.currentTarget;
+        const commentId = btn.dataset.commentId;
+        const commentElement = document.querySelector(`.comment[data-comment-id="${commentId}"]`);
+        
+        if (!commentElement) {
+            console.error('❌ Comentário não encontrado:', commentId);
+            return;
+        }
+        
+        // Verifica se já existe uma caixa de edição ativa
+        const existingEditInput = commentElement.querySelector('.comment-edit-input');
+        if (existingEditInput) {
+            // Se já existe, apenas foca nela
+            existingEditInput.focus();
+            existingEditInput.select();
+            return;
+        }
+        
+        const contentElement = commentElement.querySelector('.comment-content');
+        if (!contentElement) {
+            console.error('❌ Elemento de conteúdo não encontrado no comentário:', commentId);
+            return;
+        }
+        
+        const originalText = contentElement.textContent;
+        
+        // Fecha o menu
+        const menu = commentElement.querySelector('.comment-options-menu');
+        if (menu) menu.classList.add('oculto');
+        
+        // Cria input de edição
+        const editInput = document.createElement('input');
+        editInput.type = 'text';
+        editInput.className = 'comment-edit-input';
+        editInput.value = originalText;
+        
+        // Cria botões de confirmação/cancelamento
+        const editActions = document.createElement('div');
+        editActions.className = 'comment-edit-actions';
+        editActions.innerHTML = `
+            <button class="btn-confirm-edit" data-comment-id="${commentId}">✓</button>
+            <button class="btn-cancel-edit" data-comment-id="${commentId}">✗</button>
+        `;
+        
+        // Substitui o conteúdo
+        contentElement.style.display = 'none';
+        contentElement.parentNode.insertBefore(editInput, contentElement);
+        contentElement.parentNode.insertBefore(editActions, editInput.nextSibling);
+        
+        editInput.focus();
+        editInput.select();
+        
+        // Handler para confirmar
+        editActions.querySelector('.btn-confirm-edit').addEventListener('click', async () => {
+            const newContent = editInput.value.trim();
+            if (!newContent) {
+                alert('O comentário não pode estar vazio.');
+                return;
+            }
+            
+            const postId = commentElement.closest('.post').dataset.postId;
+            if (!postId) {
+                alert('Erro: ID do post não encontrado.');
+                return;
+            }
+            
+            console.log('📝 Editando comentário:', { postId, commentId, newContent });
+            
+            try {
+                const response = await fetch(`/api/posts/${postId}/comments/${commentId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content: newContent })
+                });
+                
+                console.log('📥 Resposta do servidor:', { status: response.status, ok: response.ok });
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ message: 'Erro desconhecido' }));
+                    throw new Error(errorData.message || `Erro HTTP ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('📥 Dados recebidos:', data);
+                
+                if (data.success) {
+                    contentElement.textContent = newContent;
+                    contentElement.style.display = '';
+                    editInput.remove();
+                    editActions.remove();
+                } else {
+                    throw new Error(data.message || 'Erro ao editar comentário');
+                }
+            } catch (error) {
+                console.error('❌ Erro ao editar comentário:', error);
+                alert('Erro ao editar comentário: ' + error.message);
+            }
+        });
+        
+        // Handler para cancelar
+        editActions.querySelector('.btn-cancel-edit').addEventListener('click', () => {
+            contentElement.style.display = '';
+            editInput.remove();
+            editActions.remove();
+        });
+    }
+
+    // Handler para abrir/fechar menu de opções da resposta
+    function handleReplyOptions(e) {
+        e.stopPropagation();
+        const btn = e.currentTarget;
+        const replyId = btn.dataset.replyId;
+        const commentId = btn.dataset.commentId;
+        
+        // Tenta encontrar o menu de múltiplas formas
+        let menu = document.querySelector(`.reply-options-menu[data-reply-id="${replyId}"]`);
+        const replyElement = btn.closest('.reply');
+        
+        // Se não encontrou, tenta encontrar dentro do reply element
+        if (!menu && replyElement) {
+            menu = replyElement.querySelector('.reply-options-menu');
+        }
+        
+        // Se ainda não encontrou, tenta encontrar no body (pode ter sido movido)
+        if (!menu) {
+            const menuInBody = document.querySelector(`.reply-options-menu[data-reply-id="${replyId}"][data-comment-id="${commentId}"]`);
+            if (menuInBody) {
+                menu = menuInBody;
+            }
+        }
+        
+        if (!menu) {
+            console.error('❌ Menu de opções não encontrado para reply:', replyId);
+            return;
+        }
+        
+        // Verifica se deve aparecer acima ou ao lado
+        if (replyElement && menu) {
+            const isMobile = window.innerWidth <= 767;
+            if (isMobile) {
+                // Em telas menores, verifica se há espaço ao lado primeiro
+                // A classe será aplicada/removida pela função adjustMenuPosition
+                menu.classList.remove('comentario-multiplas-linhas'); // Remove primeiro, adjustMenuPosition decide
+            } else {
+                // Em telas maiores, só aplica se tiver múltiplas linhas
+                if (checkCommentHasMultipleLines(replyElement)) {
+                    menu.classList.add('comentario-multiplas-linhas');
+                } else {
+                    menu.classList.remove('comentario-multiplas-linhas');
+                }
+            }
+        }
+        
+        // Fecha todos os outros menus
+        document.querySelectorAll('.reply-options-menu').forEach(m => {
+            if (m !== menu) {
+                m.classList.add('oculto');
+                // Retorna menu para o lugar original se estiver no body
+                if (m.parentElement === document.body) {
+                    const originalReply = document.querySelector(`.reply[data-reply-id="${m.dataset.replyId}"]`);
+                    if (originalReply) {
+                        const replyBody = originalReply.querySelector('.reply-body-container');
+                        if (replyBody) {
+                            replyBody.appendChild(m);
+                        }
+                    }
+                }
+            }
+        });
+        document.querySelectorAll('.comment-options-menu').forEach(m => {
+            m.classList.add('oculto');
+            // Retorna menu para o lugar original se estiver no body
+            if (m.parentElement === document.body) {
+                const originalComment = document.querySelector(`.comment[data-comment-id="${m.dataset.commentId}"]`);
+                if (originalComment) {
+                    const commentBody = originalComment.querySelector('.comment-body-container');
+                    if (commentBody) {
+                        commentBody.appendChild(m);
+                    }
+                }
+            }
+        });
+        
+        if (menu) {
+            const wasHidden = menu.classList.contains('oculto');
+            menu.classList.toggle('oculto');
+            
+            // Ajusta posicionamento após abrir
+            if (!menu.classList.contains('oculto')) {
+                // Garante que o menu esteja visível
+                menu.classList.remove('oculto');
+                menu.style.visibility = 'visible';
+                menu.style.display = 'flex';
+                
+                // Não move para o body aqui - deixa adjustMenuPosition decidir
+                requestAnimationFrame(() => {
+                    adjustMenuPosition(menu, replyElement, btn);
+                });
+            } else {
+                // Se está fechando, retorna para o lugar original
+                if (menu.parentElement === document.body) {
+                    const originalReply = document.querySelector(`.reply[data-reply-id="${replyId}"]`);
+                    if (originalReply) {
+                        const replyBody = originalReply.querySelector('.reply-body-container');
+                        if (replyBody) {
+                            replyBody.appendChild(menu);
+                        }
+                    }
+                }
+            }
+        } else {
+            console.warn('⚠️ Menu de opções não encontrado para reply:', replyId);
         }
     }
 
-    async function handleDeleteReply(e) {
+    // Handler para editar resposta
+    function handleEditReply(e) {
+        e.stopPropagation();
         const btn = e.currentTarget;
         const commentId = btn.dataset.commentId;
         const replyId = btn.dataset.replyId;
-        const postId = btn.closest('.post').dataset.postId;
+        const replyElement = document.querySelector(`.reply[data-reply-id="${replyId}"]`);
+        
+        if (!replyElement) {
+            console.error('❌ Resposta não encontrada:', replyId);
+            return;
+        }
+        
+        // Verifica se já existe uma caixa de edição ativa
+        const existingEditInput = replyElement.querySelector('.reply-edit-input');
+        if (existingEditInput) {
+            // Se já existe, apenas foca nela
+            existingEditInput.focus();
+            existingEditInput.select();
+            return;
+        }
+        
+        const contentElement = replyElement.querySelector('.reply-content');
+        if (!contentElement) {
+            console.error('❌ Elemento de conteúdo não encontrado na resposta:', replyId);
+            return;
+        }
+        
+        const originalText = contentElement.textContent;
+        
+        // Fecha o menu
+        const menu = replyElement.querySelector('.reply-options-menu');
+        if (menu) menu.classList.add('oculto');
+        
+        // Cria input de edição
+        const editInput = document.createElement('input');
+        editInput.type = 'text';
+        editInput.className = 'reply-edit-input';
+        editInput.value = originalText;
+        
+        // Cria botões de confirmação/cancelamento
+        const editActions = document.createElement('div');
+        editActions.className = 'reply-edit-actions';
+        editActions.innerHTML = `
+            <button class="btn-confirm-edit-reply" data-comment-id="${commentId}" data-reply-id="${replyId}">✓</button>
+            <button class="btn-cancel-edit-reply" data-reply-id="${replyId}">✗</button>
+        `;
+        
+        // Substitui o conteúdo
+        contentElement.style.display = 'none';
+        contentElement.parentNode.insertBefore(editInput, contentElement);
+        contentElement.parentNode.insertBefore(editActions, editInput.nextSibling);
+        
+        editInput.focus();
+        editInput.select();
+        
+        // Handler para confirmar
+        editActions.querySelector('.btn-confirm-edit-reply').addEventListener('click', async () => {
+            const newContent = editInput.value.trim();
+            if (!newContent) {
+                alert('A resposta não pode estar vazia.');
+                return;
+            }
+            
+            const postId = replyElement.closest('.post').dataset.postId;
+            try {
+                const response = await fetch(`/api/posts/${postId}/comments/${commentId}/replies/${replyId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content: newContent })
+                });
+                const data = await response.json();
+                
+                if (data.success) {
+                    contentElement.textContent = newContent;
+                    contentElement.style.display = '';
+                    editInput.remove();
+                    editActions.remove();
+                } else {
+                    throw new Error(data.message || 'Erro ao editar resposta');
+                }
+            } catch (error) {
+                console.error('Erro ao editar resposta:', error);
+                alert('Erro ao editar resposta: ' + error.message);
+            }
+        });
+        
+        // Handler para cancelar
+        editActions.querySelector('.btn-cancel-edit-reply').addEventListener('click', () => {
+            contentElement.style.display = '';
+            editInput.remove();
+            editActions.remove();
+        });
+    }
+
+    // Função auxiliar para mostrar popup de confirmação pequeno
+    function showDeleteConfirmPopup(btn, onConfirm, clickEvent = null) {
+        // Remove popup existente se houver
+        const existingPopup = document.querySelector('.delete-confirm-popup');
+        if (existingPopup) {
+            existingPopup.remove();
+        }
+
+        // Cria o popup
+        const popup = document.createElement('div');
+        popup.className = 'delete-confirm-popup';
+        popup.innerHTML = `
+            <div class="delete-confirm-text">Tem certeza?</div>
+            <div class="delete-confirm-buttons">
+                <button class="btn-confirm-yes">Sim</button>
+                <button class="btn-confirm-no">Não</button>
+            </div>
+        `;
+
+        // Adiciona ao body primeiro para poder calcular dimensões
+        document.body.appendChild(popup);
+        
+        // Guarda a posição do clique do mouse como fallback
+        let clickX = clickEvent ? clickEvent.clientX : null;
+        let clickY = clickEvent ? clickEvent.clientY : null;
+
+        // Usa duplo requestAnimationFrame para garantir que o DOM esteja totalmente renderizado
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                // SEMPRE tenta encontrar o botão no DOM original primeiro (não no body)
+                // Isso garante que temos as coordenadas corretas mesmo quando o menu está no body
+                const commentId = btn.dataset.commentId;
+                const replyId = btn.dataset.replyId;
+                
+                let actualBtn = null;
+                
+                // Tenta encontrar o botão no DOM original
+                if (commentId) {
+                    const commentElement = document.querySelector(`.comment[data-comment-id="${commentId}"]`);
+                    if (commentElement) {
+                        actualBtn = commentElement.querySelector('.btn-delete-comment');
+                    }
+                } else if (replyId) {
+                    const replyElement = document.querySelector(`.reply[data-reply-id="${replyId}"]`);
+                    if (replyElement) {
+                        actualBtn = replyElement.querySelector('.btn-delete-reply');
+                    }
+                }
+                
+                // Se não encontrou no DOM original, usa o botão clicado
+                if (!actualBtn) {
+                    actualBtn = btn;
+                }
+                
+                // Obtém as coordenadas do botão
+                // Se o botão estiver no body, ainda assim getBoundingClientRect() deve funcionar
+                const btnRect = actualBtn.getBoundingClientRect();
+                
+                // Obtém o menu de opções que contém o botão (se ainda existir no DOM)
+                // Tenta encontrar o menu no DOM original primeiro
+                let menu = null;
+                if (commentId) {
+                    const commentElement = document.querySelector(`.comment[data-comment-id="${commentId}"]`);
+                    if (commentElement) {
+                        menu = commentElement.querySelector('.comment-options-menu');
+                    }
+                } else if (replyId) {
+                    const replyElement = document.querySelector(`.reply[data-reply-id="${replyId}"]`);
+                    if (replyElement) {
+                        menu = replyElement.querySelector('.reply-options-menu');
+                    }
+                }
+                
+                // Se não encontrou no DOM original, tenta pelo botão ou no body
+                if (!menu) {
+                    menu = actualBtn.closest('.comment-options-menu') || actualBtn.closest('.reply-options-menu');
+                }
+                
+                // Se ainda não encontrou, tenta encontrar no body (pode ter sido movido)
+                if (!menu) {
+                    if (commentId) {
+                        const menuInBody = document.querySelector(`.comment-options-menu[data-comment-id="${commentId}"]`);
+                        if (menuInBody && !menuInBody.classList.contains('oculto')) {
+                            menu = menuInBody;
+                        }
+                    } else if (replyId) {
+                        const menuInBody = document.querySelector(`.reply-options-menu[data-reply-id="${replyId}"]`);
+                        if (menuInBody && !menuInBody.classList.contains('oculto')) {
+                            menu = menuInBody;
+                        }
+                    }
+                }
+                
+                // Se ainda não encontrou, procura todos os menus visíveis no body
+                if (!menu) {
+                    const allMenus = document.querySelectorAll('.comment-options-menu:not(.oculto), .reply-options-menu:not(.oculto)');
+                    if (allMenus.length > 0) {
+                        // Pega o último menu visível (provavelmente o que foi clicado)
+                        menu = allMenus[allMenus.length - 1];
+                    }
+                }
+                
+                // SEMPRE tenta usar o menu como referência primeiro (ele está visível quando o usuário clica)
+                if (menu && !menu.classList.contains('oculto')) {
+                    const menuRect = menu.getBoundingClientRect();
+                    if (menuRect.width > 0 && menuRect.height > 0) {
+                        // O menu contém 2 botões: lápis (✏️) e lixeira (🗑️)
+                        // Gap entre botões: 12px
+                        // Cada botão tem aproximadamente 20px de largura
+                        // A lixeira está no final (direita) do menu
+                        const buttonWidth = 20;
+                        const gap = 12;
+                        
+                        // Calcula onde está o botão de lixeira dentro do menu
+                        btnRect.left = menuRect.right - buttonWidth;
+                        btnRect.top = menuRect.top;
+                        btnRect.width = buttonWidth;
+                        btnRect.height = menuRect.height;
+                        btnRect.right = btnRect.left + btnRect.width;
+                        btnRect.bottom = btnRect.top + btnRect.height;
+                        console.log('✅ Usando menu visível como referência:', { menuRect, btnRect });
+                    }
+                }
+                
+                // Se o menu não foi encontrado ou não está visível, verifica se o botão tem dimensões válidas
+                if ((btnRect.width === 0 && btnRect.height === 0) || (btnRect.left === 0 && btnRect.top === 0)) {
+                    console.warn('⚠️ Botão não tem dimensões válidas, tentando alternativas');
+                    
+                    // Se ainda não tem dimensões válidas, usa a posição do clique do mouse
+                    if (clickX !== null && clickY !== null) {
+                        btnRect.left = clickX - 10;
+                        btnRect.top = clickY - 10;
+                        btnRect.width = 20;
+                        btnRect.height = 20;
+                        btnRect.right = btnRect.left + btnRect.width;
+                        btnRect.bottom = btnRect.top + btnRect.height;
+                        console.log('✅ Usando posição do clique como referência:', btnRect);
+                    } else {
+                        console.warn('⚠️ Sem coordenadas válidas, usando posição padrão');
+                    }
+                }
+                
+                // Usa o botão diretamente para posicionamento mais preciso
+                const popupRect = popup.getBoundingClientRect();
+                const isMobile = window.innerWidth <= 767;
+                
+                let left, top;
+                
+                // Debug: verifica se as coordenadas são válidas
+                if (btnRect.left === 0 && btnRect.top === 0 && btnRect.width === 0 && btnRect.height === 0) {
+                    console.warn('⚠️ Coordenadas do botão inválidas, usando posição do clique ou padrão');
+                    // Tenta usar a posição do clique primeiro
+                    if (clickX !== null && clickY !== null) {
+                        left = clickX;
+                        top = clickY + 30; // Abaixo do clique
+                    } else {
+                        // Posição padrão: centro da tela
+                        left = (window.innerWidth - popupRect.width) / 2;
+                        top = (window.innerHeight - popupRect.height) / 2;
+                    }
+                } else {
+                    if (isMobile) {
+                        // Em telas menores: popup embaixo do botão, centralizado horizontalmente
+                        left = btnRect.left + (btnRect.width / 2) - (popupRect.width / 2);
+                        top = btnRect.bottom + 8;
+                        
+                        // Ajusta se o popup sair da tela à direita
+                        if (left + popupRect.width > window.innerWidth - 8) {
+                            left = window.innerWidth - popupRect.width - 8;
+                        }
+                        
+                        // Garante que não saia da tela à esquerda
+                        if (left < 8) {
+                            left = 8;
+                        }
+                    } else {
+                        // Em telas maiores: ao lado direito do botão de lixeira, alinhado verticalmente
+                        left = btnRect.right + 8;
+                        top = btnRect.top + (btnRect.height / 2) - (popupRect.height / 2);
+                        
+                        // Ajusta se o popup sair da tela à direita
+                        if (left + popupRect.width > window.innerWidth - 8) {
+                            left = btnRect.left - popupRect.width - 8;
+                        }
+                        
+                        // Garante que não saia da tela à esquerda
+                        if (left < 8) {
+                            left = 8;
+                        }
+                    }
+                    
+                    // Ajusta se o popup sair da tela embaixo
+                    if (top + popupRect.height > window.innerHeight - 8) {
+                        top = window.innerHeight - popupRect.height - 8;
+                    }
+                    
+                    // Ajusta se o popup sair da tela em cima (considerando header)
+                    const headerHeight = 70; // Altura aproximada do header
+                    if (top < headerHeight + 8) {
+                        // Se não couber acima, coloca abaixo do botão
+                        top = btnRect.bottom + 8;
+                    }
+                }
+
+                // Aplica posicionamento (fixed usa coordenadas da viewport)
+                popup.style.position = 'fixed';
+                popup.style.top = `${top}px`;
+                popup.style.left = `${left}px`;
+                popup.style.zIndex = '10001';
+                
+                // Agora fecha o menu após calcular a posição
+                if (menu && !menu.classList.contains('oculto')) {
+                    menu.classList.add('oculto');
+                }
+                
+                // Event listeners (adicionados após posicionamento)
+                const btnYes = popup.querySelector('.btn-confirm-yes');
+                const btnNo = popup.querySelector('.btn-confirm-no');
+
+                btnYes.addEventListener('click', () => {
+                    popup.remove();
+                    onConfirm();
+                });
+
+                btnNo.addEventListener('click', () => {
+                    popup.remove();
+                });
+
+                // Fecha ao clicar fora
+                setTimeout(() => {
+                    document.addEventListener('click', function closePopup(e) {
+                        if (!popup.contains(e.target) && e.target !== btn && !btn.closest('.comment-options-menu')?.contains(e.target) && !btn.closest('.reply-options-menu')?.contains(e.target)) {
+                            popup.remove();
+                            document.removeEventListener('click', closePopup);
+                        }
+                    });
+                }, 10);
+            });
+        });
+    }
+
+    async function handleDeleteComment(e) {
+        e.stopPropagation();
+        const btn = e.currentTarget;
+        const commentId = btn.dataset.commentId;
+        
+        // Encontra o post de forma mais robusta
+        let postElement = btn.closest('.post');
+        if (!postElement) {
+            // Se o botão estiver no body, tenta encontrar pelo comentário
+            const commentElement = document.querySelector(`.comment[data-comment-id="${commentId}"]`);
+            if (commentElement) {
+                postElement = commentElement.closest('.post');
+            }
+        }
+        
+        if (!postElement) {
+            console.error('❌ Post não encontrado para o comentário:', commentId);
+            alert('Erro: Não foi possível encontrar o post.');
+            return;
+        }
+        
+        const postId = postElement.dataset.postId;
         const userId = localStorage.getItem('userId');
 
-        // Log no frontend para debug
-        console.log('🗑️ Tentando deletar resposta:', {
-            postId,
-            commentId,
-            replyId,
-            userId,
-            url: `/api/posts/${postId}/comments/${commentId}/replies/${replyId}`
-        });
+        // NÃO fecha o menu ainda - deixa showDeleteConfirmPopup usar como referência
+        // O menu será fechado dentro de showDeleteConfirmPopup após calcular a posição
 
-        if (!confirm('Tem certeza que deseja apagar esta resposta?')) return;
-
-        try {
-            const response = await fetch(`/api/posts/${postId}/comments/${commentId}/replies/${replyId}`, {
-                method: 'DELETE',
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
-            
-            console.log('📥 Resposta do servidor:', {
-                status: response.status,
-                success: data.success,
-                message: data.message
-            });
-            
-            if (data.success) {
-                btn.closest('.reply').remove(); // Remove a resposta do DOM
-            } else {
-                throw new Error(data.message);
+        // Mostra popup de confirmação pequeno (passa o evento para ter a posição do clique)
+        showDeleteConfirmPopup(btn, async () => {
+            try {
+                const response = await fetch(`/api/posts/${postId}/comments/${commentId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                
+                console.log('📥 Resposta do servidor:', {
+                    status: response.status,
+                    success: data.success,
+                    message: data.message
+                });
+                
+                if (data.success) {
+                    btn.closest('.comment').remove(); // Remove o comentário do DOM
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('❌ Erro ao deletar comentário:', error);
+                alert('Erro: ' + error.message);
             }
-        } catch (error) {
-            console.error('❌ Erro ao deletar resposta:', error);
-            alert('Erro: ' + error.message);
+        }, e);
+    }
+
+    async function handleDeleteReply(e) {
+        e.stopPropagation();
+        const btn = e.currentTarget;
+        const commentId = btn.dataset.commentId;
+        const replyId = btn.dataset.replyId;
+        
+        // Encontra o post de forma mais robusta
+        let postElement = btn.closest('.post');
+        if (!postElement) {
+            // Se o botão estiver no body, tenta encontrar pela resposta
+            const replyElement = document.querySelector(`.reply[data-reply-id="${replyId}"]`);
+            if (replyElement) {
+                postElement = replyElement.closest('.post');
+            }
         }
+        
+        if (!postElement) {
+            console.error('❌ Post não encontrado para a resposta:', replyId);
+            alert('Erro: Não foi possível encontrar o post.');
+            return;
+        }
+        
+        const postId = postElement.dataset.postId;
+        const userId = localStorage.getItem('userId');
+
+        // NÃO fecha o menu ainda - deixa showDeleteConfirmPopup usar como referência
+        // O menu será fechado dentro de showDeleteConfirmPopup após calcular a posição
+
+        // Mostra popup de confirmação pequeno (passa o evento para ter a posição do clique)
+        showDeleteConfirmPopup(btn, async () => {
+            try {
+                const response = await fetch(`/api/posts/${postId}/comments/${commentId}/replies/${replyId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                console.log('📥 Resposta do servidor:', {
+                    status: response.status,
+                    success: data.success,
+                    message: data.message
+                });
+
+                if (data.success) {
+                    btn.closest('.reply').remove(); // Remove a resposta do DOM
+                } else {
+                    throw new Error(data.message);
+                }
+            } catch (error) {
+                console.error('❌ Erro ao deletar resposta:', error);
+                alert('Erro: ' + error.message);
+            }
+        }, e);
     }
 
     // --- NAVEGAÇÃO DO HEADER ---
@@ -5823,7 +6846,179 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }, 1000);
         }
+        
+        // Verifica se há parâmetros na URL para navegar até um post específico
+        const urlParamsNav = new URLSearchParams(window.location.search);
+        const postIdNav = urlParamsNav.get('postId');
+        const commentIdNav = urlParamsNav.get('commentId');
+        const replyIdNav = urlParamsNav.get('replyId');
+        
+        if (postIdNav) {
+            console.log('📍 Parâmetros de navegação encontrados:', { postIdNav, commentIdNav, replyIdNav });
+            setTimeout(() => {
+                if (window.navegarParaPost) {
+                    window.navegarParaPost(postIdNav, commentIdNav, replyIdNav);
+                }
+            }, 1500); // Aguarda posts carregarem
+        }
     }
+    
+    // Função global para navegar até um post e comentário/resposta específico (usada por notificações)
+    window.navegarParaPost = async function(postId, commentId = null, replyId = null) {
+        console.log('📱 [script.js] Navegando para post:', { postId, commentId, replyId });
+        
+        // Função auxiliar para encontrar o post
+        const encontrarPost = () => {
+            let postElement = Array.from(document.querySelectorAll('article.post')).find(article => {
+                const btn = article.querySelector(`button[data-post-id="${postId}"]`);
+                return btn !== null;
+            });
+            
+            if (!postElement) {
+                // Tenta encontrar por qualquer article que contenha o botão
+                postElement = Array.from(document.querySelectorAll('article')).find(article => {
+                    const btn = article.querySelector(`button[data-post-id="${postId}"]`);
+                    return btn !== null;
+                });
+            }
+            
+            return postElement;
+        };
+        
+        // Tenta encontrar o post, com retry
+        let postElement = encontrarPost();
+        let tentativas = 0;
+        const maxTentativas = 5;
+        
+        while (!postElement && tentativas < maxTentativas) {
+            console.log(`⏳ Post não encontrado, tentativa ${tentativas + 1}/${maxTentativas}, aguardando...`);
+            await new Promise(resolve => setTimeout(resolve, 500));
+            postElement = encontrarPost();
+            tentativas++;
+        }
+        
+        if (postElement) {
+            console.log('✅ Post encontrado:', postElement);
+            
+            // Expande comentários se necessário
+            const btnComentarios = postElement.querySelector(`.btn-comment[data-post-id="${postId}"]`);
+            if (btnComentarios) {
+                const comentariosDiv = postElement.querySelector('.post-comments');
+                if (comentariosDiv && (comentariosDiv.classList.contains('hidden') || !comentariosDiv.classList.contains('visible'))) {
+                    console.log('📂 Expandindo comentários...');
+                    btnComentarios.click();
+                    await new Promise(resolve => setTimeout(resolve, 400));
+                }
+            }
+            
+            // Rola até o post
+            console.log('📜 Rolando até o post...');
+            postElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Se tem replyId, rola até a resposta
+            if (replyId) {
+                console.log('🔍 Procurando resposta:', replyId);
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                const allComments = postElement.querySelectorAll('.comment');
+                let replyElement = null;
+                
+                for (const comment of allComments) {
+                    // Expande respostas do comentário se necessário
+                    const replyList = comment.querySelector('.reply-list');
+                    if (replyList && (replyList.classList.contains('oculto') || replyList.style.display === 'none')) {
+                        const btnToggleReplies = comment.querySelector('.btn-toggle-replies');
+                        if (btnToggleReplies) {
+                            console.log('📂 Expandindo respostas do comentário...');
+                            btnToggleReplies.click();
+                            await new Promise(resolve => setTimeout(resolve, 300));
+                        }
+                    }
+                    
+                    // Busca a resposta dentro deste comentário
+                    const replies = comment.querySelectorAll('.reply');
+                    for (const reply of replies) {
+                        const replyIdAttr = reply.getAttribute('data-reply-id');
+                        if (replyIdAttr === replyId || String(replyIdAttr) === String(replyId)) {
+                            replyElement = reply;
+                            break;
+                        }
+                    }
+                    
+                    if (replyElement) break;
+                }
+                
+                if (replyElement) {
+                    console.log('✅ Resposta encontrada, rolando...');
+                    replyElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    replyElement.style.backgroundColor = 'rgba(0, 123, 255, 0.2)';
+                    replyElement.style.transition = 'background-color 0.3s';
+                    setTimeout(() => {
+                        replyElement.style.backgroundColor = '';
+                    }, 2000);
+                } else {
+                    console.warn('⚠️ Resposta não encontrada:', replyId);
+                }
+            }
+            // Se tem commentId, rola até o comentário
+            else if (commentId) {
+                console.log('🔍 Procurando comentário:', commentId);
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                let commentElement = postElement.querySelector(`.comment[data-comment-id="${commentId}"]`);
+                
+                if (!commentElement) {
+                    console.log('🔍 Comentário não encontrado com seletor direto, buscando em todos...');
+                    const allComments = postElement.querySelectorAll('.comment');
+                    console.log(`📋 Total de comentários encontrados: ${allComments.length}`);
+                    for (const comment of allComments) {
+                        const commentIdAttr = comment.getAttribute('data-comment-id');
+                        console.log(`🔍 Comparando: ${commentIdAttr} === ${commentId}?`, commentIdAttr === commentId);
+                        if (commentIdAttr === commentId || String(commentIdAttr) === String(commentId)) {
+                            commentElement = comment;
+                            console.log('✅ Comentário encontrado!');
+                            break;
+                        }
+                    }
+                }
+                
+                if (commentElement) {
+                    console.log('✅ Comentário encontrado, rolando...');
+                    commentElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    commentElement.style.backgroundColor = 'rgba(0, 123, 255, 0.2)';
+                    commentElement.style.transition = 'background-color 0.3s';
+                    setTimeout(() => {
+                        commentElement.style.backgroundColor = '';
+                    }, 2000);
+                } else {
+                    console.warn('⚠️ Comentário não encontrado:', commentId);
+                    // Lista todos os IDs de comentários para debug
+                    const allComments = postElement.querySelectorAll('.comment');
+                    const commentIds = Array.from(allComments).map(c => c.getAttribute('data-comment-id'));
+                    console.log('📋 IDs de comentários disponíveis:', commentIds);
+                }
+            } else {
+                // Apenas destaca o post
+                console.log('✨ Apenas destacando o post...');
+                postElement.style.backgroundColor = 'rgba(0, 123, 255, 0.1)';
+                postElement.style.transition = 'background-color 0.3s';
+                setTimeout(() => {
+                    postElement.style.backgroundColor = '';
+                }, 2000);
+            }
+        } else {
+            console.error('❌ Post não encontrado após várias tentativas:', postId);
+            // Lista todos os posts disponíveis para debug
+            const allPosts = document.querySelectorAll('article.post');
+            const postIds = Array.from(allPosts).map(article => {
+                const btn = article.querySelector('button[data-post-id]');
+                return btn ? btn.getAttribute('data-post-id') : null;
+            }).filter(Boolean);
+            console.log('📋 IDs de posts disponíveis:', postIds);
+        }
+    };
+    
     })();
 });
 

@@ -192,7 +192,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const pathParts = window.location.pathname.split('/').filter(Boolean);
     const slugFromPath = (pathParts.length >= 2 && pathParts[0] === 'perfil') ? pathParts[1] : null;
     const profileIdFromUrl = urlParams.get('id');
-    let profileId = profileIdFromUrl || null; // resolve slug e, se faltar, cai para o logado
+    // Se não tem ID na URL, usa o ID do usuário logado (próprio perfil)
+    let profileId = profileIdFromUrl || loggedInUserId || null;
     let isOwnProfile = false;
 
     // Não limpar mais a URL para evitar confusão de identidade no cabeçalho
@@ -882,7 +883,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function atualizarChavesAvaliacao() {
         const pid = profileId || profileIdFromUrl || slugFromPath || 'desconhecido';
-        avaliacaoSessionKeyBase = `avaliacaoPerfil:${loggedInUserId || userId}-${pid}`;
+        avaliacaoSessionKeyBase = `avaliacaoPerfil:${loggedInUserId}-${pid}`;
         const servicoScope = serviceScopeId;
         avaliacaoSessionKey = servicoScope
             ? `${avaliacaoSessionKeyBase}:servico:${servicoScope}`
@@ -1101,7 +1102,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Verifica chave permanente no localStorage (para visitas normais)
-        const chavePermanente = `avaliacaoPerfil:${loggedInUserId || userId}-${profileId || profileIdFromUrl || slugFromPath || 'desconhecido'}:permanente`;
+        const chavePermanente = `avaliacaoPerfil:${loggedInUserId}-${profileId || profileIdFromUrl || slugFromPath || 'desconhecido'}:permanente`;
         const temPermanente = !!localStorage.getItem(chavePermanente);
         if (temPermanente) {
             console.log('✅ avaliacaoJaFeita: encontrado na chave permanente:', chavePermanente);
@@ -1148,7 +1149,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         
         // Marca também como permanente para visitas normais
-        const chavePermanente = `avaliacaoPerfil:${loggedInUserId || userId}-${profileId || profileIdFromUrl || slugFromPath || 'desconhecido'}:permanente`;
+        const chavePermanente = `avaliacaoPerfil:${loggedInUserId}-${profileId || profileIdFromUrl || slugFromPath || 'desconhecido'}:permanente`;
         localStorage.setItem(chavePermanente, '1');
         
         // Atualiza o cache
@@ -1490,10 +1491,10 @@ document.addEventListener('DOMContentLoaded', () => {
         if (estadoPerfil) estadoPerfil.textContent = user.estado ? user.estado.toUpperCase() : 'Não informado';
 
         // Carrega avaliações verificadas para qualquer perfil acessado
-        if (!avaliacoesCarregadas) {
-            avaliacoesCarregadas = true;
-            loadAvaliacoesVerificadas(user._id);
-        }
+        // Sempre carrega as avaliações do perfil visualizado (user._id)
+        console.log('📋 Carregando avaliações verificadas para o perfil:', user._id);
+        loadAvaliacoesVerificadas(user._id);
+        avaliacoesCarregadas = true;
 
         if (user.tipo === 'trabalhador') {
             if (atuacaoPerfil) atuacaoPerfil.textContent = user.atuacao || 'Não informado';
@@ -1650,9 +1651,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 🌟 NOVO: Carregar Avaliações Verificadas
     async function loadAvaliacoesVerificadas(profissionalId) {
+        console.log('📋 loadAvaliacoesVerificadas chamado com profissionalId:', profissionalId);
         const secaoAvaliacoesVerificadas = document.getElementById('secao-avaliacoes-verificadas');
         const listaAvaliacoes = document.getElementById('lista-avaliacoes-verificadas');
-        if (!secaoAvaliacoesVerificadas || !listaAvaliacoes) return;
+        if (!secaoAvaliacoesVerificadas || !listaAvaliacoes) {
+            console.warn('⚠️ Elementos da seção de avaliações verificadas não encontrados');
+            return;
+        }
+        
+        // SEMPRE exibe a seção antes de carregar
+        secaoAvaliacoesVerificadas.style.display = 'block';
 
         try {
             const authHeaders = getAuthHeaders();
@@ -1663,6 +1671,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
             let avaliacoes = data.avaliacoes || [];
+            console.log('✅ Avaliações recebidas da API:', avaliacoes.length);
             
             // Verifica se o usuário logado já avaliou este perfil
             if (loggedInUserId && profissionalId) {
@@ -1728,7 +1737,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (avaliacoes.length === 0) {
                 // fallback: tenta usar última avaliação local (geral) do usuário atual neste perfil
                 try {
-                    const cacheKey = `ultimaAvaliacaoGeral:${profissionalId}:${loggedInUserId || userId || ''}`;
+                    const cacheKey = `ultimaAvaliacaoGeral:${profissionalId}:${loggedInUserId || ''}`;
                     const cacheStr = localStorage.getItem(cacheKey);
                     if (cacheStr) {
                         const cacheObj = JSON.parse(cacheStr);
@@ -1841,7 +1850,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            const viewerId = loggedInUserId || userId || '';
+            const viewerId = loggedInUserId || '';
             const viewerName = (localStorage.getItem('userName') || '').trim().toLowerCase();
             const sameId = (a, b) => a && b && String(a) === String(b);
             const sameName = (nome) => nome && viewerName && nome.trim().toLowerCase() === viewerName;
@@ -1880,7 +1889,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
+            // Garante que a seção está visível
             secaoAvaliacoesVerificadas.style.display = 'block';
+            console.log('✅ Seção de avaliações verificadas exibida, total de avaliações:', ordenadas.length);
             
             // Se já avaliou E veio de notificação, adiciona mensagem pequena no título
             if (avaliacaoJaFeita && avaliacaoJaFeita() && veioDeNotificacao) {
@@ -2145,6 +2156,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             listaAvaliacoes.innerHTML = html;
             
+            // Garante que a seção está visível após renderizar
+            secaoAvaliacoesVerificadas.style.display = 'block';
+            console.log('✅ Avaliações renderizadas na lista');
+            
             // Configura o botão de expandir/colapsar
             const btnExpandir = document.getElementById('btn-expandir-avaliacoes');
             if (btnExpandir) {
@@ -2182,9 +2197,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }
         } catch (error) {
-            console.error('Erro ao carregar avaliações verificadas:', error);
-            secaoAvaliacoesVerificadas.style.display = 'block';
-            listaAvaliacoes.innerHTML = '<p style="padding:16px; color: var(--error-color);">Erro ao carregar avaliações.</p>';
+            console.error('❌ Erro ao carregar avaliações verificadas:', error);
+            // Garante que a seção está visível mesmo em caso de erro
+            if (secaoAvaliacoesVerificadas) {
+                secaoAvaliacoesVerificadas.style.display = 'block';
+            }
+            if (listaAvaliacoes) {
+                listaAvaliacoes.innerHTML = '<p style="padding:16px; color: var(--error-color);">Erro ao carregar avaliações.</p>';
+            }
         }
     }
 
@@ -2224,11 +2244,11 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // 🆕 Verifica se o usuário já validou este projeto
             const jaValidou = servico.validacoesPares && servico.validacoesPares.some(
-                v => v.profissionalId && (v.profissionalId._id || v.profissionalId).toString() === (loggedInUserId || userId)
+                v => v.profissionalId && (v.profissionalId._id || v.profissionalId).toString() === loggedInUserId
             );
             
             const validacaoAnterior = jaValidou && servico.validacoesPares.find(
-                v => v.profissionalId && (v.profissionalId._id || v.profissionalId).toString() === (loggedInUserId || userId)
+                v => v.profissionalId && (v.profissionalId._id || v.profissionalId).toString() === loggedInUserId
             );
             
             let botaoValidar = '';
@@ -2296,7 +2316,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                     const servico = await response.json();
                     const minhaValidacao = servico.validacoesPares?.find(
-                        v => v.profissionalId && (v.profissionalId._id || v.profissionalId).toString() === (loggedInUserId || userId)
+                        v => v.profissionalId && (v.profissionalId._id || v.profissionalId).toString() === loggedInUserId
                     );
                     if (minhaValidacao) {
                         alert(`Você validou este projeto em ${new Date(minhaValidacao.dataValidacao).toLocaleDateString('pt-BR')}.\n${minhaValidacao.comentario ? `Comentário: ${minhaValidacao.comentario}` : 'Sem comentário.'}`);
@@ -2321,7 +2341,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
                 if (data.success) {
                     alert('Projeto validado com sucesso!');
-                    fetchServicos(loggedInUserId || userId);
+                    // Recarrega os serviços
+                    fetchServicos(loggedInUserId);
                 } else {
                     alert(data.message || 'Erro ao validar projeto.');
                 }
@@ -4830,7 +4851,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     
                     console.log('✅ Avaliação enviada com sucesso!', data);
-                    localStorage.setItem('ultimaAvaliacaoClienteId', loggedInUserId || userId || '');
+                    localStorage.setItem('ultimaAvaliacaoClienteId', loggedInUserId || '');
                     if (nomeServicoPayload) {
                         localStorage.setItem('ultimaAvaliacaoServico', nomeServicoPayload);
                         // Cacheia também com o ID do pedido/agendamento para uso futuro
@@ -4943,7 +4964,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const pedidoIdParaMarcar = pedidoIdAvaliacao || pedidoIdUltimoServicoConcluido;
                     const agendamentoIdParaMarcar = agendamentoIdAvaliacao || agendamentoIdUltimoServico;
                     marcarAvaliacaoFeita(estrelas, pedidoIdParaMarcar || null, agendamentoIdParaMarcar || null);
-                    localStorage.setItem('ultimaAvaliacaoClienteId', loggedInUserId || userId || '');
+                    localStorage.setItem('ultimaAvaliacaoClienteId', loggedInUserId || '');
                     if (nomeServicoPayload) localStorage.setItem('ultimaAvaliacaoServico', nomeServicoPayload);
                     
                     // Esconde a seção de avaliação e mostra mensagem nas avaliações verificadas
@@ -4955,7 +4976,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                     // Guarda a última avaliação geral para exibir no quadro de verificadas quando não houver outras
                     try {
-                    const cacheKey = `ultimaAvaliacaoGeral:${profileId}:${loggedInUserId || userId || ''}`;
+                    const cacheKey = `ultimaAvaliacaoGeral:${profileId}:${loggedInUserId || ''}`;
                     const nomeViewer = (localStorage.getItem('userName') || 'Você').trim();
                     const fotoViewer = localStorage.getItem('userPhotoUrl') || 'imagens/default-user.png';
                     const servicoNomeLink =
@@ -4967,7 +4988,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         localStorage.getItem('ultimaDemanda') ||
                         'Serviço concluído';
                         const cacheObj = {
-                            clienteId: { _id: loggedInUserId || userId || '', nome: nomeViewer, avatarUrl: fotoViewer },
+                            clienteId: { _id: loggedInUserId || '', nome: nomeViewer, avatarUrl: fotoViewer },
                             estrelas: parseInt(estrelas, 10),
                             comentario,
                             dataServico: new Date().toISOString(),
@@ -5327,12 +5348,12 @@ document.addEventListener('DOMContentLoaded', () => {
             mostrarServicosBtn.classList.toggle('ativo', secaoAtiva === secaoServicos);
             mostrarPostagensBtn.classList.toggle('ativo', secaoAtiva === secaoPostagens);
             
-            // Carrega dados se necessário
+            // Carrega dados se necessário - usa profileId (perfil visualizado) em vez de loggedInUserId
             if (secaoAtiva === secaoServicos && galeriaServicos && galeriaServicos.children.length === 0) {
-                fetchServicos(loggedInUserId || userId);
+                fetchServicos(profileId || loggedInUserId);
             }
             if (secaoAtiva === secaoPostagens && minhasPostagensContainer && minhasPostagensContainer.children.length === 0) {
-                fetchPostagens(loggedInUserId || userId);
+                fetchPostagens(profileId || loggedInUserId);
             }
         }
         

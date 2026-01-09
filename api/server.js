@@ -290,7 +290,9 @@ const notificacaoSchema = new mongoose.Schema({
             'candidatura_recusada_time',
             'post_curtido',
             'post_comentado',
-            'comentario_respondido'
+            'comentario_respondido',
+            'comentario_curtido',
+            'resposta_curtida'
         ], 
         required: true 
     },
@@ -2358,10 +2360,35 @@ app.post('/api/posts/:postId/comments/:commentId/like', authMiddleware, async (r
         if (!comment) return res.status(404).json({ message: 'Comentário não encontrado' });
 
         const likeIndex = comment.likes.indexOf(userId);
+        const isLiking = likeIndex === -1; // Se não está na lista, está curtindo
+        
         if (likeIndex > -1) {
             comment.likes.splice(likeIndex, 1); // Descurtir
         } else {
             comment.likes.push(userId); // Curtir
+            
+            // Cria notificação para o dono do comentário (se não for ele mesmo)
+            const comentarioUserId = comment.userId.toString();
+            if (comentarioUserId !== userId.toString()) {
+                try {
+                    const usuarioQueCurtiu = await User.findById(userId).select('nome');
+                    const nomeUsuario = usuarioQueCurtiu?.nome || 'Alguém';
+                    
+                    await criarNotificacao(
+                        comentarioUserId,
+                        'comentario_curtido',
+                        'Seu comentário recebeu uma curtida',
+                        `${nomeUsuario} curtiu seu comentário`,
+                        {
+                            postId: postId,
+                            commentId: commentId
+                        },
+                        null
+                    );
+                } catch (notifError) {
+                    console.error('Erro ao criar notificação de comentário curtido:', notifError);
+                }
+            }
         }
         
         await post.save();
@@ -2403,14 +2430,35 @@ app.post('/api/posts/:postId/comments/:commentId/reply', authMiddleware, async (
         await User.populate(addedReply, { path: 'userId', select: 'nome foto avatarUrl' });
         
         // Cria notificação para quem fez o comentário original (se não for ele mesmo)
-        const comentarioUserId = comment.userId.toString();
-        if (comentarioUserId !== userId.toString()) {
+        // Normaliza os IDs para comparação correta
+        const comentarioUserId = comment.userId?._id ? comment.userId._id.toString() : (comment.userId?.toString() || String(comment.userId));
+        const userIdStr = userIdObjectId.toString();
+        
+        console.log('📝 Criando notificação de resposta:', {
+            comentarioUserId,
+            userIdStr,
+            commentUserIdType: typeof comment.userId,
+            commentUserIdValue: comment.userId,
+            saoDiferentes: comentarioUserId !== userIdStr,
+            postId: post._id.toString(),
+            commentId: comment._id.toString(),
+            replyId: addedReply._id.toString()
+        });
+        
+        if (comentarioUserId && comentarioUserId !== userIdStr) {
             try {
                 const usuarioQueRespondeu = await User.findById(userId).select('nome');
                 const nomeUsuario = usuarioQueRespondeu?.nome || 'Alguém';
                 const previewResposta = content.length > 50 ? content.substring(0, 50) + '...' : content;
                 
-                await criarNotificacao(
+                console.log('📤 Enviando notificação para:', {
+                    destinatario: comentarioUserId,
+                    tipo: 'comentario_respondido',
+                    titulo: 'Nova resposta ao seu comentário',
+                    mensagem: `${nomeUsuario} respondeu seu comentário: "${previewResposta}"`
+                });
+                
+                const notificacaoCriada = await criarNotificacao(
                     comentarioUserId,
                     'comentario_respondido',
                     'Nova resposta ao seu comentário',
@@ -2419,14 +2467,18 @@ app.post('/api/posts/:postId/comments/:commentId/reply', authMiddleware, async (
                         postId: post._id.toString(),
                         comentarioId: comment._id.toString(),
                         respostaId: addedReply._id.toString(),
-                        usuarioId: userId.toString(),
+                        usuarioId: userIdStr,
                         usuarioNome: nomeUsuario
                     },
                     null
                 );
+                
+                console.log('✅ Notificação de resposta criada:', notificacaoCriada ? 'Sucesso' : 'Falha');
             } catch (notifError) {
-                console.error('Erro ao criar notificação de resposta:', notifError);
+                console.error('❌ Erro ao criar notificação de resposta:', notifError);
             }
+        } else {
+            console.log('ℹ️ Usuário respondeu seu próprio comentário ou comentarioUserId inválido, notificação não será criada');
         }
         
         res.status(201).json({ success: true, reply: addedReply });
@@ -2517,6 +2569,65 @@ app.delete('/api/posts/:postId/comments/:commentId', authMiddleware, async (req,
     }
 });
 
+// Editar um Comentário (Apenas dono do comentário)
+app.put('/api/posts/:postId/comments/:commentId', authMiddleware, async (req, res) => {
+    try {
+        const { postId, commentId } = req.params;
+        const { content } = req.body;
+        const userId = req.user.id;
+
+        console.log(`[PUT] Editando comentário - PostId: ${postId}, CommentId: ${commentId}, UserId: ${userId}`);
+
+        if (!content || content.trim().length === 0) {
+            return res.status(400).json({ success: false, message: 'O conteúdo do comentário não pode estar vazio.' });
+        }
+
+        const post = await Postagem.findById(postId);
+        if (!post) {
+            console.log(`[PUT] Post não encontrado: ${postId}`);
+            return res.status(404).json({ success: false, message: 'Post não encontrado' });
+        }
+
+        const comment = post.comments.id(commentId);
+        if (!comment) {
+            console.log(`[PUT] Comentário não encontrado: ${commentId}`);
+            return res.status(404).json({ success: false, message: 'Comentário não encontrado' });
+        }
+
+        // Função auxiliar para normalizar ID
+        const normalizeId = (id) => {
+            if (!id) return '';
+            if (id.toString && typeof id.toString === 'function' && id.constructor && id.constructor.name === 'ObjectId') {
+                return id.toString();
+            }
+            if (id._id) {
+                return String(id._id);
+            }
+            return String(id);
+        };
+
+        const commentUserIdStr = normalizeId(comment.userId);
+        const currentUserIdStr = normalizeId(userId);
+
+        console.log(`[PUT] Verificando permissão - CommentUserId: ${commentUserIdStr}, CurrentUserId: ${currentUserIdStr}`);
+
+        // Apenas o dono do comentário pode editar
+        if (commentUserIdStr !== currentUserIdStr) {
+            console.log(`[PUT] Permissão negada - usuário não é dono do comentário`);
+            return res.status(403).json({ success: false, message: 'Você só pode editar seus próprios comentários.' });
+        }
+
+        comment.content = content.trim();
+        await post.save();
+
+        console.log(`[PUT] Comentário editado com sucesso - CommentId: ${commentId}`);
+        res.json({ success: true, message: 'Comentário editado com sucesso.', comment });
+    } catch (error) {
+        console.error('[PUT] Erro ao editar comentário:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
 // Curtir/Descurtir uma Resposta (Reply)
 app.post('/api/posts/:postId/comments/:commentId/replies/:replyId/like', authMiddleware, async (req, res) => {
     try {
@@ -2531,10 +2642,36 @@ app.post('/api/posts/:postId/comments/:commentId/replies/:replyId/like', authMid
         if (!reply) return res.status(404).json({ message: 'Resposta não encontrada' });
 
         const likeIndex = reply.likes.indexOf(userId);
+        const isLiking = likeIndex === -1; // Se não está na lista, está curtindo
+        
         if (likeIndex > -1) {
             reply.likes.splice(likeIndex, 1); // Descurtir
         } else {
             reply.likes.push(userId); // Curtir
+            
+            // Cria notificação para o dono da resposta (se não for ele mesmo)
+            const respostaUserId = reply.userId.toString();
+            if (respostaUserId !== userId.toString()) {
+                try {
+                    const usuarioQueCurtiu = await User.findById(userId).select('nome');
+                    const nomeUsuario = usuarioQueCurtiu?.nome || 'Alguém';
+                    
+                    await criarNotificacao(
+                        respostaUserId,
+                        'resposta_curtida',
+                        'Sua resposta recebeu uma curtida',
+                        `${nomeUsuario} curtiu sua resposta`,
+                        {
+                            postId: postId,
+                            commentId: commentId,
+                            replyId: replyId
+                        },
+                        null
+                    );
+                } catch (notifError) {
+                    console.error('Erro ao criar notificação de resposta curtida:', notifError);
+                }
+            }
         }
         
         await post.save();
@@ -2624,6 +2761,55 @@ app.delete('/api/posts/:postId/comments/:commentId/replies/:replyId', authMiddle
         await post.save();
         
         res.json({ success: true, message: 'Resposta deletada.' });
+    } catch (error) {
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
+
+// Editar uma Resposta (Apenas dono da resposta)
+app.put('/api/posts/:postId/comments/:commentId/replies/:replyId', authMiddleware, async (req, res) => {
+    try {
+        const { postId, commentId, replyId } = req.params;
+        const { content } = req.body;
+        const userId = req.user.id;
+
+        if (!content || content.trim().length === 0) {
+            return res.status(400).json({ success: false, message: 'O conteúdo da resposta não pode estar vazio.' });
+        }
+
+        const post = await Postagem.findById(postId);
+        if (!post) return res.status(404).json({ success: false, message: 'Post não encontrado' });
+
+        const comment = post.comments.id(commentId);
+        if (!comment) return res.status(404).json({ success: false, message: 'Comentário não encontrado' });
+
+        const reply = comment.replies.id(replyId);
+        if (!reply) return res.status(404).json({ success: false, message: 'Resposta não encontrada' });
+
+        // Função auxiliar para normalizar ID
+        const normalizeId = (id) => {
+            if (!id) return '';
+            if (id.toString && typeof id.toString === 'function' && id.constructor && id.constructor.name === 'ObjectId') {
+                return id.toString();
+            }
+            if (id._id) {
+                return String(id._id);
+            }
+            return String(id);
+        };
+
+        const replyUserIdStr = normalizeId(reply.userId);
+        const currentUserIdStr = normalizeId(userId);
+
+        // Apenas o dono da resposta pode editar
+        if (replyUserIdStr !== currentUserIdStr) {
+            return res.status(403).json({ success: false, message: 'Você só pode editar suas próprias respostas.' });
+        }
+
+        reply.content = content.trim();
+        await post.save();
+
+        res.json({ success: true, message: 'Resposta editada com sucesso.', reply });
     } catch (error) {
         res.status(500).json({ success: false, message: error.message });
     }
@@ -3104,6 +3290,18 @@ app.post('/api/avaliacao-verificada', authMiddleware, async (req, res) => {
     try {
         const { profissionalId, agendamentoId, pedidoUrgenteId, estrelas, comentario, dataServico, servico } = req.body;
         const clienteId = req.user.id;
+        
+        // Garantir que profissionalId seja ObjectId
+        let profissionalIdFinal = profissionalId;
+        if (profissionalId && mongoose.Types.ObjectId.isValid(profissionalId)) {
+            profissionalIdFinal = new mongoose.Types.ObjectId(profissionalId);
+        }
+        
+        console.log('💾 Criando avaliação verificada - profissionalId:', {
+            original: profissionalId,
+            convertido: profissionalIdFinal,
+            tipo: typeof profissionalIdFinal
+        });
 
         let nomeServico = servico || '';
         let dataServicoFinal = dataServico;
@@ -3193,7 +3391,7 @@ app.post('/api/avaliacao-verificada', authMiddleware, async (req, res) => {
         // Verifica se já existe uma avaliação verificada para este serviço específico
         // Evita avaliações duplicadas do mesmo cliente para o mesmo serviço
         let queryDuplicata = {
-            profissionalId,
+            profissionalId: profissionalIdFinal,
             clienteId: clienteIdFinal
         };
         
@@ -3236,7 +3434,11 @@ app.post('/api/avaliacao-verificada', authMiddleware, async (req, res) => {
 
         await novaAvaliacao.save();
         console.log('✅ Avaliação verificada salva:', {
+            _id: novaAvaliacao._id,
             servico: novaAvaliacao.servico,
+            profissionalId: novaAvaliacao.profissionalId,
+            profissionalIdType: typeof novaAvaliacao.profissionalId,
+            profissionalIdString: String(novaAvaliacao.profissionalId),
             pedidoUrgenteId: novaAvaliacao.pedidoUrgenteId,
             pedidoUrgenteIdType: typeof novaAvaliacao.pedidoUrgenteId,
             pedidoUrgenteIdString: String(novaAvaliacao.pedidoUrgenteId),
@@ -3284,12 +3486,76 @@ app.post('/api/avaliacao-verificada', authMiddleware, async (req, res) => {
 app.get('/api/avaliacoes-verificadas/:profissionalId', async (req, res) => {
     try {
         const { profissionalId } = req.params;
+        console.log('📋 Buscando avaliações verificadas para profissionalId:', profissionalId);
         
-        const avaliacoes = await AvaliacaoVerificada.find({ profissionalId })
+        // Converte profissionalId para ObjectId se válido
+        let profissionalIdObj = profissionalId;
+        if (mongoose.Types.ObjectId.isValid(profissionalId)) {
+            profissionalIdObj = new mongoose.Types.ObjectId(profissionalId);
+        }
+        
+        console.log('📋 profissionalId convertido:', profissionalIdObj);
+        
+        // Busca flexível: tenta com ObjectId primeiro, depois com string
+        let avaliacoes = await AvaliacaoVerificada.find({ profissionalId: profissionalIdObj })
             .populate('clienteId', 'nome foto avatarUrl')
             .populate('agendamentoId', 'servico dataHora')
+            .populate('pedidoUrgenteId', 'servico titulo descricao')
             .sort({ createdAt: -1 })
             .exec();
+        
+        // Se não encontrou com ObjectId, tenta com string
+        if (avaliacoes.length === 0) {
+            console.log('⚠️ Nenhuma avaliação encontrada com ObjectId, tentando com string...');
+            avaliacoes = await AvaliacaoVerificada.find({ profissionalId: String(profissionalId) })
+                .populate('clienteId', 'nome foto avatarUrl')
+                .populate('agendamentoId', 'servico dataHora')
+                .populate('pedidoUrgenteId', 'servico titulo descricao')
+                .sort({ createdAt: -1 })
+                .exec();
+        }
+        
+        // Se ainda não encontrou, tenta buscar todas e filtrar manualmente
+        if (avaliacoes.length === 0) {
+            console.log('⚠️ Nenhuma avaliação encontrada, buscando todas para debug...');
+            const todasAvaliacoes = await AvaliacaoVerificada.find({})
+                .populate('clienteId', 'nome foto avatarUrl')
+                .populate('agendamentoId', 'servico dataHora')
+                .populate('pedidoUrgenteId', 'servico titulo descricao')
+                .sort({ createdAt: -1 })
+                .limit(10)
+                .exec();
+            
+            console.log('📋 Total de avaliações no banco (amostra):', todasAvaliacoes.length);
+            if (todasAvaliacoes.length > 0) {
+                console.log('📋 Primeira avaliação encontrada (amostra):', {
+                    _id: todasAvaliacoes[0]._id,
+                    profissionalId: todasAvaliacoes[0].profissionalId,
+                    profissionalIdType: typeof todasAvaliacoes[0].profissionalId,
+                    profissionalIdString: String(todasAvaliacoes[0].profissionalId),
+                    clienteId: todasAvaliacoes[0].clienteId,
+                    servico: todasAvaliacoes[0].servico
+                });
+                
+                // Filtra manualmente
+                avaliacoes = todasAvaliacoes.filter(av => {
+                    const avProfId = String(av.profissionalId);
+                    const buscaProfId = String(profissionalId);
+                    return avProfId === buscaProfId;
+                });
+                console.log('📋 Avaliações filtradas manualmente:', avaliacoes.length);
+            }
+        }
+        
+        console.log('✅ Total de avaliações encontradas:', avaliacoes.length);
+        if (avaliacoes.length > 0) {
+            console.log('📋 Primeira avaliação:', {
+                _id: avaliacoes[0]._id,
+                profissionalId: avaliacoes[0].profissionalId,
+                clienteId: avaliacoes[0].clienteId,
+                servico: avaliacoes[0].servico
+            });
+        }
 
         // Enriquecimento: tenta descobrir o nome do serviço via agendamentoId/pedido
         const avaliacoesEnriquecidas = [];
@@ -3383,9 +3649,41 @@ app.get('/api/avaliacoes-verificadas/:profissionalId', async (req, res) => {
             avaliacoesEnriquecidas.push(plain);
         }
 
+        console.log('✅ Total de avaliações enriquecidas retornadas:', avaliacoesEnriquecidas.length);
         res.json({ success: true, avaliacoes: avaliacoesEnriquecidas });
     } catch (error) {
         console.error('Erro ao buscar avaliações verificadas:', error);
+        res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
+    }
+});
+
+// 🔧 ROTA TEMPORÁRIA PARA DEBUG: Listar todas as avaliações verificadas
+app.get('/api/avaliacoes-verificadas-debug/todas', authMiddleware, async (req, res) => {
+    try {
+        const todasAvaliacoes = await AvaliacaoVerificada.find({})
+            .populate('clienteId', 'nome foto avatarUrl')
+            .populate('profissionalId', 'nome foto avatarUrl')
+            .populate('agendamentoId', 'servico dataHora')
+            .populate('pedidoUrgenteId', 'servico titulo descricao')
+            .sort({ createdAt: -1 })
+            .limit(50)
+            .exec();
+        
+        const avaliacoesFormatadas = todasAvaliacoes.map(av => ({
+            _id: av._id,
+            profissionalId: String(av.profissionalId?._id || av.profissionalId),
+            profissionalNome: av.profissionalId?.nome || 'N/A',
+            clienteId: String(av.clienteId?._id || av.clienteId),
+            clienteNome: av.clienteId?.nome || 'N/A',
+            servico: av.servico,
+            estrelas: av.estrelas,
+            comentario: av.comentario,
+            createdAt: av.createdAt
+        }));
+        
+        res.json({ success: true, total: todasAvaliacoes.length, avaliacoes: avaliacoesFormatadas });
+    } catch (error) {
+        console.error('Erro ao buscar todas as avaliações:', error);
         res.status(500).json({ success: false, message: 'Erro interno do servidor.' });
     }
 });

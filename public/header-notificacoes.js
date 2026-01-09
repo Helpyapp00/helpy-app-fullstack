@@ -779,7 +779,9 @@
                             candidatura_recusada_time: '❌',
                             post_curtido: '❤️',
                             post_comentado: '💬',
-                            comentario_respondido: '↩️'
+                            comentario_respondido: '↩️',
+                            comentario_curtido: '👍',
+                            resposta_curtida: '👍'
                         };
                         listaNotificacoes.innerHTML = notificacoes.map(notif => {
                             const dataFmt = new Date(notif.createdAt).toLocaleString('pt-BR');
@@ -931,12 +933,6 @@
                                     console.error('Erro ao marcar notificação como lida', err);
                                 }
                                 
-                                // Se a notificação não for do tipo que pode gerar erro, não precisa processar mais
-                                // As notificações que podem gerar erro são processadas abaixo
-                                if (!podeGerarErro) {
-                                    return;
-                                }
-                                
                                 // Redireciona se for serviço concluído
                                 // Reutiliza a variável notif já declarada acima
                                 console.log('📋 Notificação encontrada:', notif?.tipo, notif?.dadosAdicionais);
@@ -944,6 +940,53 @@
                                 // Flag para indicar se algo foi aberto (redirecionamento, modal, etc.)
                                 let algoFoiAberto = false;
                                 
+                                // Se for notificação de proposta de pedido urgente, abre o modal de propostas
+                                if (notif?.tipo === 'proposta_pedido_urgente' && notif.dadosAdicionais?.pedidoId) {
+                                    algoFoiAberto = true;
+                                    fecharModalNotificacoes();
+                                    const pedidoId = notif.dadosAdicionais.pedidoId;
+                                    console.log('💼 Abrindo modal de propostas para pedidoId:', pedidoId);
+                                    
+                                    // Tenta usar a função global do feed primeiro, depois a auxiliar
+                                    if (typeof window.carregarPropostas === 'function') {
+                                        console.log('✅ Usando função global carregarPropostas');
+                                        await window.carregarPropostas(pedidoId);
+                                    } else {
+                                        console.log('✅ Usando função auxiliar carregarPropostasAuxiliar');
+                                        // Usa a função auxiliar que funciona em qualquer página
+                                        await carregarPropostasAuxiliar(pedidoId);
+                                    }
+                                    return;
+                                }
+                                
+                                // Se for notificação de proposta aceita, abre o modal de serviços ativos
+                                if (notif?.tipo === 'proposta_aceita') {
+                                    algoFoiAberto = true;
+                                    fecharModalNotificacoes();
+                                    console.log('🎉 Notificação de proposta aceita detectada!', notif.dadosAdicionais);
+                                    // Pode ter pedidoId ou agendamentoId
+                                    const pedidoId = notif.dadosAdicionais?.pedidoId || notif.dadosAdicionais?.agendamentoId;
+                                    
+                                    if (pedidoId) {
+                                        console.log('📦 Abrindo serviços ativos com pedidoId:', pedidoId);
+                                        // Tenta usar a função global do feed primeiro, depois a auxiliar
+                                        if (typeof window.carregarServicosAtivos === 'function') {
+                                            console.log('✅ Usando função global carregarServicosAtivos');
+                                            await window.carregarServicosAtivos(pedidoId);
+                                        } else {
+                                            console.log('✅ Usando função auxiliar carregarServicosAtivosAuxiliar');
+                                            // Usa a função auxiliar que funciona em qualquer página
+                                            await carregarServicosAtivosAuxiliar(pedidoId);
+                                        }
+                                    } else {
+                                        console.warn('⚠️ Notificação de proposta aceita sem pedidoId ou agendamentoId');
+                                        // Se não tem pedidoId, apenas recarrega a página
+                                        window.location.reload();
+                                    }
+                                    return;
+                                }
+                                
+                                // Redireciona se for serviço concluído (deve ser processado ANTES do check de podeGerarErro)
                                 if (notif?.tipo === 'servico_concluido' && notif.dadosAdicionais?.profissionalId) {
                                     algoFoiAberto = true;
                                     fecharModalNotificacoes();
@@ -1029,51 +1072,99 @@
                                     }
                                     const fotoServico = notif.dadosAdicionais.foto || localStorage.getItem('fotoUltimoServicoConcluido') || localStorage.getItem('ultimaFotoPedido');
                                     if (fotoServico) params.set('foto', fotoServico);
+                                    console.log('✅ Redirecionando para perfil com avaliação:', params.toString());
                                     window.location.href = `/perfil?${params.toString()}#secao-avaliacao`;
                                     return;
                                 }
-                                // Se for notificação de proposta de pedido urgente, abre o modal de propostas
-                                if (notif?.tipo === 'proposta_pedido_urgente' && notif.dadosAdicionais?.pedidoId) {
+                                
+                                // Trata notificações de posts (curtidas, comentários, respostas) ANTES do check de podeGerarErro
+                                // Função auxiliar para navegar até um post e comentário/resposta específico
+                                const navegarParaPost = async (postId, commentId = null, replyId = null) => {
+                                    console.log('📱 [header-notificacoes] Navegando para post:', { postId, commentId, replyId });
+                                    
+                                    // Se não estiver no feed, redireciona para o feed
+                                    const currentPath = window.location.pathname;
+                                    console.log('📍 Caminho atual:', currentPath);
+                                    if (currentPath !== '/' && currentPath !== '/index.html') {
+                                        console.log('🔄 Redirecionando para feed com parâmetros');
+                                        const params = new URLSearchParams();
+                                        if (postId) params.set('postId', postId);
+                                        if (commentId) params.set('commentId', commentId);
+                                        if (replyId) params.set('replyId', replyId);
+                                        window.location.href = `/?${params.toString()}`;
+                                        return;
+                                    }
+                                    
+                                    // Se já estiver no feed, usa a função global se disponível
+                                    console.log('🔍 Verificando se window.navegarParaPost existe...', typeof window.navegarParaPost);
+                                    if (typeof window.navegarParaPost === 'function') {
+                                        console.log('✅ window.navegarParaPost encontrada, chamando...');
+                                        await window.navegarParaPost(postId, commentId, replyId);
+                                    } else {
+                                        console.warn('⚠️ window.navegarParaPost não encontrada, recarregando página com parâmetros');
+                                        // Fallback: recarrega a página com parâmetros
+                                        const params = new URLSearchParams();
+                                        if (postId) params.set('postId', postId);
+                                        if (commentId) params.set('commentId', commentId);
+                                        if (replyId) params.set('replyId', replyId);
+                                        window.location.href = `/?${params.toString()}`;
+                                    }
+                                };
+                                
+                                // Trata notificações de posts (curtidas, comentários, respostas)
+                                if (notif?.tipo === 'post_curtido' && notif.dadosAdicionais?.postId) {
                                     algoFoiAberto = true;
                                     fecharModalNotificacoes();
-                                    const pedidoId = notif.dadosAdicionais.pedidoId;
-                                    
-                                    // Tenta usar a função global do feed primeiro, depois a auxiliar
-                                    if (typeof window.carregarPropostas === 'function') {
-                                        await window.carregarPropostas(pedidoId);
-                                    } else {
-                                        // Usa a função auxiliar que funciona em qualquer página
-                                        await carregarPropostasAuxiliar(pedidoId);
-                                    }
+                                    await navegarParaPost(notif.dadosAdicionais.postId);
                                     return;
                                 }
                                 
-                                // Se for notificação de proposta aceita, abre o modal de serviços ativos
-                                if (notif?.tipo === 'proposta_aceita') {
+                                if (notif?.tipo === 'post_comentado' && notif.dadosAdicionais?.postId) {
                                     algoFoiAberto = true;
                                     fecharModalNotificacoes();
-                                    console.log('🎉 Notificação de proposta aceita detectada!', notif.dadosAdicionais);
-                                    // Pode ter pedidoId ou agendamentoId
-                                    const pedidoId = notif.dadosAdicionais?.pedidoId || notif.dadosAdicionais?.agendamentoId;
-                                    
-                                    if (pedidoId) {
-                                        console.log('📦 Abrindo serviços ativos com pedidoId:', pedidoId);
-                                        // Tenta usar a função global do feed primeiro, depois a auxiliar
-                                        if (typeof window.carregarServicosAtivos === 'function') {
-                                            console.log('✅ Usando função global carregarServicosAtivos');
-                                            await window.carregarServicosAtivos(pedidoId);
-                                        } else {
-                                            console.log('✅ Usando função auxiliar carregarServicosAtivosAuxiliar');
-                                            // Usa a função auxiliar que funciona em qualquer página
-                                            await carregarServicosAtivosAuxiliar(pedidoId);
-                                        }
-                                    } else {
-                                        console.warn('⚠️ Notificação de proposta aceita sem pedidoId ou agendamentoId');
-                                        // Se não tem pedidoId, apenas recarrega a página
-                                        window.location.reload();
-                                    }
+                                    const commentId = notif.dadosAdicionais?.comentarioId || notif.dadosAdicionais?.commentId;
+                                    await navegarParaPost(notif.dadosAdicionais.postId, commentId);
                                     return;
                                 }
+                                
+                                if (notif?.tipo === 'comentario_respondido' && notif.dadosAdicionais?.postId) {
+                                    algoFoiAberto = true;
+                                    fecharModalNotificacoes();
+                                    const commentId = notif.dadosAdicionais?.comentarioId || notif.dadosAdicionais?.commentId;
+                                    const replyId = notif.dadosAdicionais?.respostaId || notif.dadosAdicionais?.replyId;
+                                    await navegarParaPost(notif.dadosAdicionais.postId, commentId, replyId);
+                                    return;
+                                }
+                                
+                                if (notif?.tipo === 'comentario_curtido' && notif.dadosAdicionais?.postId) {
+                                    console.log('👍 Notificação de comentário curtido detectada:', notif.dadosAdicionais);
+                                    algoFoiAberto = true;
+                                    fecharModalNotificacoes();
+                                    const commentId = notif.dadosAdicionais?.commentId;
+                                    console.log('📱 Chamando navegarParaPost com:', { postId: notif.dadosAdicionais.postId, commentId });
+                                    await navegarParaPost(notif.dadosAdicionais.postId, commentId);
+                                    return;
+                                }
+                                
+                                if (notif?.tipo === 'resposta_curtida' && notif.dadosAdicionais?.postId) {
+                                    console.log('👍 Notificação de resposta curtida detectada:', notif.dadosAdicionais);
+                                    algoFoiAberto = true;
+                                    fecharModalNotificacoes();
+                                    const commentId = notif.dadosAdicionais?.commentId;
+                                    const replyId = notif.dadosAdicionais?.replyId;
+                                    console.log('📱 Chamando navegarParaPost com:', { postId: notif.dadosAdicionais.postId, commentId, replyId });
+                                    await navegarParaPost(notif.dadosAdicionais.postId, commentId, replyId);
+                                    return;
+                                }
+                                
+                                // Se a notificação não for do tipo que pode gerar erro, não precisa processar mais
+                                // As notificações que podem gerar erro são processadas abaixo
+                                if (!podeGerarErro) {
+                                    return;
+                                }
+                                
+                                // Processa notificações que podem gerar erro (candidatura_time, contraproposta_time, confirmar_perfil_time)
+                                // NOTA: servico_concluido já foi processado acima, então não precisa ser processado aqui novamente
                                 
                                 // Trata notificação de proposta aceita em time
                                 if (notif?.tipo === 'proposta_time_aceita' && notif.dadosAdicionais?.timeId) {
@@ -1130,31 +1221,6 @@
                                         params.append('tipoNotificacao', 'confirmar_perfil_time');
                                         window.location.href = `/index.html?${params.toString()}`;
                                     }
-                                    return;
-                                }
-                                
-                                // Trata notificações de posts (curtidas, comentários, respostas)
-                                if (notif?.tipo === 'post_curtido' && notif.dadosAdicionais?.postId) {
-                                    algoFoiAberto = true;
-                                    fecharModalNotificacoes();
-                                    // Recarrega a página para mostrar o post atualizado
-                                    window.location.reload();
-                                    return;
-                                }
-                                
-                                if (notif?.tipo === 'post_comentado' && notif.dadosAdicionais?.postId) {
-                                    algoFoiAberto = true;
-                                    fecharModalNotificacoes();
-                                    // Recarrega a página para mostrar o comentário
-                                    window.location.reload();
-                                    return;
-                                }
-                                
-                                if (notif?.tipo === 'comentario_respondido' && notif.dadosAdicionais?.postId) {
-                                    algoFoiAberto = true;
-                                    fecharModalNotificacoes();
-                                    // Recarrega a página para mostrar a resposta
-                                    window.location.reload();
                                     return;
                                 }
                                 
